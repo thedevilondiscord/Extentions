@@ -9,8 +9,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local ContentProvider = game:GetService("ContentProvider")
 
-local LocalPlayer = Players.LocalPlayer
-local lplr = LocalPlayer
 local SERVER_JOB_ID = game.JobId ~= "" and game.JobId or "Studio_Local_Server"
 
 -- ============================================================================
@@ -26,21 +24,6 @@ local SERVER_JOB_ID = game.JobId ~= "" and game.JobId or "Studio_Local_Server"
 -- eliminates the application's own identity-field spoofing paths and uses
 -- Roblox Player identity as the source of truth available to the client.
 -- ============================================================================
-local function GetRuntimePlayer()
-    local player = Players.LocalPlayer
-    if not player then return nil end
-    return player
-end
-
-local function GetRuntimeIdentity()
-    local player = GetRuntimePlayer()
-    if not player then return nil end
-    return {
-        UserId = tonumber(player.UserId),
-        Name = tostring(player.Name),
-        DisplayName = tostring(player.DisplayName),
-    }
-end
 
 -- Custom Spoofed Name State
 local SpoofedDisplayName = nil
@@ -145,7 +128,7 @@ local IntroScreenGui = Instance.new("ScreenGui")
 IntroScreenGui.Name = "KronosIntroGui"
 IntroScreenGui.ResetOnSpawn = false
 IntroScreenGui.IgnoreGuiInset = true
-IntroScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+IntroScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local IntroBackground = Instance.new("Frame")
 IntroBackground.Name = "Background"
@@ -207,7 +190,7 @@ WelcomeLabel.Name = "WelcomeLabel"
 WelcomeLabel.Size = UDim2.new(1, 0, 0, 20)
 WelcomeLabel.Position = UDim2.new(0, 0, 0, 48)
 WelcomeLabel.BackgroundTransparency = 1
-WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(LocalPlayer.DisplayName, true)
+WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(Players.LocalPlayer.DisplayName, true)
 WelcomeLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
 WelcomeLabel.Font = Enum.Font.Gotham
 WelcomeLabel.TextSize = 12
@@ -422,7 +405,7 @@ task.spawn(runIntro)
 -- [2] ROLEPLAY PROFILES LOAD MATRIX (KRONOS CHAT EDITION)
 -- ========================================================================
 local customRPName = " ᴋʀᴏɴᴏs ᴄʜᴀᴛ "
-local customRPBio  = " ωєℓ¢σмє вα¢к, " .. GetFormattedDisplayName(lplr.DisplayName, true) .. " "
+local customRPBio  = " ωєℓ¢σмє вα¢к, " .. GetFormattedDisplayName(Players.LocalPlayer.DisplayName, true) .. " "
 
 local function applyRPProfile()
     local reFolder = ReplicatedStorage:WaitForChild("RE", 10)
@@ -433,8 +416,8 @@ local function applyRPProfile()
                   or reFolder:FindFirstChild("RPName")
 
     if rpRemote then
-        if not lplr.Character or not lplr.Character:FindFirstChild("HumanoidRootPart") then
-            lplr.CharacterAdded:Wait()
+        if not Players.LocalPlayer.Character or not Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            Players.LocalPlayer.CharacterAdded:Wait()
             task.wait(1)
         end
 
@@ -451,7 +434,7 @@ local function applyRPProfile()
 end
 
 task.spawn(applyRPProfile)
-lplr.CharacterAdded:Connect(function()
+Players.LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1.5)
     applyRPProfile()
 end)
@@ -500,7 +483,7 @@ local GITHUB_PERMISSION_ROSTER_URL = "https://raw.githubusercontent.com/thedevil
 
 local JOIN_SOUND_ID = "rbxassetid://7460825623"
 local NOTIFICATION_SOUND_ID = "rbxassetid://107978604605265"
-local JoinEventId = LocalPlayer.UserId .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
+local JoinEventId = Players.LocalPlayer.UserId .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
 
 local ActiveTab = "GLOBAL"
 
@@ -1085,11 +1068,38 @@ end
 local http_req = (syn and syn.request) or (http and http.request) or http_request or request or (Fluxus and fluxus.request)
 
 local function HttpRequest(url, method, data)
+    method = string.upper(method or "GET")
+
+    if method == "GET" then
+        local success, body = pcall(function()
+            local httpGetSuccess, httpGetBody = pcall(function()
+                return game:HttpGet(url)
+            end)
+            if httpGetSuccess and type(httpGetBody) == "string" and httpGetBody ~= "" then
+                return httpGetBody
+            end
+            if http_req then
+                local response = http_req({
+                    Url = url,
+                    Method = "GET",
+                    Headers = { ["Content-Type"] = "application/json" },
+                })
+                if type(response) == "string" then return response end
+                return response and response.Body
+            end
+            return nil
+        end)
+        if not success or type(body) ~= "string" or body == "" then return nil end
+        local decoded, value = pcall(function() return HttpService:JSONDecode(body) end)
+        return decoded and value or nil
+    end
+
     if not http_req then return nil end
+
     local success, response = pcall(function()
         return http_req({
             Url = url,
-            Method = method or "GET",
+            Method = method,
             Headers = { ["Content-Type"] = "application/json" },
             Body = data and HttpService:JSONEncode(data) or nil
         })
@@ -1101,7 +1111,7 @@ local function HttpRequest(url, method, data)
         end)
         return decodedSuccess and decodedData or nil
     end
-    return nil
+    return success and true or nil
 end
 
 -- ============================================================================
@@ -1154,8 +1164,7 @@ local function LoadPermissionRoster()
 
     local clean = {}
     for rawRole, permissionSet in pairs(source) do
-        local role = FindCanonicalRole and FindCanonicalRole(rawRole) or tostring(rawRole)
-        if not role then role = tostring(rawRole) end
+        local role = tostring(rawRole)
 
         if type(permissionSet) == "table" then
             clean[role] = {}
@@ -1249,9 +1258,8 @@ local function HasRolePermissionForIdentity(userId, username, permission)
 end
 
 local function HasLocalPermission(permission)
-    local identity = GetRuntimeIdentity()
-    if not identity then return false end
-    return HasRolePermissionForIdentity(identity.UserId, identity.Name, permission)
+    if not Players.LocalPlayer then return false end
+    return HasRolePermissionForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name, permission)
 end
 
 local function HasAdminPermission()
@@ -1358,17 +1366,14 @@ task.spawn(function()
     local hue = 0
     while true do
         task.wait(0.03)
-        if not script.Parent then break end
         hue = (hue + 0.008) % 1
-        local found = false
-        for _, obj in ipairs(script.Parent:GetDescendants()) do
-            if obj:IsA("TextLabel") and obj.Text == "KABIR" then
-                obj.TextColor3 = Color3.fromHSV(hue, 0.9, 1)
-                found = true
-                break
+        if ScreenGui and ScreenGui.Parent then
+            for _, obj in ipairs(ScreenGui:GetDescendants()) do
+                if obj:IsA("TextLabel") and obj.Text == "KABIR" then
+                    obj.TextColor3 = Color3.fromHSV(hue, 0.9, 1)
+                end
             end
         end
-        if not found then break end
     end
 end)
 
@@ -1377,12 +1382,11 @@ ScreenGui.Name = "Kronos_Chat_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Enabled = false
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 450, 0, 320)
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
@@ -1723,15 +1727,15 @@ end
 
 local function DisplayNewMessageNotif(msgData, messageId)
     if not msgData then return end
-    if msgData.IsPrivate and tonumber(msgData.UserId) ~= LocalPlayer.UserId and tonumber(msgData.TargetUserId) ~= LocalPlayer.UserId then return end
-    if tonumber(msgData.UserId) == LocalPlayer.UserId and not msgData.IsJoinMessage then return end
+    if msgData.IsPrivate and tonumber(msgData.UserId) ~= Players.LocalPlayer.UserId and tonumber(msgData.TargetUserId) ~= Players.LocalPlayer.UserId then return end
+    if tonumber(msgData.UserId) == Players.LocalPlayer.UserId and not msgData.IsJoinMessage then return end
 
     messageId = tostring(messageId or ((msgData.JoinEventId or "") .. "_" .. (msgData.Timestamp or "") .. "_" .. (msgData.Username or "")))
     if ShownNotificationIds[messageId] then return end
     ShownNotificationIds[messageId] = true
 
-    local rawName = (tonumber(msgData.UserId) == (GetRuntimeIdentity() and GetRuntimeIdentity().UserId)) and ((GetRuntimeIdentity() and GetRuntimeIdentity().DisplayName) or msgData.Username) or GetVerifiedUsernameFromUserId(msgData.UserId, msgData.Username)
-    local isClient = (tonumber(msgData.UserId) == LocalPlayer.UserId)
+    local rawName = (tonumber(msgData.UserId) == Players.LocalPlayer.UserId) and Players.LocalPlayer.DisplayName or GetVerifiedUsernameFromUserId(msgData.UserId, msgData.Username)
+    local isClient = (tonumber(msgData.UserId) == Players.LocalPlayer.UserId)
     local formattedName = GetFormattedDisplayName(rawName, isClient)
     local rawText = msgData.Text or ""
     if msgData.IsJoinMessage then
@@ -2302,8 +2306,7 @@ SubmitRequestBtn.MouseButton1Click:Connect(function()
     SubmitRequestBtn.Text = "SENDING..."
     SubmitRequestBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 
-    local identity = GetRuntimeIdentity()
-    if not identity then
+    if not Players.LocalPlayer then
         SubmitRequestBtn.Text = "FAILED ✗"
         SubmitRequestBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
         return
@@ -2312,9 +2315,9 @@ SubmitRequestBtn.MouseButton1Click:Connect(function()
     task.spawn(function()
         local payload = {
             RequestText = text,
-            UserId = identity.UserId,
-            Username = identity.Name,
-            DisplayName = identity.DisplayName,
+            UserId = Players.LocalPlayer.UserId,
+            Username = Players.LocalPlayer.Name,
+            DisplayName = Players.LocalPlayer.DisplayName,
             Timestamp = os.time(),
         }
         local res = HttpRequest(REQUEST_ENDPOINT, "POST", payload) ~= nil
@@ -2416,17 +2419,17 @@ ServerInviteCorner.Parent = ServerInviteButton
 local function SendServerInvite()
     if ActiveTab ~= "GLOBAL" then return end
 
-    local clientMessageId = LocalPlayer.UserId .. "_invite_" ..
+    local clientMessageId = Players.LocalPlayer.UserId .. "_invite_" ..
         tostring(math.floor(os.clock() * 1000000)) .. "_" ..
         tostring(math.random(100000, 999999))
 
     local payload = {
         ClientMessageId = clientMessageId,
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        Username = Players.LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(Players.LocalPlayer.DisplayName, true),
         Text = "invited you to join their current server",
         Timestamp = os.time(),
-        Role = GetVerifiedRoleForIdentity(LocalPlayer.UserId, LocalPlayer.Name),
+        Role = GetVerifiedRoleForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name),
         PfpId = CurrentPfpId,
         IsPrivate = false,
         IsServerInvite = true,
@@ -2441,15 +2444,14 @@ local function SendServerInvite()
     immediateCard.Visible = true
     table.insert(GlobalUIElements, immediateCard)
 
-    local identity = GetRuntimeIdentity()
-    if not identity then return end
+    if not Players.LocalPlayer then return end
 
     local payload = {
         ClientMessageId = clientMessageId,
-        UserId = identity.UserId,
-        Username = identity.Name,
-        DisplayName = GetFormattedDisplayName(identity.DisplayName, true),
-        Role = GetVerifiedRoleForIdentity(identity.UserId, identity.Name),
+        UserId = Players.LocalPlayer.UserId,
+        Username = Players.LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(Players.LocalPlayer.DisplayName, true),
+        Role = GetVerifiedRoleForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name),
         Text = "invited you to join their current server",
         Timestamp = os.time(),
         Scope = "GLOBAL",
@@ -2637,7 +2639,7 @@ local function ShowCommandAutocomplete()
         end
     else
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
+            if player ~= Players.LocalPlayer then
                 table.insert(suggestions, player.DisplayName)
             end
         end
@@ -3045,9 +3047,9 @@ CreateMessageCard = function(msgData, isGlobal)
 
     AnimateRoleFont(tagLabel, roleName, style)
 
-    local isClient = (tonumber(msgData.UserId) == LocalPlayer.UserId)
+    local isClient = (tonumber(msgData.UserId) == Players.LocalPlayer.UserId)
     local verifiedUsername = GetVerifiedUsernameFromUserId(msgData.UserId, msgData.Username)
-    local verifiedDisplayName = (isClient and GetRuntimeIdentity() and GetRuntimeIdentity().DisplayName) or verifiedUsername
+    local verifiedDisplayName = isClient and Players.LocalPlayer.DisplayName or verifiedUsername
     local formattedName = GetFormattedDisplayName(verifiedDisplayName, isClient)
 
     local nameLabel = Instance.new("TextLabel")
@@ -3153,7 +3155,7 @@ CreateMessageCard = function(msgData, isGlobal)
                 TeleportService:TeleportToPlaceInstance(
                     tonumber(msgData.PlaceId),
                     tostring(msgData.JobId),
-                    LocalPlayer
+                    Players.LocalPlayer
                 )
             end)
 
@@ -3310,8 +3312,7 @@ local function TestNotification()
 end
 
 Moderation.PostModerationPayload = function(payload, isGlobal)
-    local identity = GetRuntimeIdentity()
-    if not identity then return false end
+    if not Players.LocalPlayer then return false end
 
     local action = payload and payload.MuteAction and "Mute"
         or (payload and payload.Announcement and "Announce" or nil)
@@ -3323,10 +3324,10 @@ Moderation.PostModerationPayload = function(payload, isGlobal)
     local endpoint = (payload.Scope == "GLOBAL") and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
 
     local clean = {
-        Username = identity.Name,
-        DisplayName = GetFormattedDisplayName(identity.DisplayName, true),
-        UserId = identity.UserId,
-        Role = GetVerifiedRoleForIdentity(identity.UserId, identity.Name),
+        Username = Players.LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(Players.LocalPlayer.DisplayName, true),
+        UserId = Players.LocalPlayer.UserId,
+        Role = GetVerifiedRoleForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name),
         Timestamp = os.time(),
         PfpId = tostring(CurrentPfpId),
         IsPrivate = false,
@@ -3336,7 +3337,7 @@ Moderation.PostModerationPayload = function(payload, isGlobal)
         clean.Text = tostring(payload.Text or "")
         clean.Announcement = true
         clean.SystemMessage = true
-        clean.AnnouncementBy = identity.DisplayName
+        clean.AnnouncementBy = Players.LocalPlayer.DisplayName
     else
         clean.MuteAction = true
         clean.TargetUserId = tonumber(payload.TargetUserId)
@@ -3344,9 +3345,9 @@ Moderation.PostModerationPayload = function(payload, isGlobal)
         clean.TargetDisplayName = tostring(payload.TargetDisplayName or "")
         clean.DurationMinutes = math.clamp(tonumber(payload.DurationMinutes) or 1, 1, 15)
         clean.ExpiresAt = os.time() + clean.DurationMinutes * 60
-        clean.ImposedByUserId = identity.UserId
-        clean.ImposedByUsername = identity.Name
-        clean.ImposedByDisplayName = identity.DisplayName
+        clean.ImposedByUserId = Players.LocalPlayer.UserId
+        clean.ImposedByUsername = Players.LocalPlayer.Name
+        clean.ImposedByDisplayName = Players.LocalPlayer.DisplayName
         clean.Scope = payload.Scope
     end
 
@@ -3364,8 +3365,7 @@ Moderation.RenderLocalMessage = function(payload, isGlobal)
 end
 
 Moderation.SendAnnouncement = function(body)
-    local identity = GetRuntimeIdentity()
-    if not identity or not CanUseAnnouncement() then
+    if not Players.LocalPlayer or not CanUseAnnouncement() then
         ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have Announcement permission.", true)
         return false
     end
@@ -3377,17 +3377,17 @@ Moderation.SendAnnouncement = function(body)
     local endpoint = scope == "GLOBAL" and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
 
     local payload = {
-        Username = identity.Name,
-        DisplayName = GetFormattedDisplayName(identity.DisplayName, true),
-        UserId = identity.UserId,
-        Role = GetVerifiedRoleForIdentity(identity.UserId, identity.Name),
+        Username = Players.LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(Players.LocalPlayer.DisplayName, true),
+        UserId = Players.LocalPlayer.UserId,
+        Role = GetVerifiedRoleForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name),
         Text = body,
         Timestamp = os.time(),
         PfpId = tostring(CurrentPfpId),
         IsPrivate = false,
         SystemMessage = true,
         Announcement = true,
-        AnnouncementBy = identity.DisplayName,
+        AnnouncementBy = Players.LocalPlayer.DisplayName,
         Scope = scope,
     }
 
@@ -3395,8 +3395,7 @@ Moderation.SendAnnouncement = function(body)
 end
 
 Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinutes)
-    local identity = GetRuntimeIdentity()
-    if not identity or not HasLocalPermission("Mute") then
+    if not Players.LocalPlayer or not HasLocalPermission("Mute") then
         ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have Mute permission.", true)
         return false
     end
@@ -3427,10 +3426,10 @@ Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinute
         ExpiresAt = os.time() + duration * 60,
         Scope = scope,
 
-        ImposedByUserId = identity.UserId,
-        ImposedByUsername = identity.Name,
-        ImposedByDisplayName = identity.DisplayName,
-        ImposedByRole = GetVerifiedRoleForIdentity(identity.UserId, identity.Name),
+        ImposedByUserId = Players.LocalPlayer.UserId,
+        ImposedByUsername = Players.LocalPlayer.Name,
+        ImposedByDisplayName = Players.LocalPlayer.DisplayName,
+        ImposedByRole = GetVerifiedRoleForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name),
 
         Timestamp = os.time(),
     }
@@ -3457,7 +3456,7 @@ SendChatMessage = function()
 
     if not isPrivate then
         local currentScope = (ActiveTab == "GLOBAL") and "GLOBAL" or "SERVER"
-        local ownMute = Moderation.GetActiveMute(currentScope, tostring(LocalPlayer.UserId))
+        local ownMute = Moderation.GetActiveMute(currentScope, tostring(Players.LocalPlayer.UserId))
         if ownMute then
             local remaining = Moderation.FormatMuteRemaining((tonumber(ownMute.ExpiresAt) or os.time()) - os.time())
             local imposedBy = tostring(ownMute.ImposedByDisplayName or "Moderator")
@@ -3520,18 +3519,18 @@ SendChatMessage = function()
     elseif not isPrivate and string.sub(typedText, 1, 5) == "!tag " then
         local requestedRole = string.sub(typedText, 6):gsub("^%s+", ""):gsub("%s+$", "")
         local canonical = FindCanonicalRole(requestedRole)
-        if not canonical or not PlayerHasRole(LocalPlayer.Name, canonical) then
+        if not canonical or not PlayerHasRole(Players.LocalPlayer.Name, canonical) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. You are not assigned to the role '" .. requestedRole .. "' in the GitHub roster.", true)
         else
-            AssignedPlayerRoles[LocalPlayer.Name] = canonical
-            DisabledTags[LocalPlayer.Name] = nil
+            AssignedPlayerRoles[Players.LocalPlayer.Name] = canonical
+            DisabledTags[Players.LocalPlayer.Name] = nil
             ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
         end
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!tag" then
-        DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
-        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
+        DisabledTags[Players.LocalPlayer.Name] = not DisabledTags[Players.LocalPlayer.Name]
+        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[Players.LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!role " then
@@ -3548,8 +3547,8 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!role" then
-        local roles = GetPlayerRoles(LocalPlayer.Name)
-        local highest = GetHighestRole(LocalPlayer.Name)
+        local roles = GetPlayerRoles(Players.LocalPlayer.Name)
+        local highest = GetHighestRole(Players.LocalPlayer.Name)
         ShowLocalSystemMessage("[AI MoD] : Your highest role is " .. highest .. ". Available roles: " .. (#roles > 0 and table.concat(roles, ", ") or "none") .. ".")
         MessageInput.Text = ""
         return
@@ -3596,10 +3595,9 @@ SendChatMessage = function()
     LastMessageSendTime = now
 
     local reply = ReplyContextMessage
-    local clientMessageId = tostring(LocalPlayer.UserId) .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = tostring(Players.LocalPlayer.UserId) .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
 
-    local identity = GetRuntimeIdentity()
-    if not identity then
+    if not Players.LocalPlayer then
         ShowLocalSystemMessage("[AI MoD] : Roblox player identity is unavailable. Message was not sent.", true)
         return
     end
@@ -3618,10 +3616,10 @@ SendChatMessage = function()
     -- No command input can override them.
     local payload = {
         ClientMessageId = clientMessageId,
-        UserId = identity.UserId,
-        Username = identity.Name,
-        DisplayName = GetFormattedDisplayName(identity.DisplayName, true),
-        Role = GetVerifiedRoleForIdentity(identity.UserId, identity.Name),
+        UserId = Players.LocalPlayer.UserId,
+        Username = Players.LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(Players.LocalPlayer.DisplayName, true),
+        Role = GetVerifiedRoleForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name),
         Text = privateBody,
         Timestamp = os.time(),
         Scope = (ActiveTab == "GLOBAL") and "GLOBAL" or "SERVER",
@@ -3688,8 +3686,8 @@ function BuildJoinMessagePayload()
     return {
         Username = "AI_MoD",
         DisplayName = "AI MoD",
-        JoinedDisplayName = LocalPlayer.DisplayName,
-        Text = LocalPlayer.DisplayName .. " has Joined the Server Chat",
+        JoinedDisplayName = Players.LocalPlayer.DisplayName,
+        Text = Players.LocalPlayer.DisplayName .. " has Joined the Server Chat",
         Timestamp = os.time(),
         Role = "BOT",
         PfpId = 78588114275746,
@@ -3712,17 +3710,16 @@ function ShowLocalJoinMessage()
 end
 
 function PostServerJoinMessage()
-    local identity = GetRuntimeIdentity()
-    if not identity then return end
+    if not Players.LocalPlayer then return end
 
     local payload = {
-        Username = identity.Name,
-        DisplayName = identity.DisplayName,
-        JoinedDisplayName = identity.DisplayName,
-        UserId = identity.UserId,
-        Text = identity.DisplayName .. " has Joined the Server Chat",
+        Username = Players.LocalPlayer.Name,
+        DisplayName = Players.LocalPlayer.DisplayName,
+        JoinedDisplayName = Players.LocalPlayer.DisplayName,
+        UserId = Players.LocalPlayer.UserId,
+        Text = Players.LocalPlayer.DisplayName .. " has Joined the Server Chat",
         Timestamp = os.time(),
-        Role = GetVerifiedRoleForIdentity(identity.UserId, identity.Name),
+        Role = GetVerifiedRoleForIdentity(Players.LocalPlayer.UserId, Players.LocalPlayer.Name),
         PfpId = tostring(CurrentPfpId),
         IsPrivate = false,
         IsJoinMessage = true,
@@ -3745,9 +3742,9 @@ function PollMessages()
                         and HasRolePermissionForIdentity(msg.ImposedByUserId, msg.ImposedByUsername, "Mute") then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("GLOBAL", tostring(msg.TargetUserId or msg.TargetUsername))] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or tonumber(msg.UserId) == LocalPlayer.UserId or tonumber(msg.TargetUserId) == LocalPlayer.UserId) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or tonumber(msg.UserId) == Players.LocalPlayer.UserId or tonumber(msg.TargetUserId) == Players.LocalPlayer.UserId) then
                     local blockedByMute = Moderation.GetActiveMute("GLOBAL", tostring(msg.UserId or msg.Username)) ~= nil
-                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    if blockedByMute and msg.Username ~= Players.LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
@@ -3775,9 +3772,9 @@ function PollMessages()
                         and HasRolePermissionForIdentity(msg.ImposedByUserId, msg.ImposedByUsername, "Mute") then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("SERVER", tostring(msg.TargetUserId or msg.TargetUsername))] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or tonumber(msg.UserId) == LocalPlayer.UserId or tonumber(msg.TargetUserId) == LocalPlayer.UserId) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or tonumber(msg.UserId) == Players.LocalPlayer.UserId or tonumber(msg.TargetUserId) == Players.LocalPlayer.UserId) then
                     local blockedByMute = Moderation.GetActiveMute("SERVER", tostring(msg.UserId or msg.Username)) ~= nil
-                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    if blockedByMute and msg.Username ~= Players.LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil

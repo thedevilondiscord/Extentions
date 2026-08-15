@@ -2442,12 +2442,23 @@ ProfileFrame.BackgroundTransparency = 1
 ProfileFrame.BorderSizePixel = 0
 ProfileFrame.ScrollBarThickness = 3
 ProfileFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
-ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 335)
+ProfileFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 850)
 ProfileFrame.Visible = false
 ProfileFrame.Parent = MainFrame
 
+-- Helper used only by this tab. Roblox thumbnail URLs are used instead of
+-- rbxassetid:// because the supplied PFP IDs are image/asset IDs and the
+-- thumbnail endpoint is considerably more reliable for UI ImageLabels.
+local function KronosPfpImage(id, size)
+    id = tostring(id or "")
+    size = size or 420
+    if id == "" then return "" end
+    return "rbxthumb://type=Asset&id=" .. id .. "&w=" .. tostring(size) .. "&h=" .. tostring(size)
+end
+
 ProfileHeaderCard = Instance.new("Frame")
-ProfileHeaderCard.Size = UDim2.new(1, 0, 0, 86)
+ProfileHeaderCard.Size = UDim2.new(1, 0, 0, 82)
 ProfileHeaderCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfileHeaderCard.BackgroundTransparency = 0.28
 ProfileHeaderCard.BorderSizePixel = 0
@@ -2458,31 +2469,33 @@ ProfileHeaderCorner.Parent = ProfileHeaderCard
 
 ProfilePfp = Instance.new("ImageLabel")
 ProfilePfp.Name = "ProfilePfp"
-ProfilePfp.Size = UDim2.new(0, 64, 0, 64)
-ProfilePfp.Position = UDim2.new(0, 10, 0, 11)
+ProfilePfp.Size = UDim2.new(0, 62, 0, 62)
+ProfilePfp.Position = UDim2.new(0, 10, 0, 10)
 ProfilePfp.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-ProfilePfp.Image = "rbxthumb://type=Asset&id=" .. tostring(CurrentPfpId) .. "&w=420&h=420"
+ProfilePfp.Image = KronosPfpImage(CurrentPfpId, 420)
+ProfilePfp.ScaleType = Enum.ScaleType.Crop
 ProfilePfp.Parent = ProfileHeaderCard
 ProfilePfpCorner = Instance.new("UICorner")
 ProfilePfpCorner.CornerRadius = UDim.new(1, 0)
 ProfilePfpCorner.Parent = ProfilePfp
 
 ProfileDisplayName = Instance.new("TextLabel")
-ProfileDisplayName.Size = UDim2.new(1, -88, 0, 32)
-ProfileDisplayName.Position = UDim2.new(0, 84, 0, 13)
+ProfileDisplayName.Size = UDim2.new(1, -88, 0, 31)
+ProfileDisplayName.Position = UDim2.new(0, 84, 0, 11)
 ProfileDisplayName.BackgroundTransparency = 1
 ProfileDisplayName.Font = Enum.Font.GothamBold
 ProfileDisplayName.Text = GetFormattedDisplayName(LocalPlayer.DisplayName, true)
 ProfileDisplayName.TextColor3 = Color3.fromRGB(255, 255, 255)
-ProfileDisplayName.TextSize = 21
+ProfileDisplayName.TextSize = 20
 ProfileDisplayName.TextXAlignment = Enum.TextXAlignment.Left
+ProfileDisplayName.TextTruncate = Enum.TextTruncate.AtEnd
 ProfileDisplayName.Parent = ProfileHeaderCard
 ProfileRole = GetAssignedOrCalculatedRole(LocalPlayer.Name)
 AnimateRoleFont(ProfileDisplayName, ProfileRole, RANK_STYLES[ProfileRole] or RANK_STYLES["VIP"])
 
 ProfileUsername = Instance.new("TextLabel")
-ProfileUsername.Size = UDim2.new(1, -88, 0, 20)
-ProfileUsername.Position = UDim2.new(0, 84, 0, 48)
+ProfileUsername.Size = UDim2.new(1, -88, 0, 19)
+ProfileUsername.Position = UDim2.new(0, 84, 0, 45)
 ProfileUsername.BackgroundTransparency = 1
 ProfileUsername.Font = Enum.Font.Gotham
 ProfileUsername.Text = "@" .. LocalPlayer.Name
@@ -2491,9 +2504,10 @@ ProfileUsername.TextSize = 11
 ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
 ProfileUsername.Parent = ProfileHeaderCard
 
+-- SOCIAL BUTTONS: icon-only, no Instagram/Discord/Snapchat text underneath.
 ProfileSocialCard = Instance.new("Frame")
-ProfileSocialCard.Size = UDim2.new(1, 0, 0, 108)
-ProfileSocialCard.Position = UDim2.new(0, 0, 0, 92)
+ProfileSocialCard.Size = UDim2.new(1, 0, 0, 92)
+ProfileSocialCard.Position = UDim2.new(0, 0, 0, 90)
 ProfileSocialCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfileSocialCard.BackgroundTransparency = 0.3
 ProfileSocialCard.BorderSizePixel = 0
@@ -2502,61 +2516,62 @@ ProfileSocialCorner = Instance.new("UICorner")
 ProfileSocialCorner.CornerRadius = UDim.new(0, 10)
 ProfileSocialCorner.Parent = ProfileSocialCard
 
-function ProfileSocialButton(name, text, imageId, pos)
+function ProfileSocialButton(name, imageId, pos)
     local b = Instance.new("ImageButton")
     b.Name = name
-    b.Size = UDim2.new(0.23, 0, 0, 42)
+    b.Size = UDim2.new(0, 76, 0, 64)
     b.Position = pos
-    b.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-    b.BackgroundTransparency = 0.15
-    b.Image = "rbxthumb://type=Asset&id=" .. tostring(imageId) .. "&w=150&h=150"
+    b.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+    b.BackgroundTransparency = 0.08
+    b.BorderSizePixel = 0
+    b.Image = KronosPfpImage(imageId, 150)
     b.ScaleType = Enum.ScaleType.Fit
+    b.AutoButtonColor = true
     b.Parent = ProfileSocialCard
+
     local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 8)
+    c.CornerRadius = UDim.new(0, 10)
     c.Parent = b
-    local l = Instance.new("TextLabel")
-    l.Size = UDim2.new(1, 0, 0, 14)
-    l.Position = UDim2.new(0, 0, 1, -15)
-    l.BackgroundTransparency = 0.25
-    l.BackgroundColor3 = Color3.fromRGB(10,10,15)
-    l.Font = Enum.Font.GothamBold
-    l.Text = text
-    l.TextColor3 = Color3.fromRGB(255,255,255)
-    l.TextSize = 7
-    l.Parent = b
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1
+    stroke.Transparency = 0.55
+    stroke.Color = Color3.fromRGB(75, 75, 95)
+    stroke.Parent = b
     return b
 end
 
-InstagramButton = ProfileSocialButton("InstagramButton", "INSTAGRAM", "18355586412", UDim2.new(0.01,0,0,10))
-DiscordButton = ProfileSocialButton("DiscordButton", "DISCORD", "10367063084", UDim2.new(0.255,0,0,10))
-SnapchatButton = ProfileSocialButton("SnapchatButton", "SNAPCHAT", "385616312", UDim2.new(0.50,0,0,10))
-ProfileShareButton = ProfileSocialButton("ProfileShareButton", "SHARE", "0", UDim2.new(0.745,0,0,10))
-ProfileShareButton.Image = ""
-ProfileShareGlyph = Instance.new("TextLabel")
-ProfileShareGlyph.Size = UDim2.new(1,0,1,-14)
-ProfileShareGlyph.Position = UDim2.new(0,0,0,-1)
-ProfileShareGlyph.BackgroundTransparency = 1
-ProfileShareGlyph.Font = Enum.Font.GothamBold
-ProfileShareGlyph.Text = "↗"
-ProfileShareGlyph.TextSize = 22
-ProfileShareGlyph.TextColor3 = Color3.fromRGB(255,255,255)
-ProfileShareGlyph.Parent = ProfileShareButton
+InstagramButton = ProfileSocialButton("InstagramButton", "18355586412", UDim2.new(0, 8, 0, 12))
+DiscordButton = ProfileSocialButton("DiscordButton", "10367063084", UDim2.new(0, 119, 0, 12))
+SnapchatButton = ProfileSocialButton("SnapchatButton", "385616312", UDim2.new(0, 230, 0, 12))
 
-ProfileSocialStatus = Instance.new("TextLabel")
-ProfileSocialStatus.Size = UDim2.new(1, -16, 0, 40)
-ProfileSocialStatus.Position = UDim2.new(0, 8, 0, 58)
-ProfileSocialStatus.BackgroundTransparency = 1
-ProfileSocialStatus.Font = Enum.Font.Gotham
-ProfileSocialStatus.Text = "Instagram: " .. (ProfileSocials.Instagram ~= "" and "@" .. ProfileSocials.Instagram or "Not set") .. "   •   Discord: " .. (ProfileSocials.Discord ~= "" and "@" .. ProfileSocials.Discord or "Not set") .. "   •   Snapchat: " .. (ProfileSocials.Snapchat ~= "" and "@" .. ProfileSocials.Snapchat or "Not set")
-ProfileSocialStatus.TextColor3 = Color3.fromRGB(185,185,200)
-ProfileSocialStatus.TextSize = 8
-ProfileSocialStatus.TextWrapped = true
-ProfileSocialStatus.Parent = ProfileSocialCard
+ProfileShareButton = Instance.new("TextButton")
+ProfileShareButton.Name = "ProfileShareButton"
+ProfileShareButton.Size = UDim2.new(0, 76, 0, 64)
+ProfileShareButton.Position = UDim2.new(0, 341, 0, 12)
+ProfileShareButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+ProfileShareButton.BackgroundTransparency = 0.08
+ProfileShareButton.BorderSizePixel = 0
+ProfileShareButton.Text = "↗"
+ProfileShareButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ProfileShareButton.Font = Enum.Font.GothamBold
+ProfileShareButton.TextSize = 30
+ProfileShareButton.AutoButtonColor = true
+ProfileShareButton.Parent = ProfileSocialCard
+ProfileShareCorner = Instance.new("UICorner")
+ProfileShareCorner.CornerRadius = UDim.new(0, 10)
+ProfileShareCorner.Parent = ProfileShareButton
 
+-- No social-status label is placed under the four buttons. The popup opened
+-- by each social button remains the place where the saved username is shown.
+
+-- ============================================================================
+-- PROFILE PICTURE SELECTOR
+-- Girl and boy lists are deliberately separated into independent sections.
+-- ============================================================================
 ProfilePfpCard = Instance.new("Frame")
-ProfilePfpCard.Size = UDim2.new(1, 0, 0, 112)
-ProfilePfpCard.Position = UDim2.new(0, 0, 0, 208)
+ProfilePfpCard.Size = UDim2.new(1, 0, 0, 590)
+ProfilePfpCard.Position = UDim2.new(0, 0, 0, 190)
 ProfilePfpCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfilePfpCard.BackgroundTransparency = 0.3
 ProfilePfpCard.BorderSizePixel = 0
@@ -2566,78 +2581,139 @@ ProfilePfpCardCorner.CornerRadius = UDim.new(0, 10)
 ProfilePfpCardCorner.Parent = ProfilePfpCard
 
 ProfilePfpTitle = Instance.new("TextLabel")
-ProfilePfpTitle.Size = UDim2.new(1,-16,0,20)
-ProfilePfpTitle.Position = UDim2.new(0,8,0,6)
+ProfilePfpTitle.Size = UDim2.new(1, -16, 0, 20)
+ProfilePfpTitle.Position = UDim2.new(0, 8, 0, 7)
 ProfilePfpTitle.BackgroundTransparency = 1
 ProfilePfpTitle.Font = Enum.Font.GothamBold
 ProfilePfpTitle.Text = "CHANGE PROFILE PICTURE"
-ProfilePfpTitle.TextColor3 = Color3.fromRGB(240,240,245)
+ProfilePfpTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
 ProfilePfpTitle.TextSize = 10
 ProfilePfpTitle.TextXAlignment = Enum.TextXAlignment.Left
 ProfilePfpTitle.Parent = ProfilePfpCard
 
 PfpCustomInput = Instance.new("TextBox")
-PfpCustomInput.Size = UDim2.new(0.55, -4, 0, 27)
-PfpCustomInput.Position = UDim2.new(0,8,0,31)
-PfpCustomInput.BackgroundColor3 = Color3.fromRGB(25,25,38)
+PfpCustomInput.Size = UDim2.new(0, 205, 0, 29)
+PfpCustomInput.Position = UDim2.new(0, 8, 0, 32)
+PfpCustomInput.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
 PfpCustomInput.BackgroundTransparency = 0.15
 PfpCustomInput.BorderSizePixel = 0
 PfpCustomInput.Font = Enum.Font.Code
 PfpCustomInput.PlaceholderText = "Custom image ID"
 PfpCustomInput.Text = ""
-PfpCustomInput.TextColor3 = Color3.fromRGB(235,235,240)
+PfpCustomInput.TextColor3 = Color3.fromRGB(235, 235, 240)
 PfpCustomInput.TextSize = 9
 PfpCustomInput.Parent = ProfilePfpCard
 PfpCustomCorner = Instance.new("UICorner")
-PfpCustomCorner.CornerRadius = UDim.new(0,7)
+PfpCustomCorner.CornerRadius = UDim.new(0, 7)
 PfpCustomCorner.Parent = PfpCustomInput
 
-PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0.55,4,0,31), UDim2.new(0.22,-4,0,27))
-PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0.78,0,0,31), UDim2.new(0.22,-8,0,27))
+PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0, 218, 0, 32), UDim2.new(0, 105, 0, 29))
+PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0, 331, 0, 32), UDim2.new(0, 105, 0, 29))
 
-PfpListScroller = Instance.new("ScrollingFrame")
-PfpListScroller.Size = UDim2.new(1,-16,0,43)
-PfpListScroller.Position = UDim2.new(0,8,0,63)
-PfpListScroller.BackgroundTransparency = 1
-PfpListScroller.BorderSizePixel = 0
-PfpListScroller.ScrollBarThickness = 2
-PfpListScroller.ScrollingDirection = Enum.ScrollingDirection.X
-PfpListScroller.Parent = ProfilePfpCard
-PfpListLayout = Instance.new("UIListLayout")
-PfpListLayout.FillDirection = Enum.FillDirection.Horizontal
-PfpListLayout.Padding = UDim.new(0,4)
-PfpListLayout.Parent = PfpListScroller
+function BuildPfpSection(parent, title, emoji, ids, topY, sectionName)
+    local section = Instance.new("Frame")
+    section.Name = sectionName
+    section.Size = UDim2.new(1, -16, 0, 250)
+    section.Position = UDim2.new(0, 8, 0, topY)
+    section.BackgroundColor3 = Color3.fromRGB(22, 22, 34)
+    section.BackgroundTransparency = 0.12
+    section.BorderSizePixel = 0
+    section.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 9)
+    corner.Parent = section
+
+    local heading = Instance.new("TextLabel")
+    heading.Size = UDim2.new(1, -16, 0, 25)
+    heading.Position = UDim2.new(0, 8, 0, 6)
+    heading.BackgroundTransparency = 1
+    heading.Font = Enum.Font.GothamBold
+    heading.Text = title .. " " .. emoji
+    heading.TextColor3 = Color3.fromRGB(245, 245, 250)
+    heading.TextSize = 11
+    heading.TextXAlignment = Enum.TextXAlignment.Left
+    heading.Parent = section
+
+    local scroller = Instance.new("ScrollingFrame")
+    scroller.Name = "PfpScroller"
+    scroller.Size = UDim2.new(1, -16, 0, 207)
+    scroller.Position = UDim2.new(0, 8, 0, 34)
+    scroller.BackgroundTransparency = 1
+    scroller.BorderSizePixel = 0
+    scroller.ScrollBarThickness = 3
+    scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+    scroller.ScrollingDirection = Enum.ScrollingDirection.Y
+    scroller.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroller.Parent = section
+
+    local grid = Instance.new("UIGridLayout")
+    grid.CellSize = UDim2.new(0, 58, 0, 58)
+    grid.CellPadding = UDim2.new(0, 6, 0, 6)
+    grid.FillDirection = Enum.FillDirection.Horizontal
+    grid.SortOrder = Enum.SortOrder.LayoutOrder
+    grid.Parent = scroller
+
+    for index, id in ipairs(ids) do
+        local b = Instance.new("ImageButton")
+        b.Name = "Pfp_" .. tostring(index)
+        b.Size = UDim2.new(0, 58, 0, 58)
+        b.BackgroundColor3 = Color3.fromRGB(30, 30, 43)
+        b.BackgroundTransparency = 0.02
+        b.BorderSizePixel = 0
+        b.Image = KronosPfpImage(id, 150)
+        b.ScaleType = Enum.ScaleType.Crop
+        b.AutoButtonColor = true
+        b.LayoutOrder = index
+        b.Parent = scroller
+
+        local bc = Instance.new("UICorner")
+        bc.CornerRadius = UDim.new(1, 0)
+        bc.Parent = b
+
+        local bs = Instance.new("UIStroke")
+        bs.Thickness = 1
+        bs.Transparency = 0.45
+        bs.Color = Color3.fromRGB(80, 80, 100)
+        bs.Parent = b
+
+        b.MouseButton1Click:Connect(function()
+            SetProfilePfp(id)
+        end)
+    end
+
+    return section
+end
 
 function SetProfilePfp(id)
     id = tostring(id or ""):match("%d+") or ""
     if id == "" then return end
     SavePfpIdLocally(id)
-    ProfilePfp.Image = "rbxthumb://type=Asset&id=" .. id .. "&w=420&h=420"
+    ProfilePfp.Image = KronosPfpImage(id, 420)
     ShowLocalSystemMessage("[AI MoD] : Profile picture saved locally ✓")
 end
 
-for _, list in ipairs({BoyPfpList, GirlPfpList}) do
-    for _, id in ipairs(list) do
-        b = Instance.new("ImageButton")
-        b.Size = UDim2.new(0,36,0,36)
-        b.BackgroundColor3 = Color3.fromRGB(25,25,38)
-        b.BackgroundTransparency = 0.15
-        b.Image = "rbxthumb://type=Asset&id=" .. tostring(id) .. "&w=100&h=100"
-        b.Parent = PfpListScroller
-        c = Instance.new("UICorner")
-        c.CornerRadius = UDim.new(1,0)
-        c.Parent = b
-        b.MouseButton1Click:Connect(function() SetProfilePfp(id) end)
-    end
-end
-PfpListScroller.CanvasSize = UDim2.new(0, PfpListLayout.AbsoluteContentSize.X + 8, 0, 0)
-PfpCustomSetButton.MouseButton1Click:Connect(function() SetProfilePfp(PfpCustomInput.Text) end)
-PfpRandomButton.MouseButton1Click:Connect(function()
-    local combined = {}
-    for _, id in ipairs(BoyPfpList) do table.insert(combined,id) end
-    for _, id in ipairs(GirlPfpList) do table.insert(combined,id) end
-    if #combined > 0 then SetProfilePfp(combined[math.random(1,#combined)]) end
+-- IMPORTANT: the two supplied arrays are not combined in the selector.
+BuildPfpSection(ProfilePfpCard, "HER PFP CHOICE", "🌸", GirlPfpList, 72, "HerPfpSection")
+BuildPfpSection(ProfilePfpCard, "HIS PFP CHOICE", "🔥", BoyPfpList, 326, "HisPfpSection")
+
+PfpCustomSetButton.MouseButton1Click:Connect(function()
+    SetProfilePfp(PfpCustomInput.Text)
 end)
+
+PfpRandomButton.MouseButton1Click:Connect(function()
+    -- Random can still choose from both supplied collections, but the visible
+    -- selector itself remains strictly separated into HER and HIS sections.
+    local combined = {}
+    for _, id in ipairs(GirlPfpList) do table.insert(combined, id) end
+    for _, id in ipairs(BoyPfpList) do table.insert(combined, id) end
+    if #combined > 0 then
+        SetProfilePfp(combined[math.random(1, #combined)])
+    end
+end)
+
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 800)
 
 ProfilePopup = Instance.new("Frame")
 ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
@@ -2695,7 +2771,6 @@ ProfilePopupSave.MouseButton1Click:Connect(function()
         local value = ProfilePopupInput.Text:gsub("^@", ""):gsub("%s+", "")
         ProfileSocials[ActiveSocialKey] = value
         SaveLocalText(ActiveSocialKey, value)
-        ProfileSocialStatus.Text = "Instagram: " .. (ProfileSocials.Instagram ~= "" and "@" .. ProfileSocials.Instagram or "Not set") .. "   •   Discord: " .. (ProfileSocials.Discord ~= "" and "@" .. ProfileSocials.Discord or "Not set") .. "   •   Snapchat: " .. (ProfileSocials.Snapchat ~= "" and "@" .. ProfileSocials.Snapchat or "Not set")
     end
     ProfilePopup.Visible = false
 end)

@@ -8,6 +8,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local ContentProvider = game:GetService("ContentProvider")
+local SoundService = game:GetService("SoundService")
 
 local LocalPlayer = Players.LocalPlayer
 local lplr = LocalPlayer
@@ -23,7 +24,6 @@ local ScriptStartTime = os.time()
 local MessageInput = nil
 local SendChatMessage = nil
 local CreateMessageCard = nil
-local HttpRequest = nil
 
 -- Anti-Spam Tracking State
 local LastSentMessageText = ""
@@ -463,186 +463,6 @@ local SERVER_MESSAGES_ENDPOINT = SERVER_FIREBASE_URL .. "server_chat/" .. SERVER
 
 local REQUEST_FIREBASE_URL = "https://gctagreq-default-rtdb.asia-southeast1.firebasedatabase.app/"
 local REQUEST_ENDPOINT = REQUEST_FIREBASE_URL .. "requests.json"
-
--- ============================================================================
--- KRONOS MUSIC SESSION
--- !gplymsc <Roblox music ID> = global music for all Kronos clients
--- !splymsc <Roblox music ID> = server music for clients in this JobId
--- !stpmsc = stop music in the current GLOBAL/SERVER scope
--- The Firebase node stores the current state so newly joined clients can sync.
--- ============================================================================
-local MUSIC_FIREBASE_URL = "https://kmusicsessionxd-default-rtdb.asia-southeast1.firebasedatabase.app/"
-local GLOBAL_MUSIC_ENDPOINT = MUSIC_FIREBASE_URL .. "music/global.json"
-local SERVER_MUSIC_ENDPOINT = MUSIC_FIREBASE_URL .. "music/server/" .. SERVER_JOB_ID .. ".json"
-
-local KRONO_JOCKIE_USERNAME = "Krono_Jockie"
-local KRONO_JOCKIE_DISPLAY_NAME = "Krono Jockie"
-local KRONO_JOCKIE_PFP_ID = "7261787230"
-local KRONO_JOCKIE_ROLE = "BOT"
-
-local ActiveMusicScope = nil
-local ActiveMusicId = nil
-local ActiveMusicCommandId = nil
-local MusicSound = nil
-local MusicPollToken = 0
-
-local function GetMusicEndpoint(isGlobal)
-    return isGlobal and GLOBAL_MUSIC_ENDPOINT or SERVER_MUSIC_ENDPOINT
-end
-
-local function NormalizeMusicId(rawId)
-    rawId = tostring(rawId or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    rawId = rawId:gsub("^rbxassetid://", "")
-    if rawId == "" or not rawId:match("^%d+$") then
-        return nil
-    end
-    return rawId
-end
-
-local function StopKronosMusic()
-    MusicPollToken = MusicPollToken + 1
-    if MusicSound then
-        pcall(function()
-            MusicSound:Stop()
-            MusicSound:Destroy()
-        end)
-        MusicSound = nil
-    end
-    ActiveMusicScope = nil
-    ActiveMusicId = nil
-    ActiveMusicCommandId = nil
-end
-
-local function PlayKronosMusic(musicId, scope, commandId)
-    musicId = NormalizeMusicId(musicId)
-    if not musicId then return false end
-
-    if ActiveMusicScope == scope and ActiveMusicId == musicId and ActiveMusicCommandId == commandId and MusicSound and MusicSound.Parent then
-        if not MusicSound.IsPlaying then
-            pcall(function() MusicSound:Play() end)
-        end
-        return true
-    end
-
-    MusicPollToken = MusicPollToken + 1
-    local token = MusicPollToken
-
-    if MusicSound then
-        pcall(function()
-            MusicSound:Stop()
-            MusicSound:Destroy()
-        end)
-        MusicSound = nil
-    end
-
-    local sound = Instance.new("Sound")
-    sound.Name = "KronosMusicSession"
-    sound.SoundId = "rbxassetid://" .. musicId
-    sound.Volume = 0.5
-    sound.Looped = true
-    sound.Parent = game:GetService("SoundService")
-    MusicSound = sound
-    ActiveMusicScope = scope
-    ActiveMusicId = musicId
-    ActiveMusicCommandId = commandId
-
-    task.spawn(function()
-        local ok = pcall(function()
-            ContentProvider:PreloadAsync({sound})
-        end)
-        if token ~= MusicPollToken or not sound.Parent then return end
-        if ok then
-            pcall(function() sound:Play() end)
-        else
-            pcall(function() sound:Play() end)
-        end
-    end)
-
-    return true
-end
-
-local function BuildKronosMusicChatPayload(text, isGlobal, commandId)
-    return {
-        Username = KRONO_JOCKIE_USERNAME,
-        DisplayName = KRONO_JOCKIE_DISPLAY_NAME,
-        Text = tostring(text),
-        Timestamp = os.time(),
-        Role = KRONO_JOCKIE_ROLE,
-        PfpId = KRONO_JOCKIE_PFP_ID,
-        IsPrivate = false,
-        SystemMessage = true,
-        MusicSystemMessage = true,
-        MusicScope = isGlobal and "GLOBAL" or "SERVER",
-        MusicCommandId = commandId,
-    }
-end
-
-local function PostKronosMusicState(isGlobal, playing, musicId, commandId)
-    local endpoint = GetMusicEndpoint(isGlobal)
-    local payload = {
-        Playing = playing == true,
-        MusicId = playing and NormalizeMusicId(musicId) or nil,
-        UpdatedAt = os.time(),
-        UpdatedByUsername = LocalPlayer.Name,
-        UpdatedByDisplayName = LocalPlayer.DisplayName,
-        Scope = isGlobal and "GLOBAL" or "SERVER",
-        CommandId = tostring(commandId or (LocalPlayer.UserId .. "_" .. os.time() .. "_" .. math.random(100000, 999999))),
-    }
-
-    task.spawn(function()
-        pcall(function()
-            HttpRequest(endpoint, "PUT", payload)
-        end)
-    end)
-
-    return payload
-end
-
-local function PostKronosMusicChat(text, isGlobal, commandId)
-    local endpoint = isGlobal and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
-    local payload = BuildKronosMusicChatPayload(text, isGlobal, commandId)
-
-    task.spawn(function()
-        pcall(function()
-            HttpRequest(endpoint, "POST", payload)
-        end)
-    end)
-end
-
-local function SyncKronosMusicState(state, isGlobal)
-    if type(state) ~= "table" then return end
-
-    local scope = isGlobal and "GLOBAL" or "SERVER"
-    local playing = state.Playing == true
-    local musicId = NormalizeMusicId(state.MusicId)
-    local commandId = tostring(state.CommandId or "")
-
-    if not playing or not musicId then
-        if ActiveMusicScope == scope then
-            StopKronosMusic()
-        end
-        return
-    end
-
-    PlayKronosMusic(musicId, scope, commandId)
-end
-
-local function PollKronosMusic()
-    while true do
-        local globalState = HttpRequest(GLOBAL_MUSIC_ENDPOINT, "GET")
-        if globalState and type(globalState) == "table" then
-            SyncKronosMusicState(globalState, true)
-        end
-
-        local serverState = HttpRequest(SERVER_MUSIC_ENDPOINT, "GET")
-        if serverState and type(serverState) == "table" then
-            SyncKronosMusicState(serverState, false)
-        end
-
-        task.wait(2)
-    end
-end
-
 
 local GITHUB_ROLE_LIST_URL = "https://raw.githubusercontent.com/thedevilondiscord/GC/refs/heads/main/GC_RoleList.json"
 local GITHUB_RANK_STYLES_URL = nil -- Role colours are local; only the GitHub roster is dynamic.
@@ -1099,7 +919,7 @@ local function AnimateRoleFont(textObject, roleName, style)
     end)
 end
 
-local ALL_AUTOCOMPLETE_OPTIONS = { "!tag", "!role", "!spoof", "!announce ", "!mute ", "!gplymsc ", "!splymsc ", "!stpmsc", "/w " }
+local ALL_AUTOCOMPLETE_OPTIONS = { "!tag", "!role", "!spoof", "!announce ", "!mute ", "/w " }
 local CurrentContextMessage = nil
 local ReplyContextMessage = nil
 local ReplyHighlightToken = 0
@@ -1233,7 +1053,7 @@ end
 -- ============================================================================
 local http_req = (syn and syn.request) or (http and http.request) or http_request or request or (Fluxus and fluxus.request)
 
-HttpRequest = function(url, method, data)
+local function HttpRequest(url, method, data)
     if not http_req then return nil end
     local success, response = pcall(function()
         return http_req({
@@ -1254,6 +1074,151 @@ HttpRequest = function(url, method, data)
 end
 
 -- ============================================================================
+-- ============================================================================
+-- MUSIC SESSION + PROFILE SERVICES
+-- ============================================================================
+local MUSIC_SESSION_FIREBASE_URL = "https://kmusicsessionxd-default-rtdb.asia-southeast1.firebasedatabase.app/"
+local MUSIC_SESSION_ROOT = MUSIC_SESSION_FIREBASE_URL .. "music_sessions"
+local MUSIC_ROSTER_URL = "https://raw.githubusercontent.com/basementfox98/DBforS2/refs/heads/main/db2"
+local KRONO_JOCKIE_NAME = "Krono Jockie"
+local KRONO_JOCKIE_USERNAME = "krono_jockie"
+local KRONO_JOCKIE_PFP = "7261787230"
+
+local ActiveMusicSessionId = nil
+local ActiveMusicSessionData = nil
+local MusicSessionMuted = false
+local MusicSessionLastRevision = nil
+local MusicRoster = {}
+local MusicRosterLoaded = false
+local MusicRosterCategories = {}
+
+local MusicSessionSound = Instance.new("Sound")
+MusicSessionSound.Name = "KronosMusicSessionAudio"
+MusicSessionSound.Volume = 0.5
+MusicSessionSound.Looped = false
+MusicSessionSound.Parent = SoundService
+
+local PROFILE_SAVE_PREFIX = "Kronos_Profile_"
+local ProfileSocials = { Instagram = "", Discord = "", Snapchat = "" }
+local function LoadLocalText(key)
+    if readfile and isfile and isfile(PROFILE_SAVE_PREFIX .. key .. ".txt") then
+        local ok, value = pcall(function() return readfile(PROFILE_SAVE_PREFIX .. key .. ".txt") end)
+        if ok and value then return value end
+    end
+    return ""
+end
+local function SaveLocalText(key, value)
+    if writefile then
+        pcall(function() writefile(PROFILE_SAVE_PREFIX .. key .. ".txt", tostring(value or "")) end)
+    end
+end
+for key in pairs(ProfileSocials) do ProfileSocials[key] = LoadLocalText(key) end
+
+local function MusicSessionRandomId()
+    local chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    local out = ""
+    for _ = 1, 8 do
+        local i = math.random(1, #chars)
+        out = out .. string.sub(chars, i, i)
+    end
+    return out
+end
+
+local function MusicSessionPath(sessionId)
+    return MUSIC_SESSION_ROOT .. "/" .. tostring(sessionId) .. ".json"
+end
+
+local function MusicSessionUrl(sessionId, suffix)
+    return MUSIC_SESSION_ROOT .. "/" .. tostring(sessionId) .. (suffix or "") .. ".json"
+end
+
+local function LoadMusicRoster()
+    local data = HttpRequest(MUSIC_ROSTER_URL, "GET")
+    if type(data) == "table" then
+        MusicRoster = data
+        MusicRosterLoaded = true
+        MusicRosterCategories = {}
+        for category in pairs(data) do table.insert(MusicRosterCategories, category) end
+        table.sort(MusicRosterCategories)
+        return true
+    end
+    return false
+end
+
+local function GetMusicSongName(songId)
+    for category, songs in pairs(MusicRoster) do
+        if type(songs) == "table" then
+            for _, song in ipairs(songs) do
+                if type(song) == "table" and tostring(song.id) == tostring(songId) then
+                    return tostring(song.name or songId), tostring(category)
+                end
+            end
+        end
+    end
+    return tostring(songId), "Custom"
+end
+
+local function StopLocalMusicSessionAudio()
+    pcall(function() MusicSessionSound:Stop() end)
+    MusicSessionSound.SoundId = ""
+    MusicSessionSound.TimePosition = 0
+end
+
+local function ApplyMusicSessionAudio(session)
+    if type(session) ~= "table" or not session.Playing or not session.CurrentSongId then
+        StopLocalMusicSessionAudio()
+        return
+    end
+
+    local songId = tostring(session.CurrentSongId)
+    local desiredSoundId = "rbxassetid://" .. songId
+    local startedAt = tonumber(session.StartedAt or session.UpdatedAt or os.time()) or os.time()
+    local elapsed = math.max(0, os.time() - startedAt)
+
+    if MusicSessionSound.SoundId ~= desiredSoundId then
+        MusicSessionSound.SoundId = desiredSoundId
+        MusicSessionSound.TimePosition = elapsed
+        MusicSessionSound.Volume = MusicSessionMuted and 0 or 0.5
+        pcall(function() MusicSessionSound:Play() end)
+    elseif not MusicSessionSound.IsPlaying then
+        MusicSessionSound.TimePosition = elapsed
+        MusicSessionSound.Volume = MusicSessionMuted and 0 or 0.5
+        pcall(function() MusicSessionSound:Play() end)
+    end
+end
+
+local function RefreshMusicSessionState()
+    if not ActiveMusicSessionId then
+        ActiveMusicSessionData = nil
+        StopLocalMusicSessionAudio()
+        return
+    end
+    local data = HttpRequest(MusicSessionPath(ActiveMusicSessionId), "GET")
+    if type(data) ~= "table" then
+        ActiveMusicSessionData = nil
+        StopLocalMusicSessionAudio()
+        return
+    end
+    ActiveMusicSessionData = data
+    local revision = tostring(data.Revision or data.UpdatedAt or data.CurrentSongId or data.Playing)
+    if revision ~= MusicSessionLastRevision then
+        MusicSessionLastRevision = revision
+        ApplyMusicSessionAudio(data)
+    elseif data.Playing and not MusicSessionSound.IsPlaying then
+        ApplyMusicSessionAudio(data)
+    end
+end
+
+task.spawn(function()
+    task.wait(1)
+    LoadMusicRoster()
+    while true do
+        pcall(RefreshMusicSessionState)
+        task.wait(1.25)
+    end
+end)
+
+
 -- DYNAMIC ROLE AUTHORITY / PRIORITY
 -- The GitHub roster is authoritative. ROLE_PRIORITY is the hierarchy used when
 -- a player appears in more than one role. Earlier entries have higher priority.
@@ -1562,10 +1527,40 @@ local AboutTabCorner = Instance.new("UICorner")
 AboutTabCorner.CornerRadius = UDim.new(0, 8)
 AboutTabCorner.Parent = AboutTabBtn
 
+local MusicTabBtn = Instance.new("TextButton")
+MusicTabBtn.Name = "MusicSessionTabBtn"
+MusicTabBtn.Size = UDim2.new(0, 84, 0, 26)
+MusicTabBtn.Position = UDim2.new(0, 209, 0, 5)
+MusicTabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+MusicTabBtn.BackgroundTransparency = 0.4
+MusicTabBtn.Font = Enum.Font.GothamBold
+MusicTabBtn.Text = "MUSIC"
+MusicTabBtn.TextColor3 = Color3.fromRGB(180, 180, 190)
+MusicTabBtn.TextSize = 10
+MusicTabBtn.Parent = HeaderBar
+local MusicTabCorner = Instance.new("UICorner")
+MusicTabCorner.CornerRadius = UDim.new(0, 8)
+MusicTabCorner.Parent = MusicTabBtn
+
+local ProfileTabBtn = Instance.new("TextButton")
+ProfileTabBtn.Name = "ProfileTabBtn"
+ProfileTabBtn.Size = UDim2.new(0, 70, 0, 26)
+ProfileTabBtn.Position = UDim2.new(0, 298, 0, 5)
+ProfileTabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+ProfileTabBtn.BackgroundTransparency = 0.4
+ProfileTabBtn.Font = Enum.Font.GothamBold
+ProfileTabBtn.Text = "PROFILE"
+ProfileTabBtn.TextColor3 = Color3.fromRGB(180, 180, 190)
+ProfileTabBtn.TextSize = 10
+ProfileTabBtn.Parent = HeaderBar
+local ProfileTabCorner = Instance.new("UICorner")
+ProfileTabCorner.CornerRadius = UDim.new(0, 8)
+ProfileTabCorner.Parent = ProfileTabBtn
+
 local KronosHeaderLabel = Instance.new("TextLabel")
 KronosHeaderLabel.Name = "KronosHeaderLabel"
-KronosHeaderLabel.Size = UDim2.new(0, 80, 0, 26)
-KronosHeaderLabel.Position = UDim2.new(1, -88, 0, 5)
+KronosHeaderLabel.Size = UDim2.new(0, 64, 0, 26)
+KronosHeaderLabel.Position = UDim2.new(1, -70, 0, 5)
 KronosHeaderLabel.BackgroundTransparency = 1
 KronosHeaderLabel.Font = Enum.Font.GothamBold
 KronosHeaderLabel.Text = "KRONOS"
@@ -1975,6 +1970,797 @@ AboutFrame.BackgroundTransparency = 1
 AboutFrame.Visible = false
 AboutFrame.Parent = MainFrame
 
+-- ============================================================================
+-- MUSIC SESSION TAB
+-- ============================================================================
+local MusicSessionFrame = Instance.new("ScrollingFrame")
+MusicSessionFrame.Name = "MusicSessionFrame"
+MusicSessionFrame.Size = UDim2.new(1, -16, 1, -48)
+MusicSessionFrame.Position = UDim2.new(0, 8, 0, 40)
+MusicSessionFrame.BackgroundTransparency = 1
+MusicSessionFrame.BorderSizePixel = 0
+MusicSessionFrame.ScrollBarThickness = 3
+MusicSessionFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+MusicSessionFrame.CanvasSize = UDim2.new(0, 0, 0, 390)
+MusicSessionFrame.Visible = false
+MusicSessionFrame.Parent = MainFrame
+
+local MusicTopCard = Instance.new("Frame")
+MusicTopCard.Size = UDim2.new(1, 0, 0, 82)
+MusicTopCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MusicTopCard.BackgroundTransparency = 0.28
+MusicTopCard.BorderSizePixel = 0
+MusicTopCard.Parent = MusicSessionFrame
+local MusicTopCorner = Instance.new("UICorner")
+MusicTopCorner.CornerRadius = UDim.new(0, 10)
+MusicTopCorner.Parent = MusicTopCard
+local MusicTopStroke = Instance.new("UIStroke")
+MusicTopStroke.Thickness = 1.2
+MusicTopStroke.Color = Color3.fromRGB(255, 0, 0)
+MusicTopStroke.Transparency = 0.55
+MusicTopStroke.Parent = MusicTopCard
+
+local MusicSessionTitle = Instance.new("TextLabel")
+MusicSessionTitle.Size = UDim2.new(1, -18, 0, 22)
+MusicSessionTitle.Position = UDim2.new(0, 9, 0, 6)
+MusicSessionTitle.BackgroundTransparency = 1
+MusicSessionTitle.Font = Enum.Font.GothamBold
+MusicSessionTitle.Text = "🎵 MUSIC SESSION"
+MusicSessionTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicSessionTitle.TextSize = 14
+MusicSessionTitle.TextXAlignment = Enum.TextXAlignment.Left
+MusicSessionTitle.Parent = MusicTopCard
+
+local MusicNowPlayingLabel = Instance.new("TextLabel")
+MusicNowPlayingLabel.Size = UDim2.new(1, -18, 0, 20)
+MusicNowPlayingLabel.Position = UDim2.new(0, 9, 0, 28)
+MusicNowPlayingLabel.BackgroundTransparency = 1
+MusicNowPlayingLabel.Font = Enum.Font.Gotham
+MusicNowPlayingLabel.Text = "Not in a music session"
+MusicNowPlayingLabel.TextColor3 = Color3.fromRGB(210, 210, 220)
+MusicNowPlayingLabel.TextSize = 10
+MusicNowPlayingLabel.TextXAlignment = Enum.TextXAlignment.Left
+MusicNowPlayingLabel.Parent = MusicTopCard
+
+local MusicHostLabel = Instance.new("TextLabel")
+MusicHostLabel.Size = UDim2.new(1, -18, 0, 18)
+MusicHostLabel.Position = UDim2.new(0, 9, 0, 49)
+MusicHostLabel.BackgroundTransparency = 1
+MusicHostLabel.Font = Enum.Font.Gotham
+MusicHostLabel.Text = "Host: —"
+MusicHostLabel.TextColor3 = Color3.fromRGB(150, 150, 165)
+MusicHostLabel.TextSize = 9
+MusicHostLabel.TextXAlignment = Enum.TextXAlignment.Left
+MusicHostLabel.Parent = MusicTopCard
+
+local MusicSessionIdLabel = Instance.new("TextLabel")
+MusicSessionIdLabel.Size = UDim2.new(0.55, 0, 0, 18)
+MusicSessionIdLabel.Position = UDim2.new(0, 9, 0, 64)
+MusicSessionIdLabel.BackgroundTransparency = 1
+MusicSessionIdLabel.Font = Enum.Font.Code
+MusicSessionIdLabel.Text = "Session ID: —"
+MusicSessionIdLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+MusicSessionIdLabel.TextSize = 9
+MusicSessionIdLabel.TextXAlignment = Enum.TextXAlignment.Left
+MusicSessionIdLabel.Parent = MusicTopCard
+
+local MusicMuteButton = Instance.new("TextButton")
+MusicMuteButton.Size = UDim2.new(0, 90, 0, 25)
+MusicMuteButton.Position = UDim2.new(1, -99, 0, 52)
+MusicMuteButton.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+MusicMuteButton.BackgroundTransparency = 0.2
+MusicMuteButton.Font = Enum.Font.GothamBold
+MusicMuteButton.Text = "🔊 MUTE"
+MusicMuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicMuteButton.TextSize = 9
+MusicMuteButton.Parent = MusicTopCard
+local MusicMuteCorner = Instance.new("UICorner")
+MusicMuteCorner.CornerRadius = UDim.new(0, 7)
+MusicMuteCorner.Parent = MusicMuteButton
+MusicMuteButton.MouseButton1Click:Connect(function()
+    MusicSessionMuted = not MusicSessionMuted
+    MusicSessionSound.Volume = MusicSessionMuted and 0 or 0.5
+    MusicMuteButton.Text = MusicSessionMuted and "🔇 UNMUTE" or "🔊 MUTE"
+end)
+
+local function MusicMakeButton(parent, name, text, pos, size)
+    local b = Instance.new("TextButton")
+    b.Name = name
+    b.Size = size
+    b.Position = pos
+    b.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+    b.BackgroundTransparency = 0.18
+    b.BorderSizePixel = 0
+    b.Font = Enum.Font.GothamBold
+    b.Text = text
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.TextSize = 9
+    b.Parent = parent
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 7)
+    c.Parent = b
+    return b
+end
+
+local StartMusicSessionButton = MusicMakeButton(MusicSessionFrame, "StartMusicSessionButton", "START SESSION", UDim2.new(0, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
+local JoinMusicSessionButton = MusicMakeButton(MusicSessionFrame, "JoinMusicSessionButton", "JOIN SESSION", UDim2.new(0.34, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
+local EndMusicSessionButton = MusicMakeButton(MusicSessionFrame, "EndMusicSessionButton", "LEAVE / END", UDim2.new(0.68, 0, 0, 88), UDim2.new(0.32, 0, 0, 28))
+
+local MusicSessionIdInput = Instance.new("TextBox")
+MusicSessionIdInput.Size = UDim2.new(1, 0, 0, 30)
+MusicSessionIdInput.Position = UDim2.new(0, 0, 0, 120)
+MusicSessionIdInput.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MusicSessionIdInput.BackgroundTransparency = 0.25
+MusicSessionIdInput.BorderSizePixel = 0
+MusicSessionIdInput.Font = Enum.Font.Code
+MusicSessionIdInput.PlaceholderText = "Enter Session ID to join..."
+MusicSessionIdInput.PlaceholderColor3 = Color3.fromRGB(130, 130, 145)
+MusicSessionIdInput.Text = ""
+MusicSessionIdInput.TextColor3 = Color3.fromRGB(240, 240, 245)
+MusicSessionIdInput.TextSize = 11
+MusicSessionIdInput.ClearTextOnFocus = false
+MusicSessionIdInput.Parent = MusicSessionFrame
+local MusicSessionIdCorner = Instance.new("UICorner")
+MusicSessionIdCorner.CornerRadius = UDim.new(0, 8)
+MusicSessionIdCorner.Parent = MusicSessionIdInput
+
+local MusicInviteGlobalButton = MusicMakeButton(MusicSessionFrame, "MusicInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 0, 0, 156), UDim2.new(0.5, -4, 0, 27))
+local MusicInviteServerButton = MusicMakeButton(MusicSessionFrame, "MusicInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 4, 0, 156), UDim2.new(0.5, -4, 0, 27))
+
+local MusicCustomIdInput = Instance.new("TextBox")
+MusicCustomIdInput.Size = UDim2.new(1, 0, 0, 28)
+MusicCustomIdInput.Position = UDim2.new(0, 0, 0, 191)
+MusicCustomIdInput.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MusicCustomIdInput.BackgroundTransparency = 0.25
+MusicCustomIdInput.BorderSizePixel = 0
+MusicCustomIdInput.Font = Enum.Font.Code
+MusicCustomIdInput.PlaceholderText = "Custom Roblox Music ID..."
+MusicCustomIdInput.PlaceholderColor3 = Color3.fromRGB(130, 130, 145)
+MusicCustomIdInput.Text = ""
+MusicCustomIdInput.TextColor3 = Color3.fromRGB(240, 240, 245)
+MusicCustomIdInput.TextSize = 10
+MusicCustomIdInput.ClearTextOnFocus = false
+MusicCustomIdInput.Parent = MusicSessionFrame
+local MusicCustomCorner = Instance.new("UICorner")
+MusicCustomCorner.CornerRadius = UDim.new(0, 8)
+MusicCustomCorner.Parent = MusicCustomIdInput
+
+local MusicCustomPlayButton = MusicMakeButton(MusicSessionFrame, "MusicCustomPlayButton", "PLAY CUSTOM", UDim2.new(0, 0, 0, 223), UDim2.new(0.5, -4, 0, 27))
+local MusicStopButton = MusicMakeButton(MusicSessionFrame, "MusicStopButton", "STOP MUSIC", UDim2.new(0.5, 4, 0, 223), UDim2.new(0.5, -4, 0, 27))
+
+local MusicCategoryFrame = Instance.new("ScrollingFrame")
+MusicCategoryFrame.Size = UDim2.new(1, 0, 0, 29)
+MusicCategoryFrame.Position = UDim2.new(0, 0, 0, 255)
+MusicCategoryFrame.BackgroundTransparency = 1
+MusicCategoryFrame.BorderSizePixel = 0
+MusicCategoryFrame.ScrollBarThickness = 2
+MusicCategoryFrame.ScrollingDirection = Enum.ScrollingDirection.X
+MusicCategoryFrame.Parent = MusicSessionFrame
+local MusicCategoryLayout = Instance.new("UIListLayout")
+MusicCategoryLayout.FillDirection = Enum.FillDirection.Horizontal
+MusicCategoryLayout.Padding = UDim.new(0, 5)
+MusicCategoryLayout.Parent = MusicCategoryFrame
+
+local MusicSongScroller = Instance.new("ScrollingFrame")
+MusicSongScroller.Size = UDim2.new(1, 0, 0, 95)
+MusicSongScroller.Position = UDim2.new(0, 0, 0, 286)
+MusicSongScroller.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MusicSongScroller.BackgroundTransparency = 0.3
+MusicSongScroller.BorderSizePixel = 0
+MusicSongScroller.ScrollBarThickness = 3
+MusicSongScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+MusicSongScroller.Parent = MusicSessionFrame
+local MusicSongLayout = Instance.new("UIListLayout")
+MusicSongLayout.SortOrder = Enum.SortOrder.Name
+MusicSongLayout.Padding = UDim.new(0, 3)
+MusicSongLayout.Parent = MusicSongScroller
+MusicSongLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    MusicSongScroller.CanvasSize = UDim2.new(0, 0, 0, MusicSongLayout.AbsoluteContentSize.Y + 8)
+end)
+
+local MusicSelectedCategory = nil
+local function UpdateMusicSessionDisplay()
+    local data = ActiveMusicSessionData
+    if not data then
+        MusicNowPlayingLabel.Text = "Not in a music session"
+        MusicHostLabel.Text = "Host: —"
+        MusicSessionIdLabel.Text = "Session ID: —"
+        return
+    end
+    local song = data.Playing and (tostring(data.CurrentSongName or data.CurrentSongId or "Unknown") .. " [" .. tostring(data.CurrentSongId or "") .. "]") or "Nothing playing"
+    MusicNowPlayingLabel.Text = "Now Playing: " .. song
+    MusicHostLabel.Text = "Host: " .. tostring(data.HostDisplayName or "Unknown") .. "  (@" .. tostring(data.HostUsername or "unknown") .. ")"
+    MusicSessionIdLabel.Text = "Session ID: " .. tostring(ActiveMusicSessionId or "—")
+end
+
+local function RenderMusicSongList(category)
+    MusicSelectedCategory = category
+    for _, child in ipairs(MusicSongScroller:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    local songs = MusicRoster[category]
+    if type(songs) ~= "table" then return end
+    for _, song in ipairs(songs) do
+        if type(song) == "table" then
+            local b = Instance.new("TextButton")
+            b.Size = UDim2.new(1, -8, 0, 24)
+            b.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+            b.BackgroundTransparency = 0.12
+            b.BorderSizePixel = 0
+            b.Font = Enum.Font.GothamMedium
+            b.Text = "  " .. tostring(song.name or "Unnamed") .. "  •  " .. tostring(song.id or "")
+            b.TextColor3 = Color3.fromRGB(235, 235, 240)
+            b.TextSize = 9
+            b.TextXAlignment = Enum.TextXAlignment.Left
+            b.Parent = MusicSongScroller
+            local c = Instance.new("UICorner")
+            c.CornerRadius = UDim.new(0, 6)
+            c.Parent = b
+            b.MouseButton1Click:Connect(function()
+                if not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
+                    ShowLocalSystemMessage("[AI MoD] : Only the Music Session Host can play music.", true)
+                    return
+                end
+                local id = tostring(song.id or "")
+                if id == "" then return end
+                local name = tostring(song.name or id)
+                local payload = {
+                    Playing = true,
+                    CurrentSongId = id,
+                    CurrentSongName = name,
+                    StartedAt = os.time(),
+                    UpdatedAt = os.time(),
+                    Revision = tostring(os.time()) .. "_" .. tostring(math.random(1000,9999)),
+                    HostUsername = LocalPlayer.Name,
+                    HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+                    HostUserId = LocalPlayer.UserId,
+                    HostPfpId = CurrentPfpId,
+                    SessionId = ActiveMusicSessionId,
+                }
+                HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PATCH", payload)
+                ActiveMusicSessionData = payload
+                MusicSessionLastRevision = nil
+                ApplyMusicSessionAudio(payload)
+                UpdateMusicSessionDisplay()
+            end)
+        end
+    end
+end
+
+local function RenderMusicCategories()
+    for _, child in ipairs(MusicCategoryFrame:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    if not MusicRosterLoaded then return end
+    for _, category in ipairs(MusicRosterCategories) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0, 74, 0, 24)
+        b.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+        b.BackgroundTransparency = 0.2
+        b.BorderSizePixel = 0
+        b.Font = Enum.Font.GothamBold
+        b.Text = tostring(category)
+        b.TextColor3 = Color3.fromRGB(220, 220, 230)
+        b.TextSize = 8
+        b.Parent = MusicCategoryFrame
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 6)
+        c.Parent = b
+        b.MouseButton1Click:Connect(function() RenderMusicSongList(category) end)
+    end
+    MusicCategoryFrame.CanvasSize = UDim2.new(0, MusicCategoryLayout.AbsoluteContentSize.X + 8, 0, 0)
+    if MusicSelectedCategory and MusicRoster[MusicSelectedCategory] then
+        RenderMusicSongList(MusicSelectedCategory)
+    elseif MusicRosterCategories[1] then
+        RenderMusicSongList(MusicRosterCategories[1])
+    end
+end
+
+task.spawn(function()
+    while not MusicRosterLoaded do task.wait(0.5) end
+    RenderMusicCategories()
+end)
+
+local function StartOwnMusicSession()
+    if ActiveMusicSessionId then
+        ShowLocalSystemMessage("[AI MoD] : You already have a Music Session: " .. ActiveMusicSessionId)
+        return
+    end
+    local id = MusicSessionRandomId()
+    local payload = {
+        SessionId = id,
+        HostUsername = LocalPlayer.Name,
+        HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        HostUserId = LocalPlayer.UserId,
+        HostPfpId = CurrentPfpId,
+        Playing = false,
+        CurrentSongId = "",
+        CurrentSongName = "",
+        StartedAt = 0,
+        UpdatedAt = os.time(),
+        Revision = tostring(os.time()),
+        CreatedAt = os.time(),
+    }
+    local result = HttpRequest(MusicSessionPath(id), "PUT", payload)
+    if result ~= nil or HttpRequest(MusicSessionPath(id), "GET") then
+        ActiveMusicSessionId = id
+        ActiveMusicSessionData = payload
+        MusicSessionLastRevision = nil
+        UpdateMusicSessionDisplay()
+        ShowLocalSystemMessage("[AI MoD] : Music Session started. Session ID: " .. id)
+    else
+        ShowLocalSystemMessage("[AI MoD] : Failed to create Music Session. Check Firebase access.", true)
+    end
+end
+
+local function JoinMusicSessionById(id)
+    id = tostring(id or ""):upper():gsub("%s+", "")
+    if id == "" then
+        ShowLocalSystemMessage("[AI MoD] : Enter a Session ID first.", true)
+        return
+    end
+    local data = HttpRequest(MusicSessionPath(id), "GET")
+    if type(data) ~= "table" or not data.HostUsername then
+        ShowLocalSystemMessage("[AI MoD] : Music Session not found: " .. id, true)
+        return
+    end
+    ActiveMusicSessionId = id
+    ActiveMusicSessionData = data
+    MusicSessionLastRevision = nil
+    HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(LocalPlayer.UserId)), "PUT", {
+        Username = LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        JoinedAt = os.time(),
+        PfpId = CurrentPfpId,
+    })
+    ApplyMusicSessionAudio(data)
+    UpdateMusicSessionDisplay()
+    ShowLocalSystemMessage("[AI MoD] : Joined Music Session " .. id .. " hosted by " .. tostring(data.HostDisplayName or data.HostUsername) .. " ✓")
+end
+
+local function LeaveOrEndMusicSession()
+    if not ActiveMusicSessionId then return end
+    local id = ActiveMusicSessionId
+    local isHost = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
+    if isHost then
+        HttpRequest(MusicSessionPath(id), "DELETE")
+        ShowLocalSystemMessage("[AI MoD] : Music Session " .. id .. " ended.")
+    else
+        HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(LocalPlayer.UserId)), "DELETE")
+        ShowLocalSystemMessage("[AI MoD] : Left Music Session " .. id .. ".")
+    end
+    ActiveMusicSessionId = nil
+    ActiveMusicSessionData = nil
+    MusicSessionLastRevision = nil
+    StopLocalMusicSessionAudio()
+    UpdateMusicSessionDisplay()
+end
+
+local function HostSetMusic(id, name)
+    if not ActiveMusicSessionId or not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
+        ShowLocalSystemMessage("[AI MoD] : Start/host a Music Session first.", true)
+        return
+    end
+    id = tostring(id or ""):match("%d+") or ""
+    if id == "" then
+        ShowLocalSystemMessage("[AI MoD] : Enter a valid Roblox Music ID.", true)
+        return
+    end
+    name = name or GetMusicSongName(id)
+    local payload = {
+        Playing = true,
+        CurrentSongId = id,
+        CurrentSongName = tostring(name),
+        StartedAt = os.time(),
+        UpdatedAt = os.time(),
+        Revision = tostring(os.time()) .. "_" .. tostring(math.random(1000,9999)),
+        HostUsername = LocalPlayer.Name,
+        HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        HostUserId = LocalPlayer.UserId,
+        HostPfpId = CurrentPfpId,
+        SessionId = ActiveMusicSessionId,
+    }
+    HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PATCH", payload)
+    ActiveMusicSessionData = payload
+    MusicSessionLastRevision = nil
+    ApplyMusicSessionAudio(payload)
+    UpdateMusicSessionDisplay()
+end
+
+local function HostStopMusic()
+    if not ActiveMusicSessionId or not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
+        ShowLocalSystemMessage("[AI MoD] : Only the Music Session Host can stop music.", true)
+        return
+    end
+    local payload = {
+        Playing = false,
+        CurrentSongId = ActiveMusicSessionData.CurrentSongId or "",
+        CurrentSongName = ActiveMusicSessionData.CurrentSongName or "",
+        StartedAt = 0,
+        UpdatedAt = os.time(),
+        Revision = tostring(os.time()) .. "_stop",
+        HostUsername = LocalPlayer.Name,
+        HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        HostUserId = LocalPlayer.UserId,
+        HostPfpId = CurrentPfpId,
+        SessionId = ActiveMusicSessionId,
+    }
+    HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PATCH", payload)
+    ActiveMusicSessionData = payload
+    MusicSessionLastRevision = nil
+    StopLocalMusicSessionAudio()
+    UpdateMusicSessionDisplay()
+end
+
+local function SendMusicSessionInvite(isGlobal)
+    if not ActiveMusicSessionId or not ActiveMusicSessionData then
+        ShowLocalSystemMessage("[AI MoD] : Start or join a Music Session first.", true)
+        return
+    end
+    local payload = {
+        ClientMessageId = LocalPlayer.UserId .. "_musicinvite_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000,999999)),
+        Username = KRONO_JOCKIE_USERNAME,
+        DisplayName = KRONO_JOCKIE_NAME,
+        Text = GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " invited you to join their Music Session",
+        Timestamp = os.time(),
+        Role = "BOT",
+        PfpId = KRONO_JOCKIE_PFP,
+        IsPrivate = false,
+        IsMusicSessionInvite = true,
+        MusicSessionId = ActiveMusicSessionId,
+        MusicSessionHostUsername = ActiveMusicSessionData.HostUsername,
+        MusicSessionHostDisplayName = ActiveMusicSessionData.HostDisplayName,
+        MusicSessionHostPfpId = ActiveMusicSessionData.HostPfpId or CurrentPfpId,
+    }
+    local endpoint = isGlobal and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
+    local cache = isGlobal and GlobalCachedMessages or ServerCachedMessages
+    local ui = isGlobal and GlobalUIElements or ServerUIElements
+    local localKey = "local_" .. payload.ClientMessageId
+    cache[localKey] = payload
+    local card = CreateMessageCard(payload, isGlobal)
+    card.Visible = (ActiveTab == (isGlobal and "GLOBAL" or "SERVER"))
+    table.insert(ui, card)
+    task.spawn(function() HttpRequest(endpoint, "POST", payload) end)
+end
+
+StartMusicSessionButton.MouseButton1Click:Connect(StartOwnMusicSession)
+JoinMusicSessionButton.MouseButton1Click:Connect(function() JoinMusicSessionById(MusicSessionIdInput.Text) end)
+EndMusicSessionButton.MouseButton1Click:Connect(LeaveOrEndMusicSession)
+MusicCustomPlayButton.MouseButton1Click:Connect(function() HostSetMusic(MusicCustomIdInput.Text, nil) end)
+MusicStopButton.MouseButton1Click:Connect(HostStopMusic)
+MusicInviteGlobalButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(true) end)
+MusicInviteServerButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(false) end)
+
+-- ============================================================================
+-- PROFILE TAB
+-- ============================================================================
+local ProfileFrame = Instance.new("ScrollingFrame")
+ProfileFrame.Name = "ProfileFrame"
+ProfileFrame.Size = UDim2.new(1, -16, 1, -48)
+ProfileFrame.Position = UDim2.new(0, 8, 0, 40)
+ProfileFrame.BackgroundTransparency = 1
+ProfileFrame.BorderSizePixel = 0
+ProfileFrame.ScrollBarThickness = 3
+ProfileFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 335)
+ProfileFrame.Visible = false
+ProfileFrame.Parent = MainFrame
+
+local ProfileHeaderCard = Instance.new("Frame")
+ProfileHeaderCard.Size = UDim2.new(1, 0, 0, 86)
+ProfileHeaderCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+ProfileHeaderCard.BackgroundTransparency = 0.28
+ProfileHeaderCard.BorderSizePixel = 0
+ProfileHeaderCard.Parent = ProfileFrame
+local ProfileHeaderCorner = Instance.new("UICorner")
+ProfileHeaderCorner.CornerRadius = UDim.new(0, 10)
+ProfileHeaderCorner.Parent = ProfileHeaderCard
+
+local ProfilePfp = Instance.new("ImageLabel")
+ProfilePfp.Name = "ProfilePfp"
+ProfilePfp.Size = UDim2.new(0, 64, 0, 64)
+ProfilePfp.Position = UDim2.new(0, 10, 0, 11)
+ProfilePfp.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+ProfilePfp.Image = "rbxthumb://type=Asset&id=" .. tostring(CurrentPfpId) .. "&w=420&h=420"
+ProfilePfp.Parent = ProfileHeaderCard
+local ProfilePfpCorner = Instance.new("UICorner")
+ProfilePfpCorner.CornerRadius = UDim.new(1, 0)
+ProfilePfpCorner.Parent = ProfilePfp
+
+local ProfileDisplayName = Instance.new("TextLabel")
+ProfileDisplayName.Size = UDim2.new(1, -88, 0, 32)
+ProfileDisplayName.Position = UDim2.new(0, 84, 0, 13)
+ProfileDisplayName.BackgroundTransparency = 1
+ProfileDisplayName.Font = Enum.Font.GothamBold
+ProfileDisplayName.Text = GetFormattedDisplayName(LocalPlayer.DisplayName, true)
+ProfileDisplayName.TextColor3 = Color3.fromRGB(255, 255, 255)
+ProfileDisplayName.TextSize = 21
+ProfileDisplayName.TextXAlignment = Enum.TextXAlignment.Left
+ProfileDisplayName.Parent = ProfileHeaderCard
+local ProfileRole = GetAssignedOrCalculatedRole(LocalPlayer.Name)
+AnimateRoleFont(ProfileDisplayName, ProfileRole, RANK_STYLES[ProfileRole] or RANK_STYLES["VIP"])
+
+local ProfileUsername = Instance.new("TextLabel")
+ProfileUsername.Size = UDim2.new(1, -88, 0, 20)
+ProfileUsername.Position = UDim2.new(0, 84, 0, 48)
+ProfileUsername.BackgroundTransparency = 1
+ProfileUsername.Font = Enum.Font.Gotham
+ProfileUsername.Text = "@" .. LocalPlayer.Name
+ProfileUsername.TextColor3 = Color3.fromRGB(155, 155, 170)
+ProfileUsername.TextSize = 11
+ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
+ProfileUsername.Parent = ProfileHeaderCard
+
+local ProfileSocialCard = Instance.new("Frame")
+ProfileSocialCard.Size = UDim2.new(1, 0, 0, 108)
+ProfileSocialCard.Position = UDim2.new(0, 0, 0, 92)
+ProfileSocialCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+ProfileSocialCard.BackgroundTransparency = 0.3
+ProfileSocialCard.BorderSizePixel = 0
+ProfileSocialCard.Parent = ProfileFrame
+local ProfileSocialCorner = Instance.new("UICorner")
+ProfileSocialCorner.CornerRadius = UDim.new(0, 10)
+ProfileSocialCorner.Parent = ProfileSocialCard
+
+local function ProfileSocialButton(name, text, imageId, pos)
+    local b = Instance.new("ImageButton")
+    b.Name = name
+    b.Size = UDim2.new(0.23, 0, 0, 42)
+    b.Position = pos
+    b.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+    b.BackgroundTransparency = 0.15
+    b.Image = "rbxthumb://type=Asset&id=" .. tostring(imageId) .. "&w=150&h=150"
+    b.ScaleType = Enum.ScaleType.Fit
+    b.Parent = ProfileSocialCard
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = b
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, 0, 0, 14)
+    l.Position = UDim2.new(0, 0, 1, -15)
+    l.BackgroundTransparency = 0.25
+    l.BackgroundColor3 = Color3.fromRGB(10,10,15)
+    l.Font = Enum.Font.GothamBold
+    l.Text = text
+    l.TextColor3 = Color3.fromRGB(255,255,255)
+    l.TextSize = 7
+    l.Parent = b
+    return b
+end
+
+local InstagramButton = ProfileSocialButton("InstagramButton", "INSTAGRAM", "18355586412", UDim2.new(0.01,0,0,10))
+local DiscordButton = ProfileSocialButton("DiscordButton", "DISCORD", "10367063084", UDim2.new(0.255,0,0,10))
+local SnapchatButton = ProfileSocialButton("SnapchatButton", "SNAPCHAT", "385616312", UDim2.new(0.50,0,0,10))
+local ProfileShareButton = ProfileSocialButton("ProfileShareButton", "SHARE", "0", UDim2.new(0.745,0,0,10))
+ProfileShareButton.Image = ""
+local ProfileShareGlyph = Instance.new("TextLabel")
+ProfileShareGlyph.Size = UDim2.new(1,0,1,-14)
+ProfileShareGlyph.Position = UDim2.new(0,0,0,-1)
+ProfileShareGlyph.BackgroundTransparency = 1
+ProfileShareGlyph.Font = Enum.Font.GothamBold
+ProfileShareGlyph.Text = "↗"
+ProfileShareGlyph.TextSize = 22
+ProfileShareGlyph.TextColor3 = Color3.fromRGB(255,255,255)
+ProfileShareGlyph.Parent = ProfileShareButton
+
+local ProfileSocialStatus = Instance.new("TextLabel")
+ProfileSocialStatus.Size = UDim2.new(1, -16, 0, 40)
+ProfileSocialStatus.Position = UDim2.new(0, 8, 0, 58)
+ProfileSocialStatus.BackgroundTransparency = 1
+ProfileSocialStatus.Font = Enum.Font.Gotham
+ProfileSocialStatus.Text = "Instagram: " .. (ProfileSocials.Instagram ~= "" and "@" .. ProfileSocials.Instagram or "Not set") .. "   •   Discord: " .. (ProfileSocials.Discord ~= "" and "@" .. ProfileSocials.Discord or "Not set") .. "   •   Snapchat: " .. (ProfileSocials.Snapchat ~= "" and "@" .. ProfileSocials.Snapchat or "Not set")
+ProfileSocialStatus.TextColor3 = Color3.fromRGB(185,185,200)
+ProfileSocialStatus.TextSize = 8
+ProfileSocialStatus.TextWrapped = true
+ProfileSocialStatus.Parent = ProfileSocialCard
+
+local ProfilePfpCard = Instance.new("Frame")
+ProfilePfpCard.Size = UDim2.new(1, 0, 0, 112)
+ProfilePfpCard.Position = UDim2.new(0, 0, 0, 208)
+ProfilePfpCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+ProfilePfpCard.BackgroundTransparency = 0.3
+ProfilePfpCard.BorderSizePixel = 0
+ProfilePfpCard.Parent = ProfileFrame
+local ProfilePfpCardCorner = Instance.new("UICorner")
+ProfilePfpCardCorner.CornerRadius = UDim.new(0, 10)
+ProfilePfpCardCorner.Parent = ProfilePfpCard
+
+local ProfilePfpTitle = Instance.new("TextLabel")
+ProfilePfpTitle.Size = UDim2.new(1,-16,0,20)
+ProfilePfpTitle.Position = UDim2.new(0,8,0,6)
+ProfilePfpTitle.BackgroundTransparency = 1
+ProfilePfpTitle.Font = Enum.Font.GothamBold
+ProfilePfpTitle.Text = "CHANGE PROFILE PICTURE"
+ProfilePfpTitle.TextColor3 = Color3.fromRGB(240,240,245)
+ProfilePfpTitle.TextSize = 10
+ProfilePfpTitle.TextXAlignment = Enum.TextXAlignment.Left
+ProfilePfpTitle.Parent = ProfilePfpCard
+
+local PfpCustomInput = Instance.new("TextBox")
+PfpCustomInput.Size = UDim2.new(0.55, -4, 0, 27)
+PfpCustomInput.Position = UDim2.new(0,8,0,31)
+PfpCustomInput.BackgroundColor3 = Color3.fromRGB(25,25,38)
+PfpCustomInput.BackgroundTransparency = 0.15
+PfpCustomInput.BorderSizePixel = 0
+PfpCustomInput.Font = Enum.Font.Code
+PfpCustomInput.PlaceholderText = "Custom image ID"
+PfpCustomInput.Text = ""
+PfpCustomInput.TextColor3 = Color3.fromRGB(235,235,240)
+PfpCustomInput.TextSize = 9
+PfpCustomInput.Parent = ProfilePfpCard
+local PfpCustomCorner = Instance.new("UICorner")
+PfpCustomCorner.CornerRadius = UDim.new(0,7)
+PfpCustomCorner.Parent = PfpCustomInput
+
+local PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0.55,4,0,31), UDim2.new(0.22,-4,0,27))
+local PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0.78,0,0,31), UDim2.new(0.22,-8,0,27))
+
+local PfpListScroller = Instance.new("ScrollingFrame")
+PfpListScroller.Size = UDim2.new(1,-16,0,43)
+PfpListScroller.Position = UDim2.new(0,8,0,63)
+PfpListScroller.BackgroundTransparency = 1
+PfpListScroller.BorderSizePixel = 0
+PfpListScroller.ScrollBarThickness = 2
+PfpListScroller.ScrollingDirection = Enum.ScrollingDirection.X
+PfpListScroller.Parent = ProfilePfpCard
+local PfpListLayout = Instance.new("UIListLayout")
+PfpListLayout.FillDirection = Enum.FillDirection.Horizontal
+PfpListLayout.Padding = UDim.new(0,4)
+PfpListLayout.Parent = PfpListScroller
+
+local function SetProfilePfp(id)
+    id = tostring(id or ""):match("%d+") or ""
+    if id == "" then return end
+    SavePfpIdLocally(id)
+    ProfilePfp.Image = "rbxthumb://type=Asset&id=" .. id .. "&w=420&h=420"
+    ShowLocalSystemMessage("[AI MoD] : Profile picture saved locally ✓")
+end
+
+for _, list in ipairs({BoyPfpList, GirlPfpList}) do
+    for _, id in ipairs(list) do
+        local b = Instance.new("ImageButton")
+        b.Size = UDim2.new(0,36,0,36)
+        b.BackgroundColor3 = Color3.fromRGB(25,25,38)
+        b.BackgroundTransparency = 0.15
+        b.Image = "rbxthumb://type=Asset&id=" .. tostring(id) .. "&w=100&h=100"
+        b.Parent = PfpListScroller
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(1,0)
+        c.Parent = b
+        b.MouseButton1Click:Connect(function() SetProfilePfp(id) end)
+    end
+end
+PfpListScroller.CanvasSize = UDim2.new(0, PfpListLayout.AbsoluteContentSize.X + 8, 0, 0)
+PfpCustomSetButton.MouseButton1Click:Connect(function() SetProfilePfp(PfpCustomInput.Text) end)
+PfpRandomButton.MouseButton1Click:Connect(function()
+    local combined = {}
+    for _, id in ipairs(BoyPfpList) do table.insert(combined,id) end
+    for _, id in ipairs(GirlPfpList) do table.insert(combined,id) end
+    if #combined > 0 then SetProfilePfp(combined[math.random(1,#combined)]) end
+end)
+
+local ProfilePopup = Instance.new("Frame")
+ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
+ProfilePopup.Position = UDim2.new(0.5, -150, 0.5, -59)
+ProfilePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
+ProfilePopup.BackgroundTransparency = 0.08
+ProfilePopup.BorderSizePixel = 0
+ProfilePopup.Visible = false
+ProfilePopup.ZIndex = 80
+ProfilePopup.Parent = ScreenGui
+local ProfilePopupCorner = Instance.new("UICorner")
+ProfilePopupCorner.CornerRadius = UDim.new(0,10)
+ProfilePopupCorner.Parent = ProfilePopup
+local ProfilePopupTitle = Instance.new("TextLabel")
+ProfilePopupTitle.Size = UDim2.new(1,-16,0,22)
+ProfilePopupTitle.Position = UDim2.new(0,8,0,6)
+ProfilePopupTitle.BackgroundTransparency = 1
+ProfilePopupTitle.Font = Enum.Font.GothamBold
+ProfilePopupTitle.Text = "SOCIAL USERNAME"
+ProfilePopupTitle.TextColor3 = Color3.fromRGB(255,255,255)
+ProfilePopupTitle.TextSize = 11
+ProfilePopupTitle.TextXAlignment = Enum.TextXAlignment.Left
+ProfilePopupTitle.Parent = ProfilePopup
+local ProfilePopupInput = Instance.new("TextBox")
+ProfilePopupInput.Size = UDim2.new(1,-16,0,30)
+ProfilePopupInput.Position = UDim2.new(0,8,0,32)
+ProfilePopupInput.BackgroundColor3 = Color3.fromRGB(30,30,42)
+ProfilePopupInput.BackgroundTransparency = 0.15
+ProfilePopupInput.BorderSizePixel = 0
+ProfilePopupInput.Font = Enum.Font.Gotham
+ProfilePopupInput.TextColor3 = Color3.fromRGB(240,240,245)
+ProfilePopupInput.TextSize = 10
+ProfilePopupInput.ClearTextOnFocus = false
+ProfilePopupInput.Parent = ProfilePopup
+local ProfilePopupInputCorner = Instance.new("UICorner")
+ProfilePopupInputCorner.CornerRadius = UDim.new(0,7)
+ProfilePopupInputCorner.Parent = ProfilePopupInput
+local ProfilePopupSave = MusicMakeButton(ProfilePopup, "ProfilePopupSave", "SAVE", UDim2.new(0,8,0,68), UDim2.new(0.48,-6,0,28))
+local ProfilePopupCancel = MusicMakeButton(ProfilePopup, "ProfilePopupCancel", "CANCEL", UDim2.new(0.52,0,0,68), UDim2.new(0.48,-8,0,28))
+
+local ActiveSocialKey = nil
+local function OpenSocialPopup(key)
+    ActiveSocialKey = key
+    ProfilePopupTitle.Text = string.upper(key) .. " USERNAME"
+    ProfilePopupInput.Text = ProfileSocials[key] or ""
+    ProfilePopup.Visible = true
+    ProfilePopupInput:CaptureFocus()
+end
+InstagramButton.MouseButton1Click:Connect(function() OpenSocialPopup("Instagram") end)
+DiscordButton.MouseButton1Click:Connect(function() OpenSocialPopup("Discord") end)
+SnapchatButton.MouseButton1Click:Connect(function() OpenSocialPopup("Snapchat") end)
+ProfilePopupCancel.MouseButton1Click:Connect(function() ProfilePopup.Visible = false end)
+ProfilePopupSave.MouseButton1Click:Connect(function()
+    if ActiveSocialKey then
+        local value = ProfilePopupInput.Text:gsub("^@", ""):gsub("%s+", "")
+        ProfileSocials[ActiveSocialKey] = value
+        SaveLocalText(ActiveSocialKey, value)
+        ProfileSocialStatus.Text = "Instagram: " .. (ProfileSocials.Instagram ~= "" and "@" .. ProfileSocials.Instagram or "Not set") .. "   •   Discord: " .. (ProfileSocials.Discord ~= "" and "@" .. ProfileSocials.Discord or "Not set") .. "   •   Snapchat: " .. (ProfileSocials.Snapchat ~= "" and "@" .. ProfileSocials.Snapchat or "Not set")
+    end
+    ProfilePopup.Visible = false
+end)
+
+local ProfileSharePopup = Instance.new("Frame")
+ProfileSharePopup.Size = UDim2.new(0, 260, 0, 90)
+ProfileSharePopup.Position = UDim2.new(0.5,-130,0.5,-45)
+ProfileSharePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
+ProfileSharePopup.BackgroundTransparency = 0.08
+ProfileSharePopup.BorderSizePixel = 0
+ProfileSharePopup.Visible = false
+ProfileSharePopup.ZIndex = 80
+ProfileSharePopup.Parent = ScreenGui
+local ShareCorner = Instance.new("UICorner")
+ShareCorner.CornerRadius = UDim.new(0,10)
+ShareCorner.Parent = ProfileSharePopup
+local ShareTitle = Instance.new("TextLabel")
+ShareTitle.Size = UDim2.new(1,-16,0,22)
+ShareTitle.Position = UDim2.new(0,8,0,6)
+ShareTitle.BackgroundTransparency = 1
+ShareTitle.Font = Enum.Font.GothamBold
+ShareTitle.Text = "SHARE PROFILE TO"
+ShareTitle.TextColor3 = Color3.fromRGB(255,255,255)
+ShareTitle.TextSize = 11
+ShareTitle.Parent = ProfileSharePopup
+local ShareGlobal = MusicMakeButton(ProfileSharePopup, "ShareGlobal", "GLOBAL", UDim2.new(0,8,0,36), UDim2.new(0.48,-6,0,28))
+local ShareServer = MusicMakeButton(ProfileSharePopup, "ShareServer", "SERVER", UDim2.new(0.52,0,0,36), UDim2.new(0.48,-8,0,28))
+ProfileShareButton.MouseButton1Click:Connect(function() ProfileSharePopup.Visible = true end)
+local function SendProfileShare(isGlobal)
+    local instagram = ProfileSocials.Instagram
+    local discord = ProfileSocials.Discord
+    local snapchat = ProfileSocials.Snapchat
+    if instagram == "" and discord == "" and snapchat == "" then
+        ShowLocalSystemMessage("[AI MoD] : Set at least one social username before sharing.", true)
+        return
+    end
+    local payload = {
+        ClientMessageId = LocalPlayer.UserId .. "_profile_share_" .. tostring(math.floor(os.clock()*1000000)) .. "_" .. tostring(math.random(100000,999999)),
+        Username = LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        Text = "",
+        Timestamp = os.time(),
+        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
+        PfpId = CurrentPfpId,
+        IsPrivate = false,
+        IsProfileShare = true,
+        Instagram = instagram,
+        Discord = discord,
+        Snapchat = snapchat,
+    }
+    local endpoint = isGlobal and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
+    local cache = isGlobal and GlobalCachedMessages or ServerCachedMessages
+    local ui = isGlobal and GlobalUIElements or ServerUIElements
+    local localKey = "local_" .. payload.ClientMessageId
+    cache[localKey] = payload
+    local card = CreateMessageCard(payload, isGlobal)
+    card.Visible = (ActiveTab == (isGlobal and "GLOBAL" or "SERVER"))
+    table.insert(ui, card)
+    task.spawn(function() HttpRequest(endpoint, "POST", payload) end)
+    ProfileSharePopup.Visible = false
+end
+ShareGlobal.MouseButton1Click:Connect(function() SendProfileShare(true) end)
+ShareServer.MouseButton1Click:Connect(function() SendProfileShare(false) end)
+
+-- About Section Configuration
 local TagScrollFrame = Instance.new("ScrollingFrame")
 TagScrollFrame.Name = "TagScrollFrame"
 TagScrollFrame.Size = UDim2.new(1, 0, 0, 36)
@@ -2452,15 +3238,6 @@ local function ShowCommandAutocomplete()
     elseif lower == "!announce" then
         command = "!announce "
         query = ""
-    elseif lower == "!gplymsc" or lower:sub(1, 9) == "!gplymsc " then
-        command = "!gplymsc "
-        query = typed:sub(10)
-    elseif lower == "!splymsc" or lower:sub(1, 9) == "!splymsc " then
-        command = "!splymsc "
-        query = typed:sub(10)
-    elseif lower == "!stpmsc" then
-        command = "!stpmsc"
-        query = ""
     else
         return
     end
@@ -2474,11 +3251,6 @@ local function ShowCommandAutocomplete()
             return
         end
         table.insert(suggestions, "!announce ")
-    elseif command == "!gplymsc " or command == "!splymsc " or command == "!stpmsc" then
-        if not CanUsePlayMusic(LocalPlayer.Name) then
-            return
-        end
-        table.insert(suggestions, command)
     elseif command == "!tag " then
         for roleName in pairs(RANK_STYLES) do
             if not seen[roleName] then
@@ -2541,7 +3313,7 @@ local function ShowCommandAutocomplete()
                 button.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
             end)
             button.MouseButton1Click:Connect(function()
-                local selectedCommand = (suggestion == command) and suggestion or (command .. suggestion)
+                local selectedCommand = (command == "!announce ") and command or (command .. suggestion)
                 HideCommandAutocomplete()
 
                 -- Setting the textbox after removing the old suggestions avoids
@@ -2798,12 +3570,18 @@ function SwitchTab(newTab)
     MessageContainer.Visible = (newTab == "GLOBAL" or newTab == "SERVER")
     InputBarFrame.Visible = (newTab == "GLOBAL" or newTab == "SERVER")
     AboutFrame.Visible = (newTab == "ABOUT")
+    MusicSessionFrame.Visible = (newTab == "MUSIC")
+    ProfileFrame.Visible = (newTab == "PROFILE")
     StickerPanel.Visible = false
     ServerInviteButton.Visible = (newTab == "GLOBAL")
+    ProfilePopup.Visible = false
+    ProfileSharePopup.Visible = false
 
     GlobalTabBtn.BackgroundColor3 = (newTab == "GLOBAL") and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 55)
     ServerTabBtn.BackgroundColor3 = (newTab == "SERVER") and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 55)
     AboutTabBtn.BackgroundColor3 = (newTab == "ABOUT") and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 55)
+    MusicTabBtn.BackgroundColor3 = (newTab == "MUSIC") and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 55)
+    ProfileTabBtn.BackgroundColor3 = (newTab == "PROFILE") and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 55)
 
     if newTab == "GLOBAL" then
         for _, elem in pairs(ServerUIElements) do elem.Visible = false end
@@ -2817,6 +3595,8 @@ end
 GlobalTabBtn.MouseButton1Click:Connect(function() SwitchTab("GLOBAL") end)
 ServerTabBtn.MouseButton1Click:Connect(function() SwitchTab("SERVER") end)
 AboutTabBtn.MouseButton1Click:Connect(function() SwitchTab("ABOUT") end)
+MusicTabBtn.MouseButton1Click:Connect(function() SwitchTab("MUSIC") end)
+ProfileTabBtn.MouseButton1Click:Connect(function() SwitchTab("PROFILE") end)
 
 -- Initial state: GLOBAL is the default tab.
 ServerInviteButton.Visible = true
@@ -2967,7 +3747,119 @@ CreateMessageCard = function(msgData, isGlobal)
 
     local isSticker = string.sub(msgData.Text, 1, 11) == "rbxthumb://" or string.sub(msgData.Text, 1, 13) == "rbxassetid://"
 
-    if msgData.IsServerInvite and msgData.PlaceId and msgData.JobId then
+    if msgData.IsMusicSessionInvite and msgData.MusicSessionId then
+        local inviteButton = Instance.new("TextButton")
+        inviteButton.Name = "MusicSessionInviteButton"
+        inviteButton.Size = UDim2.new(1, -48, 0, 34)
+        inviteButton.Position = UDim2.new(0, 38, 0, msgData.ReplyToText and 58 or 24)
+        inviteButton.BackgroundColor3 = Color3.fromRGB(170, 40, 180)
+        inviteButton.BackgroundTransparency = 0.12
+        inviteButton.BorderSizePixel = 0
+        inviteButton.Font = Enum.Font.GothamBold
+        inviteButton.Text = "  🎵 JOIN MUSIC SESSION  "
+        inviteButton.TextColor3 = Color3.fromRGB(255,255,255)
+        inviteButton.TextSize = 10
+        inviteButton.ZIndex = 12
+        inviteButton.Parent = frame
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0,7)
+        c.Parent = inviteButton
+        local info = Instance.new("TextLabel")
+        info.Size = UDim2.new(1,-48,0,28)
+        info.Position = UDim2.new(0,38,0,msgData.ReplyToText and 94 or 60)
+        info.BackgroundTransparency = 1
+        info.Font = Enum.Font.Gotham
+        info.Text = tostring(msgData.Text or "Join this Music Session") .. "\nSession ID: " .. tostring(msgData.MusicSessionId) .. "\nHost: " .. tostring(msgData.MusicSessionHostDisplayName or "Unknown")
+        info.TextColor3 = Color3.fromRGB(215,215,225)
+        info.TextSize = 8
+        info.TextXAlignment = Enum.TextXAlignment.Left
+        info.TextYAlignment = Enum.TextYAlignment.Center
+        info.TextWrapped = true
+        info.ZIndex = 12
+        info.Parent = frame
+        inviteButton.MouseButton1Click:Connect(function()
+            JoinMusicSessionById(tostring(msgData.MusicSessionId))
+        end)
+        local pad = Instance.new("UIPadding")
+        pad.PaddingBottom = UDim.new(0, 8)
+        pad.Parent = frame
+    elseif msgData.IsProfileShare then
+        local shareBox = Instance.new("Frame")
+        shareBox.Name = "ProfileShareBox"
+        shareBox.Size = UDim2.new(1,-48,0,86)
+        shareBox.Position = UDim2.new(0,38,0,msgData.ReplyToText and 58 or 24)
+        shareBox.BackgroundColor3 = Color3.fromRGB(25,25,38)
+        shareBox.BackgroundTransparency = 0.18
+        shareBox.BorderSizePixel = 0
+        shareBox.ZIndex = 12
+        shareBox.Parent = frame
+        local sc = Instance.new("UICorner")
+        sc.CornerRadius = UDim.new(0,7)
+        sc.Parent = shareBox
+        local function shareLine(labelText, value, y, copy)
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1,-74,0,20)
+            label.Position = UDim2.new(0,7,0,y)
+            label.BackgroundTransparency = 1
+            label.Font = Enum.Font.Gotham
+            label.Text = labelText .. (value ~= "" and value or "Not set")
+            label.TextColor3 = Color3.fromRGB(220,220,230)
+            label.TextSize = 8
+            label.TextXAlignment = Enum.TextXAlignment.Left
+            label.ZIndex = 13
+            label.Parent = shareBox
+            if copy and value ~= "" then
+                local cb = Instance.new("TextButton")
+                cb.Size = UDim2.new(0,58,0,18)
+                cb.Position = UDim2.new(1,-64,0,y+1)
+                cb.BackgroundColor3 = Color3.fromRGB(60,60,80)
+                cb.BackgroundTransparency = 0.1
+                cb.BorderSizePixel = 0
+                cb.Font = Enum.Font.GothamBold
+                cb.Text = "COPY"
+                cb.TextColor3 = Color3.fromRGB(255,255,255)
+                cb.TextSize = 7
+                cb.ZIndex = 13
+                cb.Parent = shareBox
+                local cc=Instance.new("UICorner")
+                cc.CornerRadius=UDim.new(0,5)
+                cc.Parent=cb
+                cb.MouseButton1Click:Connect(function()
+                    if setclipboard then setclipboard(tostring(value)) end
+                    cb.Text = "COPIED"
+                    task.delay(1.2,function() if cb and cb.Parent then cb.Text="COPY" end end)
+                end)
+            end
+        end
+        shareLine("Instagram: https://instagram.com/", tostring(msgData.Instagram or ""), 4, false)
+        shareLine("Discord: @", tostring(msgData.Discord or ""), 25, false)
+        shareLine("Snapchat: @", tostring(msgData.Snapchat or ""), 46, true)
+        if msgData.Snapchat and msgData.Snapchat ~= "" then
+            local cb2 = Instance.new("TextButton")
+            cb2.Size = UDim2.new(0,58,0,18)
+            cb2.Position = UDim2.new(1,-64,0,67)
+            cb2.BackgroundColor3 = Color3.fromRGB(60,60,80)
+            cb2.BackgroundTransparency = 0.1
+            cb2.BorderSizePixel = 0
+            cb2.Font = Enum.Font.GothamBold
+            cb2.Text = "LINK"
+            cb2.TextColor3 = Color3.fromRGB(255,255,255)
+            cb2.TextSize = 7
+            cb2.ZIndex = 13
+            cb2.Parent = shareBox
+            local cc2=Instance.new("UICorner")
+            cc2.CornerRadius=UDim.new(0,5)
+            cc2.Parent=cb2
+            cb2.MouseButton1Click:Connect(function()
+                if setclipboard then setclipboard("https://www.snapchat.com/add/" .. tostring(msgData.Snapchat)) end
+                cb2.Text="COPIED"
+                task.delay(1.2,function() if cb2 and cb2.Parent then cb2.Text="LINK" end end)
+            end)
+        end
+        local pad=Instance.new("UIPadding")
+        pad.PaddingBottom=UDim.new(0,8)
+        pad.Parent=frame
+    elseif msgData.IsServerInvite and msgData.PlaceId and msgData.JobId then
         local inviteButton = Instance.new("TextButton")
         inviteButton.Name = "ServerInviteCardButton"
         inviteButton.Size = UDim2.new(1, -48, 0, 34)
@@ -3273,62 +4165,6 @@ SendChatMessage = function()
         ShowLocalSystemMessage("[AI MoD] : Join-message test triggered successfully ✓")
         MessageInput.Text = ""
         return
-    elseif not isPrivate and (typedText:match("^!gplymsc%s+") or typedText == "!gplymsc") then
-        if not CanUsePlayMusic(LocalPlayer.Name) then
-            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to use music commands.", true)
-            MessageInput.Text = ""
-            return
-        end
-
-        local rawId = typedText:match("^!gplymsc%s+(.+)$")
-        local musicId = NormalizeMusicId(rawId)
-        if not musicId then
-            ShowLocalSystemMessage("[AI MoD] : Command failed. Usage: !gplymsc [Roblox Music ID].", true)
-            MessageInput.Text = ""
-            return
-        end
-
-        local commandId = LocalPlayer.UserId .. "_g_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
-        PostKronosMusicState(true, true, musicId, commandId)
-        PostKronosMusicChat(GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " Is Playing " .. musicId .. "🎵", true, commandId)
-        MessageInput.Text = ""
-        return
-
-    elseif not isPrivate and (typedText:match("^!splymsc%s+") or typedText == "!splymsc") then
-        if not CanUsePlayMusic(LocalPlayer.Name) then
-            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to use music commands.", true)
-            MessageInput.Text = ""
-            return
-        end
-
-        local rawId = typedText:match("^!splymsc%s+(.+)$")
-        local musicId = NormalizeMusicId(rawId)
-        if not musicId then
-            ShowLocalSystemMessage("[AI MoD] : Command failed. Usage: !splymsc [Roblox Music ID].", true)
-            MessageInput.Text = ""
-            return
-        end
-
-        local commandId = LocalPlayer.UserId .. "_s_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
-        PostKronosMusicState(false, true, musicId, commandId)
-        PostKronosMusicChat(GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " Is Playing " .. musicId .. "🎵", false, commandId)
-        MessageInput.Text = ""
-        return
-
-    elseif not isPrivate and typedText == "!stpmsc" then
-        if not CanUsePlayMusic(LocalPlayer.Name) then
-            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to use music commands.", true)
-            MessageInput.Text = ""
-            return
-        end
-
-        local isGlobalMusic = ActiveTab == "GLOBAL"
-        local commandId = LocalPlayer.UserId .. "_stop_" .. (isGlobalMusic and "g" or "s") .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
-        PostKronosMusicState(isGlobalMusic, false, nil, commandId)
-        PostKronosMusicChat(GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " Has Stopped the Music.", isGlobalMusic, commandId)
-        MessageInput.Text = ""
-        return
-
     elseif not isPrivate and string.sub(typedText, 1, 9) == "!announce" then
         if not CanUseAnnouncement(LocalPlayer.Name) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Only Architect, Overseer and Moderator can use !announce.", true)
@@ -3425,6 +4261,59 @@ SendChatMessage = function()
         ShowLocalSystemMessage("[AI MoD] : Command failed. Usage: !spoof [NewName].", true)
         MessageInput.Text = ""
         return
+    elseif not isPrivate and string.sub(typedText, 1, 9) == "!gplymsc " then
+        if not CanUsePlayMusic(LocalPlayer.Name) then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to play music.", true)
+            MessageInput.Text = ""
+            return
+        end
+        local id = typedText:sub(10):match("%d+")
+        if not id then
+            ShowLocalSystemMessage("[AI MoD] : Usage: !gplymsc [Roblox Music ID].", true)
+            MessageInput.Text = ""
+            return
+        end
+        -- Global legacy music command: update the global music session state.
+        local payload = {
+            Playing = true, CurrentSongId = id, CurrentSongName = GetMusicSongName(id),
+            StartedAt = os.time(), UpdatedAt = os.time(), Revision = tostring(os.time()) .. "_g",
+            HostUsername = LocalPlayer.Name, HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+            HostUserId = LocalPlayer.UserId, HostPfpId = CurrentPfpId, SessionId = "GLOBAL"
+        }
+        HttpRequest(MUSIC_SESSION_ROOT .. "/GLOBAL.json", "PATCH", payload)
+        MessageInput.Text = ""
+        return
+    elseif not isPrivate and string.sub(typedText, 1, 9) == "!splymsc " then
+        if not CanUsePlayMusic(LocalPlayer.Name) then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to play music.", true)
+            MessageInput.Text = ""
+            return
+        end
+        local id = typedText:sub(10):match("%d+")
+        if not id then
+            ShowLocalSystemMessage("[AI MoD] : Usage: !splymsc [Roblox Music ID].", true)
+            MessageInput.Text = ""
+            return
+        end
+        local payload = {
+            Playing = true, CurrentSongId = id, CurrentSongName = GetMusicSongName(id),
+            StartedAt = os.time(), UpdatedAt = os.time(), Revision = tostring(os.time()) .. "_s",
+            HostUsername = LocalPlayer.Name, HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+            HostUserId = LocalPlayer.UserId, HostPfpId = CurrentPfpId, SessionId = "SERVER_" .. SERVER_JOB_ID
+        }
+        HttpRequest(MUSIC_SESSION_ROOT .. "/SERVER_" .. SERVER_JOB_ID .. ".json", "PATCH", payload)
+        MessageInput.Text = ""
+        return
+    elseif not isPrivate and typedText == "!stpmsc" then
+        if not CanUsePlayMusic(LocalPlayer.Name) then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to stop music.", true)
+            MessageInput.Text = ""
+            return
+        end
+        local id = ActiveTab == "GLOBAL" and "GLOBAL" or ("SERVER_" .. SERVER_JOB_ID)
+        HttpRequest(MUSIC_SESSION_ROOT .. "/" .. id .. ".json", "PATCH", {Playing=false, UpdatedAt=os.time(), Revision=tostring(os.time()) .. "_stop"})
+        MessageInput.Text = ""
+        return
     elseif not isPrivate and string.sub(typedText, 1, 1) == "!" then
         ShowLocalSystemMessage("[AI MoD] : Unknown command. Command failed.", true)
         MessageInput.Text = ""
@@ -3516,11 +4405,6 @@ MessageInput.FocusLost:Connect(function()
             or current:sub(1, 6) == "!mute "
             or current == "!announce"
             or current:sub(1, 9) == "!announce "
-            or current == "!gplymsc"
-            or current:sub(1, 9) == "!gplymsc "
-            or current == "!splymsc"
-            or current:sub(1, 9) == "!splymsc "
-            or current == "!stpmsc"
 
         if not isCommand then
             HideCommandAutocomplete()
@@ -3571,18 +4455,6 @@ function PollMessages()
     while true do
         FetchRemoteRankStyles()
         FetchRemoteRoles()
-
-        -- Music session state is separate from chat state, but uses the same
-        -- two-second client polling cadence so every Kronos client stays synced.
-        local globalMusicState = HttpRequest(GLOBAL_MUSIC_ENDPOINT, "GET")
-        if globalMusicState and type(globalMusicState) == "table" then
-            SyncKronosMusicState(globalMusicState, true)
-        end
-
-        local serverMusicState = HttpRequest(SERVER_MUSIC_ENDPOINT, "GET")
-        if serverMusicState and type(serverMusicState) == "table" then
-            SyncKronosMusicState(serverMusicState, false)
-        end
 
         local globalData = HttpRequest(GLOBAL_MESSAGES_ENDPOINT, "GET")
         if globalData and type(globalData) == "table" then

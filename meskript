@@ -111,13 +111,13 @@ local SOUNDS = {
     "rbxassetid://88058206720285",
 }
 
-local IntroScreenGui = Instance.new("ScreenGui")
+IntroScreenGui = Instance.new("ScreenGui")
 IntroScreenGui.Name = "KronosIntroGui"
 IntroScreenGui.ResetOnSpawn = false
 IntroScreenGui.IgnoreGuiInset = true
 IntroScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local IntroBackground = Instance.new("Frame")
+IntroBackground = Instance.new("Frame")
 IntroBackground.Name = "Background"
 IntroBackground.Size = UDim2.new(1, 0, 1, 0)
 IntroBackground.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
@@ -125,7 +125,7 @@ IntroBackground.BackgroundTransparency = 0.4
 IntroBackground.BorderSizePixel = 0
 IntroBackground.Parent = IntroScreenGui
 
-local IntroMainCard = Instance.new("Frame")
+IntroMainCard = Instance.new("Frame")
 IntroMainCard.Name = "MainCard"
 IntroMainCard.Size = UDim2.new(0, 480, 0, 180)
 IntroMainCard.Position = UDim2.new(0.5, -240, 0.5, -90)
@@ -133,17 +133,17 @@ IntroMainCard.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
 IntroMainCard.BorderSizePixel = 0
 IntroMainCard.Parent = IntroBackground
 
-local CardCorner = Instance.new("UICorner")
+CardCorner = Instance.new("UICorner")
 CardCorner.CornerRadius = UDim.new(0, 12)
 CardCorner.Parent = IntroMainCard
 
-local CardStroke = Instance.new("UIStroke")
+CardStroke = Instance.new("UIStroke")
 CardStroke.Thickness = 3
 CardStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 CardStroke.Color = Color3.fromRGB(255, 255, 255)
 CardStroke.Parent = IntroMainCard
 
-local BorderGradientIntro = Instance.new("UIGradient")
+BorderGradientIntro = Instance.new("UIGradient")
 BorderGradientIntro.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 0, 0)),
@@ -161,7 +161,7 @@ borderConnection = RunService.RenderStepped:Connect(function(deltaTime)
     BorderGradientIntro.Rotation = (BorderGradientIntro.Rotation + (rotationSpeed * deltaTime)) % 360
 end)
 
-local IntroTitle = Instance.new("TextLabel")
+IntroTitle = Instance.new("TextLabel")
 IntroTitle.Name = "Title"
 IntroTitle.Size = UDim2.new(1, 0, 0, 35)
 IntroTitle.Position = UDim2.new(0, 0, 0, 15)
@@ -172,7 +172,7 @@ IntroTitle.Font = Enum.Font.GothamBold
 IntroTitle.TextSize = 22
 IntroTitle.Parent = IntroMainCard
 
-local WelcomeLabel = Instance.new("TextLabel")
+WelcomeLabel = Instance.new("TextLabel")
 WelcomeLabel.Name = "WelcomeLabel"
 WelcomeLabel.Size = UDim2.new(1, 0, 0, 20)
 WelcomeLabel.Position = UDim2.new(0, 0, 0, 48)
@@ -183,7 +183,7 @@ WelcomeLabel.Font = Enum.Font.Gotham
 WelcomeLabel.TextSize = 12
 WelcomeLabel.Parent = IntroMainCard
 
-local StatusLabel = Instance.new("TextLabel")
+StatusLabel = Instance.new("TextLabel")
 StatusLabel.Name = "StatusLabel"
 StatusLabel.Size = UDim2.new(0, 320, 0, 20)
 StatusLabel.Position = UDim2.new(0, 30, 0, 88)
@@ -195,7 +195,7 @@ StatusLabel.Font = Enum.Font.Code
 StatusLabel.TextSize = 11
 StatusLabel.Parent = IntroMainCard
 
-local SubStatusLabel = Instance.new("TextLabel")
+SubStatusLabel = Instance.new("TextLabel")
 SubStatusLabel.Name = "SubStatusLabel"
 SubStatusLabel.Size = UDim2.new(0, 320, 0, 20)
 SubStatusLabel.Position = UDim2.new(0, 30, 0, 106)
@@ -207,7 +207,7 @@ SubStatusLabel.Font = Enum.Font.Gotham
 SubStatusLabel.TextSize = 10
 SubStatusLabel.Parent = IntroMainCard
 
-local BarBackground = Instance.new("Frame")
+BarBackground = Instance.new("Frame")
 BarBackground.Name = "BarBackground"
 BarBackground.Size = UDim2.new(0, 320, 0, 5)
 BarBackground.Position = UDim2.new(0, 30, 0, 140)
@@ -215,17 +215,17 @@ BarBackground.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 BarBackground.BorderSizePixel = 0
 BarBackground.Parent = IntroMainCard
 
-local BarCorner = Instance.new("UICorner")
+BarCorner = Instance.new("UICorner")
 BarCorner.CornerRadius = UDim.new(1, 0)
 BarCorner.Parent = BarBackground
 
-local BarFill = Instance.new("Frame")
+BarFill = Instance.new("Frame")
 BarFill.Name = "BarFill"
 BarFill.Size = UDim2.new(0, 0, 1, 0)
 BarFill.BorderSizePixel = 0
 BarFill.Parent = BarBackground
 
-local FillCorner = Instance.new("UICorner")
+FillCorner = Instance.new("UICorner")
 FillCorner.CornerRadius = UDim.new(1, 0)
 FillCorner.Parent = BarFill
 
@@ -255,7 +255,7 @@ local function getColorFromProgress(progress, sequence)
     return lower.Color:Lerp(upper.Color, ratio)
 end
 
-local PercentCircle = Instance.new("Frame")
+PercentCircle = Instance.new("Frame")
 PercentCircle.Name = "PercentCircle"
 PercentCircle.Size = UDim2.new(0, 56, 0, 56)
 PercentCircle.Position = UDim2.new(0, 385, 0, 89)
@@ -263,16 +263,16 @@ PercentCircle.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 PercentCircle.BorderSizePixel = 0
 PercentCircle.Parent = IntroMainCard
 
-local CircleCorner = Instance.new("UICorner")
+CircleCorner = Instance.new("UICorner")
 CircleCorner.CornerRadius = UDim.new(1, 0)
 CircleCorner.Parent = PercentCircle
 
-local CircleStroke = Instance.new("UIStroke")
+CircleStroke = Instance.new("UIStroke")
 CircleStroke.Thickness = 2
 CircleStroke.Color = Color3.fromRGB(40, 40, 50)
 CircleStroke.Parent = PercentCircle
 
-local PercentText = Instance.new("TextLabel")
+PercentText = Instance.new("TextLabel")
 PercentText.Name = "PercentText"
 PercentText.Size = UDim2.new(1, 0, 1, 0)
 PercentText.BackgroundTransparency = 1
@@ -282,7 +282,7 @@ PercentText.Font = Enum.Font.GothamBold
 PercentText.TextSize = 14
 PercentText.Parent = PercentCircle
 
-local IntroSound = Instance.new("Sound")
+IntroSound = Instance.new("Sound")
 IntroSound.Volume = 0.5
 IntroSound.PlayOnRemove = false
 IntroSound.Parent = IntroScreenGui
@@ -1077,29 +1077,29 @@ end
 -- ============================================================================
 -- MUSIC SESSION + PROFILE SERVICES
 -- ============================================================================
-local MUSIC_SESSION_FIREBASE_URL = "https://kmusicsessionxd-default-rtdb.asia-southeast1.firebasedatabase.app/"
-local MUSIC_SESSION_ROOT = MUSIC_SESSION_FIREBASE_URL .. "music_sessions"
-local MUSIC_ROSTER_URL = "https://raw.githubusercontent.com/basementfox98/DBforS2/refs/heads/main/db2"
-local KRONO_JOCKIE_NAME = "Krono Jockie"
-local KRONO_JOCKIE_USERNAME = "krono_jockie"
-local KRONO_JOCKIE_PFP = "7261787230"
+MUSIC_SESSION_FIREBASE_URL = "https://kmusicsessionxd-default-rtdb.asia-southeast1.firebasedatabase.app/"
+MUSIC_SESSION_ROOT = MUSIC_SESSION_FIREBASE_URL .. "music_sessions"
+MUSIC_ROSTER_URL = "https://raw.githubusercontent.com/basementfox98/DBforS2/refs/heads/main/db2"
+KRONO_JOCKIE_NAME = "Krono Jockie"
+KRONO_JOCKIE_USERNAME = "krono_jockie"
+KRONO_JOCKIE_PFP = "7261787230"
 
-local ActiveMusicSessionId = nil
-local ActiveMusicSessionData = nil
-local MusicSessionMuted = false
-local MusicSessionLastRevision = nil
-local MusicRoster = {}
-local MusicRosterLoaded = false
-local MusicRosterCategories = {}
+ActiveMusicSessionId = nil
+ActiveMusicSessionData = nil
+MusicSessionMuted = false
+MusicSessionLastRevision = nil
+MusicRoster = {}
+MusicRosterLoaded = false
+MusicRosterCategories = {}
 
-local MusicSessionSound = Instance.new("Sound")
+MusicSessionSound = Instance.new("Sound")
 MusicSessionSound.Name = "KronosMusicSessionAudio"
 MusicSessionSound.Volume = 0.5
 MusicSessionSound.Looped = false
 MusicSessionSound.Parent = SoundService
 
-local PROFILE_SAVE_PREFIX = "Kronos_Profile_"
-local ProfileSocials = { Instagram = "", Discord = "", Snapchat = "" }
+PROFILE_SAVE_PREFIX = "Kronos_Profile_"
+ProfileSocials = { Instagram = "", Discord = "", Snapchat = "" }
 local function LoadLocalText(key)
     if readfile and isfile and isfile(PROFILE_SAVE_PREFIX .. key .. ".txt") then
         local ok, value = pcall(function() return readfile(PROFILE_SAVE_PREFIX .. key .. ".txt") end)
@@ -1420,7 +1420,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.Enabled = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local MainFrame = Instance.new("Frame")
+MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 450, 0, 320)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1432,11 +1432,11 @@ MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = false
 MainFrame.Parent = ScreenGui
 
-local MainCorner = Instance.new("UICorner")
+MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 16)
 MainCorner.Parent = MainFrame
 
-local GlassGloss = Instance.new("Frame")
+GlassGloss = Instance.new("Frame")
 GlassGloss.Name = "GlassGloss"
 GlassGloss.Size = UDim2.new(1, 0, 0.45, 0)
 GlassGloss.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1444,18 +1444,18 @@ GlassGloss.BackgroundTransparency = 0.95
 GlassGloss.BorderSizePixel = 0
 GlassGloss.Parent = MainFrame
 
-local GlossCorner = Instance.new("UICorner")
+GlossCorner = Instance.new("UICorner")
 GlossCorner.CornerRadius = UDim.new(0, 16)
 GlossCorner.Parent = GlassGloss
 
-local MainStroke = Instance.new("UIStroke")
+MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2.5
 MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MainStroke.Transparency = 0.2
 MainStroke.Color = Color3.fromRGB(255, 0, 0)
 MainStroke.Parent = MainFrame
 
-local BorderGradient = Instance.new("UIGradient")
+BorderGradient = Instance.new("UIGradient")
 BorderGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 50, 50)),
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40, 40, 60)),
@@ -1467,7 +1467,7 @@ RunService.RenderStepped:Connect(function(dt)
     BorderGradient.Rotation = (BorderGradient.Rotation + (40 * dt)) % 360
 end)
 
-local HeaderBar = Instance.new("Frame")
+HeaderBar = Instance.new("Frame")
 HeaderBar.Name = "HeaderBar"
 HeaderBar.Size = UDim2.new(1, 0, 0, 36)
 HeaderBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
@@ -1475,11 +1475,11 @@ HeaderBar.BackgroundTransparency = 0.3
 HeaderBar.BorderSizePixel = 0
 HeaderBar.Parent = MainFrame
 
-local HeaderCorner = Instance.new("UICorner")
+HeaderCorner = Instance.new("UICorner")
 HeaderCorner.CornerRadius = UDim.new(0, 16)
 HeaderCorner.Parent = HeaderBar
 
-local GlobalTabBtn = Instance.new("TextButton")
+GlobalTabBtn = Instance.new("TextButton")
 GlobalTabBtn.Name = "GlobalTabBtn"
 GlobalTabBtn.Size = UDim2.new(0, 65, 0, 26)
 GlobalTabBtn.Position = UDim2.new(0, 6, 0, 5)
@@ -1491,11 +1491,11 @@ GlobalTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 GlobalTabBtn.TextSize = 10
 GlobalTabBtn.Parent = HeaderBar
 
-local GlobalTabCorner = Instance.new("UICorner")
+GlobalTabCorner = Instance.new("UICorner")
 GlobalTabCorner.CornerRadius = UDim.new(0, 8)
 GlobalTabCorner.Parent = GlobalTabBtn
 
-local ServerTabBtn = Instance.new("TextButton")
+ServerTabBtn = Instance.new("TextButton")
 ServerTabBtn.Name = "ServerTabBtn"
 ServerTabBtn.Size = UDim2.new(0, 65, 0, 26)
 ServerTabBtn.Position = UDim2.new(0, 75, 0, 5)
@@ -1507,11 +1507,11 @@ ServerTabBtn.TextColor3 = Color3.fromRGB(180, 180, 190)
 ServerTabBtn.TextSize = 10
 ServerTabBtn.Parent = HeaderBar
 
-local ServerTabCorner = Instance.new("UICorner")
+ServerTabCorner = Instance.new("UICorner")
 ServerTabCorner.CornerRadius = UDim.new(0, 8)
 ServerTabCorner.Parent = ServerTabBtn
 
-local AboutTabBtn = Instance.new("TextButton")
+AboutTabBtn = Instance.new("TextButton")
 AboutTabBtn.Name = "AboutTabBtn"
 AboutTabBtn.Size = UDim2.new(0, 60, 0, 26)
 AboutTabBtn.Position = UDim2.new(0, 144, 0, 5)
@@ -1523,11 +1523,11 @@ AboutTabBtn.TextColor3 = Color3.fromRGB(180, 180, 190)
 AboutTabBtn.TextSize = 10
 AboutTabBtn.Parent = HeaderBar
 
-local AboutTabCorner = Instance.new("UICorner")
+AboutTabCorner = Instance.new("UICorner")
 AboutTabCorner.CornerRadius = UDim.new(0, 8)
 AboutTabCorner.Parent = AboutTabBtn
 
-local MusicTabBtn = Instance.new("TextButton")
+MusicTabBtn = Instance.new("TextButton")
 MusicTabBtn.Name = "MusicSessionTabBtn"
 MusicTabBtn.Size = UDim2.new(0, 84, 0, 26)
 MusicTabBtn.Position = UDim2.new(0, 209, 0, 5)
@@ -1538,11 +1538,11 @@ MusicTabBtn.Text = "MUSIC"
 MusicTabBtn.TextColor3 = Color3.fromRGB(180, 180, 190)
 MusicTabBtn.TextSize = 10
 MusicTabBtn.Parent = HeaderBar
-local MusicTabCorner = Instance.new("UICorner")
+MusicTabCorner = Instance.new("UICorner")
 MusicTabCorner.CornerRadius = UDim.new(0, 8)
 MusicTabCorner.Parent = MusicTabBtn
 
-local ProfileTabBtn = Instance.new("TextButton")
+ProfileTabBtn = Instance.new("TextButton")
 ProfileTabBtn.Name = "ProfileTabBtn"
 ProfileTabBtn.Size = UDim2.new(0, 70, 0, 26)
 ProfileTabBtn.Position = UDim2.new(0, 298, 0, 5)
@@ -1553,11 +1553,11 @@ ProfileTabBtn.Text = "PROFILE"
 ProfileTabBtn.TextColor3 = Color3.fromRGB(180, 180, 190)
 ProfileTabBtn.TextSize = 10
 ProfileTabBtn.Parent = HeaderBar
-local ProfileTabCorner = Instance.new("UICorner")
+ProfileTabCorner = Instance.new("UICorner")
 ProfileTabCorner.CornerRadius = UDim.new(0, 8)
 ProfileTabCorner.Parent = ProfileTabBtn
 
-local KronosHeaderLabel = Instance.new("TextLabel")
+KronosHeaderLabel = Instance.new("TextLabel")
 KronosHeaderLabel.Name = "KronosHeaderLabel"
 KronosHeaderLabel.Size = UDim2.new(0, 64, 0, 26)
 KronosHeaderLabel.Position = UDim2.new(1, -70, 0, 5)
@@ -1580,7 +1580,7 @@ task.spawn(function()
     end
 end)
 
-local ToggleButton = Instance.new("TextButton")
+ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ChatToggleButton"
 ToggleButton.Size = UDim2.new(0, 116, 0, 40)
 ToggleButton.Position = UDim2.new(0.02, 0, 0.5, 0)
@@ -1595,20 +1595,20 @@ ToggleButton.Visible = true
 ToggleButton.ZIndex = 200
 ToggleButton.Parent = ScreenGui
 
-local ToggleCorner = Instance.new("UICorner")
+ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(0, 13)
 ToggleCorner.Parent = ToggleButton
 
-local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke = Instance.new("UIStroke")
 ToggleStroke.Thickness = 2.5
 ToggleStroke.Color = Color3.fromRGB(255, 0, 0)
 ToggleStroke.Transparency = 0.15
 ToggleStroke.Parent = ToggleButton
 
-local ToggleScale = Instance.new("UIScale")
+ToggleScale = Instance.new("UIScale")
 ToggleScale.Parent = ToggleButton
 
-local MainScale = Instance.new("UIScale")
+MainScale = Instance.new("UIScale")
 MainScale.Parent = MainFrame
 
 local ChatOriginalPosition = MainFrame.Position
@@ -1703,7 +1703,7 @@ ToggleButton.MouseButton1Click:Connect(function()
     SetChatVisibility(not ChatIsShown)
 end)
 
-local MessageContainer = Instance.new("ScrollingFrame")
+MessageContainer = Instance.new("ScrollingFrame")
 MessageContainer.Name = "MessageContainer"
 MessageContainer.Size = UDim2.new(1, -16, 1, -90)
 MessageContainer.Position = UDim2.new(0, 8, 0, 40)
@@ -1714,7 +1714,7 @@ MessageContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
 MessageContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 MessageContainer.Parent = MainFrame
 
-local UIListLayout = Instance.new("UIListLayout")
+UIListLayout = Instance.new("UIListLayout")
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 6)
 UIListLayout.Parent = MessageContainer
@@ -1725,7 +1725,7 @@ UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 end)
 
 -- Notification Container Frame
-local NotifContainerFrame = Instance.new("Frame")
+NotifContainerFrame = Instance.new("Frame")
 NotifContainerFrame.Name = "NotifContainerFrame"
 NotifContainerFrame.Size = UDim2.new(0, 350, 0, 40)
 NotifContainerFrame.Position = UDim2.new(0.5, -175, 0, 20)
@@ -1890,7 +1890,7 @@ local function DisplayNewMessageNotif(msgData, messageId)
 end
 
 -- Sticker Panel Initialization
-local StickerPanel = Instance.new("Frame")
+StickerPanel = Instance.new("Frame")
 StickerPanel.Name = "StickerPanel"
 StickerPanel.Size = UDim2.new(0, 260, 0, 200)
 StickerPanel.Position = UDim2.new(1, -268, 1, -250)
@@ -1901,17 +1901,17 @@ StickerPanel.Visible = false
 StickerPanel.ZIndex = 25
 StickerPanel.Parent = MainFrame
 
-local StickerPanelCorner = Instance.new("UICorner")
+StickerPanelCorner = Instance.new("UICorner")
 StickerPanelCorner.CornerRadius = UDim.new(0, 10)
 StickerPanelCorner.Parent = StickerPanel
 
-local StickerPanelStroke = Instance.new("UIStroke")
+StickerPanelStroke = Instance.new("UIStroke")
 StickerPanelStroke.Thickness = 1.5
 StickerPanelStroke.Color = Color3.fromRGB(220, 30, 30)
 StickerPanelStroke.Transparency = 0.4
 StickerPanelStroke.Parent = StickerPanel
 
-local StickerScroller = Instance.new("ScrollingFrame")
+StickerScroller = Instance.new("ScrollingFrame")
 StickerScroller.Name = "StickerScroller"
 StickerScroller.Size = UDim2.new(1, -12, 1, -12)
 StickerScroller.Position = UDim2.new(0, 6, 0, 6)
@@ -1922,7 +1922,7 @@ StickerScroller.ScrollBarImageColor3 = Color3.fromRGB(220, 30, 30)
 StickerScroller.ZIndex = 26
 StickerScroller.Parent = StickerPanel
 
-local StickerGrid = Instance.new("UIGridLayout")
+StickerGrid = Instance.new("UIGridLayout")
 StickerGrid.CellSize = UDim2.new(0, 70, 0, 70)
 StickerGrid.CellPadding = UDim2.new(0, 6, 0, 6)
 StickerGrid.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1962,7 +1962,7 @@ for _, stickerUrl in ipairs(baseStickers) do
 end
 
 -- About Section Configuration
-local AboutFrame = Instance.new("Frame")
+AboutFrame = Instance.new("Frame")
 AboutFrame.Name = "AboutFrame"
 AboutFrame.Size = UDim2.new(1, -16, 1, -48)
 AboutFrame.Position = UDim2.new(0, 8, 0, 40)
@@ -1973,7 +1973,7 @@ AboutFrame.Parent = MainFrame
 -- ============================================================================
 -- MUSIC SESSION TAB
 -- ============================================================================
-local MusicSessionFrame = Instance.new("ScrollingFrame")
+MusicSessionFrame = Instance.new("ScrollingFrame")
 MusicSessionFrame.Name = "MusicSessionFrame"
 MusicSessionFrame.Size = UDim2.new(1, -16, 1, -48)
 MusicSessionFrame.Position = UDim2.new(0, 8, 0, 40)
@@ -1985,22 +1985,22 @@ MusicSessionFrame.CanvasSize = UDim2.new(0, 0, 0, 390)
 MusicSessionFrame.Visible = false
 MusicSessionFrame.Parent = MainFrame
 
-local MusicTopCard = Instance.new("Frame")
+MusicTopCard = Instance.new("Frame")
 MusicTopCard.Size = UDim2.new(1, 0, 0, 82)
 MusicTopCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 MusicTopCard.BackgroundTransparency = 0.28
 MusicTopCard.BorderSizePixel = 0
 MusicTopCard.Parent = MusicSessionFrame
-local MusicTopCorner = Instance.new("UICorner")
+MusicTopCorner = Instance.new("UICorner")
 MusicTopCorner.CornerRadius = UDim.new(0, 10)
 MusicTopCorner.Parent = MusicTopCard
-local MusicTopStroke = Instance.new("UIStroke")
+MusicTopStroke = Instance.new("UIStroke")
 MusicTopStroke.Thickness = 1.2
 MusicTopStroke.Color = Color3.fromRGB(255, 0, 0)
 MusicTopStroke.Transparency = 0.55
 MusicTopStroke.Parent = MusicTopCard
 
-local MusicSessionTitle = Instance.new("TextLabel")
+MusicSessionTitle = Instance.new("TextLabel")
 MusicSessionTitle.Size = UDim2.new(1, -18, 0, 22)
 MusicSessionTitle.Position = UDim2.new(0, 9, 0, 6)
 MusicSessionTitle.BackgroundTransparency = 1
@@ -2011,7 +2011,7 @@ MusicSessionTitle.TextSize = 14
 MusicSessionTitle.TextXAlignment = Enum.TextXAlignment.Left
 MusicSessionTitle.Parent = MusicTopCard
 
-local MusicNowPlayingLabel = Instance.new("TextLabel")
+MusicNowPlayingLabel = Instance.new("TextLabel")
 MusicNowPlayingLabel.Size = UDim2.new(1, -18, 0, 20)
 MusicNowPlayingLabel.Position = UDim2.new(0, 9, 0, 28)
 MusicNowPlayingLabel.BackgroundTransparency = 1
@@ -2022,7 +2022,7 @@ MusicNowPlayingLabel.TextSize = 10
 MusicNowPlayingLabel.TextXAlignment = Enum.TextXAlignment.Left
 MusicNowPlayingLabel.Parent = MusicTopCard
 
-local MusicHostLabel = Instance.new("TextLabel")
+MusicHostLabel = Instance.new("TextLabel")
 MusicHostLabel.Size = UDim2.new(1, -18, 0, 18)
 MusicHostLabel.Position = UDim2.new(0, 9, 0, 49)
 MusicHostLabel.BackgroundTransparency = 1
@@ -2033,7 +2033,7 @@ MusicHostLabel.TextSize = 9
 MusicHostLabel.TextXAlignment = Enum.TextXAlignment.Left
 MusicHostLabel.Parent = MusicTopCard
 
-local MusicSessionIdLabel = Instance.new("TextLabel")
+MusicSessionIdLabel = Instance.new("TextLabel")
 MusicSessionIdLabel.Size = UDim2.new(0.55, 0, 0, 18)
 MusicSessionIdLabel.Position = UDim2.new(0, 9, 0, 64)
 MusicSessionIdLabel.BackgroundTransparency = 1
@@ -2044,7 +2044,7 @@ MusicSessionIdLabel.TextSize = 9
 MusicSessionIdLabel.TextXAlignment = Enum.TextXAlignment.Left
 MusicSessionIdLabel.Parent = MusicTopCard
 
-local MusicMuteButton = Instance.new("TextButton")
+MusicMuteButton = Instance.new("TextButton")
 MusicMuteButton.Size = UDim2.new(0, 90, 0, 25)
 MusicMuteButton.Position = UDim2.new(1, -99, 0, 52)
 MusicMuteButton.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
@@ -2054,7 +2054,7 @@ MusicMuteButton.Text = "🔊 MUTE"
 MusicMuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MusicMuteButton.TextSize = 9
 MusicMuteButton.Parent = MusicTopCard
-local MusicMuteCorner = Instance.new("UICorner")
+MusicMuteCorner = Instance.new("UICorner")
 MusicMuteCorner.CornerRadius = UDim.new(0, 7)
 MusicMuteCorner.Parent = MusicMuteButton
 MusicMuteButton.MouseButton1Click:Connect(function()
@@ -2063,7 +2063,7 @@ MusicMuteButton.MouseButton1Click:Connect(function()
     MusicMuteButton.Text = MusicSessionMuted and "🔇 UNMUTE" or "🔊 MUTE"
 end)
 
-local function MusicMakeButton(parent, name, text, pos, size)
+function MusicMakeButton(parent, name, text, pos, size)
     local b = Instance.new("TextButton")
     b.Name = name
     b.Size = size
@@ -2082,11 +2082,11 @@ local function MusicMakeButton(parent, name, text, pos, size)
     return b
 end
 
-local StartMusicSessionButton = MusicMakeButton(MusicSessionFrame, "StartMusicSessionButton", "START SESSION", UDim2.new(0, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
-local JoinMusicSessionButton = MusicMakeButton(MusicSessionFrame, "JoinMusicSessionButton", "JOIN SESSION", UDim2.new(0.34, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
-local EndMusicSessionButton = MusicMakeButton(MusicSessionFrame, "EndMusicSessionButton", "LEAVE / END", UDim2.new(0.68, 0, 0, 88), UDim2.new(0.32, 0, 0, 28))
+StartMusicSessionButton = MusicMakeButton(MusicSessionFrame, "StartMusicSessionButton", "START SESSION", UDim2.new(0, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
+JoinMusicSessionButton = MusicMakeButton(MusicSessionFrame, "JoinMusicSessionButton", "JOIN SESSION", UDim2.new(0.34, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
+EndMusicSessionButton = MusicMakeButton(MusicSessionFrame, "EndMusicSessionButton", "LEAVE / END", UDim2.new(0.68, 0, 0, 88), UDim2.new(0.32, 0, 0, 28))
 
-local MusicSessionIdInput = Instance.new("TextBox")
+MusicSessionIdInput = Instance.new("TextBox")
 MusicSessionIdInput.Size = UDim2.new(1, 0, 0, 30)
 MusicSessionIdInput.Position = UDim2.new(0, 0, 0, 120)
 MusicSessionIdInput.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -2100,14 +2100,14 @@ MusicSessionIdInput.TextColor3 = Color3.fromRGB(240, 240, 245)
 MusicSessionIdInput.TextSize = 11
 MusicSessionIdInput.ClearTextOnFocus = false
 MusicSessionIdInput.Parent = MusicSessionFrame
-local MusicSessionIdCorner = Instance.new("UICorner")
+MusicSessionIdCorner = Instance.new("UICorner")
 MusicSessionIdCorner.CornerRadius = UDim.new(0, 8)
 MusicSessionIdCorner.Parent = MusicSessionIdInput
 
-local MusicInviteGlobalButton = MusicMakeButton(MusicSessionFrame, "MusicInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 0, 0, 156), UDim2.new(0.5, -4, 0, 27))
-local MusicInviteServerButton = MusicMakeButton(MusicSessionFrame, "MusicInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 4, 0, 156), UDim2.new(0.5, -4, 0, 27))
+MusicInviteGlobalButton = MusicMakeButton(MusicSessionFrame, "MusicInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 0, 0, 156), UDim2.new(0.5, -4, 0, 27))
+MusicInviteServerButton = MusicMakeButton(MusicSessionFrame, "MusicInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 4, 0, 156), UDim2.new(0.5, -4, 0, 27))
 
-local MusicCustomIdInput = Instance.new("TextBox")
+MusicCustomIdInput = Instance.new("TextBox")
 MusicCustomIdInput.Size = UDim2.new(1, 0, 0, 28)
 MusicCustomIdInput.Position = UDim2.new(0, 0, 0, 191)
 MusicCustomIdInput.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -2121,14 +2121,14 @@ MusicCustomIdInput.TextColor3 = Color3.fromRGB(240, 240, 245)
 MusicCustomIdInput.TextSize = 10
 MusicCustomIdInput.ClearTextOnFocus = false
 MusicCustomIdInput.Parent = MusicSessionFrame
-local MusicCustomCorner = Instance.new("UICorner")
+MusicCustomCorner = Instance.new("UICorner")
 MusicCustomCorner.CornerRadius = UDim.new(0, 8)
 MusicCustomCorner.Parent = MusicCustomIdInput
 
-local MusicCustomPlayButton = MusicMakeButton(MusicSessionFrame, "MusicCustomPlayButton", "PLAY CUSTOM", UDim2.new(0, 0, 0, 223), UDim2.new(0.5, -4, 0, 27))
-local MusicStopButton = MusicMakeButton(MusicSessionFrame, "MusicStopButton", "STOP MUSIC", UDim2.new(0.5, 4, 0, 223), UDim2.new(0.5, -4, 0, 27))
+MusicCustomPlayButton = MusicMakeButton(MusicSessionFrame, "MusicCustomPlayButton", "PLAY CUSTOM", UDim2.new(0, 0, 0, 223), UDim2.new(0.5, -4, 0, 27))
+MusicStopButton = MusicMakeButton(MusicSessionFrame, "MusicStopButton", "STOP MUSIC", UDim2.new(0.5, 4, 0, 223), UDim2.new(0.5, -4, 0, 27))
 
-local MusicCategoryFrame = Instance.new("ScrollingFrame")
+MusicCategoryFrame = Instance.new("ScrollingFrame")
 MusicCategoryFrame.Size = UDim2.new(1, 0, 0, 29)
 MusicCategoryFrame.Position = UDim2.new(0, 0, 0, 255)
 MusicCategoryFrame.BackgroundTransparency = 1
@@ -2136,12 +2136,12 @@ MusicCategoryFrame.BorderSizePixel = 0
 MusicCategoryFrame.ScrollBarThickness = 2
 MusicCategoryFrame.ScrollingDirection = Enum.ScrollingDirection.X
 MusicCategoryFrame.Parent = MusicSessionFrame
-local MusicCategoryLayout = Instance.new("UIListLayout")
+MusicCategoryLayout = Instance.new("UIListLayout")
 MusicCategoryLayout.FillDirection = Enum.FillDirection.Horizontal
 MusicCategoryLayout.Padding = UDim.new(0, 5)
 MusicCategoryLayout.Parent = MusicCategoryFrame
 
-local MusicSongScroller = Instance.new("ScrollingFrame")
+MusicSongScroller = Instance.new("ScrollingFrame")
 MusicSongScroller.Size = UDim2.new(1, 0, 0, 95)
 MusicSongScroller.Position = UDim2.new(0, 0, 0, 286)
 MusicSongScroller.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
@@ -2150,7 +2150,7 @@ MusicSongScroller.BorderSizePixel = 0
 MusicSongScroller.ScrollBarThickness = 3
 MusicSongScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
 MusicSongScroller.Parent = MusicSessionFrame
-local MusicSongLayout = Instance.new("UIListLayout")
+MusicSongLayout = Instance.new("UIListLayout")
 MusicSongLayout.SortOrder = Enum.SortOrder.Name
 MusicSongLayout.Padding = UDim.new(0, 3)
 MusicSongLayout.Parent = MusicSongScroller
@@ -2158,8 +2158,8 @@ MusicSongLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function
     MusicSongScroller.CanvasSize = UDim2.new(0, 0, 0, MusicSongLayout.AbsoluteContentSize.Y + 8)
 end)
 
-local MusicSelectedCategory = nil
-local function UpdateMusicSessionDisplay()
+MusicSelectedCategory = nil
+function UpdateMusicSessionDisplay()
     local data = ActiveMusicSessionData
     if not data then
         MusicNowPlayingLabel.Text = "Not in a music session"
@@ -2173,7 +2173,7 @@ local function UpdateMusicSessionDisplay()
     MusicSessionIdLabel.Text = "Session ID: " .. tostring(ActiveMusicSessionId or "—")
 end
 
-local function RenderMusicSongList(category)
+function RenderMusicSongList(category)
     MusicSelectedCategory = category
     for _, child in ipairs(MusicSongScroller:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
@@ -2227,7 +2227,7 @@ local function RenderMusicSongList(category)
     end
 end
 
-local function RenderMusicCategories()
+function RenderMusicCategories()
     for _, child in ipairs(MusicCategoryFrame:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
@@ -2261,7 +2261,7 @@ task.spawn(function()
     RenderMusicCategories()
 end)
 
-local function StartOwnMusicSession()
+function StartOwnMusicSession()
     if ActiveMusicSessionId then
         ShowLocalSystemMessage("[AI MoD] : You already have a Music Session: " .. ActiveMusicSessionId)
         return
@@ -2293,7 +2293,7 @@ local function StartOwnMusicSession()
     end
 end
 
-local function JoinMusicSessionById(id)
+function JoinMusicSessionById(id)
     id = tostring(id or ""):upper():gsub("%s+", "")
     if id == "" then
         ShowLocalSystemMessage("[AI MoD] : Enter a Session ID first.", true)
@@ -2318,7 +2318,7 @@ local function JoinMusicSessionById(id)
     ShowLocalSystemMessage("[AI MoD] : Joined Music Session " .. id .. " hosted by " .. tostring(data.HostDisplayName or data.HostUsername) .. " ✓")
 end
 
-local function LeaveOrEndMusicSession()
+function LeaveOrEndMusicSession()
     if not ActiveMusicSessionId then return end
     local id = ActiveMusicSessionId
     local isHost = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
@@ -2336,7 +2336,7 @@ local function LeaveOrEndMusicSession()
     UpdateMusicSessionDisplay()
 end
 
-local function HostSetMusic(id, name)
+function HostSetMusic(id, name)
     if not ActiveMusicSessionId or not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
         ShowLocalSystemMessage("[AI MoD] : Start/host a Music Session first.", true)
         return
@@ -2367,7 +2367,7 @@ local function HostSetMusic(id, name)
     UpdateMusicSessionDisplay()
 end
 
-local function HostStopMusic()
+function HostStopMusic()
     if not ActiveMusicSessionId or not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
         ShowLocalSystemMessage("[AI MoD] : Only the Music Session Host can stop music.", true)
         return
@@ -2392,7 +2392,7 @@ local function HostStopMusic()
     UpdateMusicSessionDisplay()
 end
 
-local function SendMusicSessionInvite(isGlobal)
+function SendMusicSessionInvite(isGlobal)
     if not ActiveMusicSessionId or not ActiveMusicSessionData then
         ShowLocalSystemMessage("[AI MoD] : Start or join a Music Session first.", true)
         return
@@ -2434,7 +2434,7 @@ MusicInviteServerButton.MouseButton1Click:Connect(function() SendMusicSessionInv
 -- ============================================================================
 -- PROFILE TAB
 -- ============================================================================
-local ProfileFrame = Instance.new("ScrollingFrame")
+ProfileFrame = Instance.new("ScrollingFrame")
 ProfileFrame.Name = "ProfileFrame"
 ProfileFrame.Size = UDim2.new(1, -16, 1, -48)
 ProfileFrame.Position = UDim2.new(0, 8, 0, 40)
@@ -2446,28 +2446,28 @@ ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 335)
 ProfileFrame.Visible = false
 ProfileFrame.Parent = MainFrame
 
-local ProfileHeaderCard = Instance.new("Frame")
+ProfileHeaderCard = Instance.new("Frame")
 ProfileHeaderCard.Size = UDim2.new(1, 0, 0, 86)
 ProfileHeaderCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfileHeaderCard.BackgroundTransparency = 0.28
 ProfileHeaderCard.BorderSizePixel = 0
 ProfileHeaderCard.Parent = ProfileFrame
-local ProfileHeaderCorner = Instance.new("UICorner")
+ProfileHeaderCorner = Instance.new("UICorner")
 ProfileHeaderCorner.CornerRadius = UDim.new(0, 10)
 ProfileHeaderCorner.Parent = ProfileHeaderCard
 
-local ProfilePfp = Instance.new("ImageLabel")
+ProfilePfp = Instance.new("ImageLabel")
 ProfilePfp.Name = "ProfilePfp"
 ProfilePfp.Size = UDim2.new(0, 64, 0, 64)
 ProfilePfp.Position = UDim2.new(0, 10, 0, 11)
 ProfilePfp.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 ProfilePfp.Image = "rbxthumb://type=Asset&id=" .. tostring(CurrentPfpId) .. "&w=420&h=420"
 ProfilePfp.Parent = ProfileHeaderCard
-local ProfilePfpCorner = Instance.new("UICorner")
+ProfilePfpCorner = Instance.new("UICorner")
 ProfilePfpCorner.CornerRadius = UDim.new(1, 0)
 ProfilePfpCorner.Parent = ProfilePfp
 
-local ProfileDisplayName = Instance.new("TextLabel")
+ProfileDisplayName = Instance.new("TextLabel")
 ProfileDisplayName.Size = UDim2.new(1, -88, 0, 32)
 ProfileDisplayName.Position = UDim2.new(0, 84, 0, 13)
 ProfileDisplayName.BackgroundTransparency = 1
@@ -2477,10 +2477,10 @@ ProfileDisplayName.TextColor3 = Color3.fromRGB(255, 255, 255)
 ProfileDisplayName.TextSize = 21
 ProfileDisplayName.TextXAlignment = Enum.TextXAlignment.Left
 ProfileDisplayName.Parent = ProfileHeaderCard
-local ProfileRole = GetAssignedOrCalculatedRole(LocalPlayer.Name)
+ProfileRole = GetAssignedOrCalculatedRole(LocalPlayer.Name)
 AnimateRoleFont(ProfileDisplayName, ProfileRole, RANK_STYLES[ProfileRole] or RANK_STYLES["VIP"])
 
-local ProfileUsername = Instance.new("TextLabel")
+ProfileUsername = Instance.new("TextLabel")
 ProfileUsername.Size = UDim2.new(1, -88, 0, 20)
 ProfileUsername.Position = UDim2.new(0, 84, 0, 48)
 ProfileUsername.BackgroundTransparency = 1
@@ -2491,18 +2491,18 @@ ProfileUsername.TextSize = 11
 ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
 ProfileUsername.Parent = ProfileHeaderCard
 
-local ProfileSocialCard = Instance.new("Frame")
+ProfileSocialCard = Instance.new("Frame")
 ProfileSocialCard.Size = UDim2.new(1, 0, 0, 108)
 ProfileSocialCard.Position = UDim2.new(0, 0, 0, 92)
 ProfileSocialCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfileSocialCard.BackgroundTransparency = 0.3
 ProfileSocialCard.BorderSizePixel = 0
 ProfileSocialCard.Parent = ProfileFrame
-local ProfileSocialCorner = Instance.new("UICorner")
+ProfileSocialCorner = Instance.new("UICorner")
 ProfileSocialCorner.CornerRadius = UDim.new(0, 10)
 ProfileSocialCorner.Parent = ProfileSocialCard
 
-local function ProfileSocialButton(name, text, imageId, pos)
+function ProfileSocialButton(name, text, imageId, pos)
     local b = Instance.new("ImageButton")
     b.Name = name
     b.Size = UDim2.new(0.23, 0, 0, 42)
@@ -2528,12 +2528,12 @@ local function ProfileSocialButton(name, text, imageId, pos)
     return b
 end
 
-local InstagramButton = ProfileSocialButton("InstagramButton", "INSTAGRAM", "18355586412", UDim2.new(0.01,0,0,10))
-local DiscordButton = ProfileSocialButton("DiscordButton", "DISCORD", "10367063084", UDim2.new(0.255,0,0,10))
-local SnapchatButton = ProfileSocialButton("SnapchatButton", "SNAPCHAT", "385616312", UDim2.new(0.50,0,0,10))
-local ProfileShareButton = ProfileSocialButton("ProfileShareButton", "SHARE", "0", UDim2.new(0.745,0,0,10))
+InstagramButton = ProfileSocialButton("InstagramButton", "INSTAGRAM", "18355586412", UDim2.new(0.01,0,0,10))
+DiscordButton = ProfileSocialButton("DiscordButton", "DISCORD", "10367063084", UDim2.new(0.255,0,0,10))
+SnapchatButton = ProfileSocialButton("SnapchatButton", "SNAPCHAT", "385616312", UDim2.new(0.50,0,0,10))
+ProfileShareButton = ProfileSocialButton("ProfileShareButton", "SHARE", "0", UDim2.new(0.745,0,0,10))
 ProfileShareButton.Image = ""
-local ProfileShareGlyph = Instance.new("TextLabel")
+ProfileShareGlyph = Instance.new("TextLabel")
 ProfileShareGlyph.Size = UDim2.new(1,0,1,-14)
 ProfileShareGlyph.Position = UDim2.new(0,0,0,-1)
 ProfileShareGlyph.BackgroundTransparency = 1
@@ -2543,7 +2543,7 @@ ProfileShareGlyph.TextSize = 22
 ProfileShareGlyph.TextColor3 = Color3.fromRGB(255,255,255)
 ProfileShareGlyph.Parent = ProfileShareButton
 
-local ProfileSocialStatus = Instance.new("TextLabel")
+ProfileSocialStatus = Instance.new("TextLabel")
 ProfileSocialStatus.Size = UDim2.new(1, -16, 0, 40)
 ProfileSocialStatus.Position = UDim2.new(0, 8, 0, 58)
 ProfileSocialStatus.BackgroundTransparency = 1
@@ -2554,18 +2554,18 @@ ProfileSocialStatus.TextSize = 8
 ProfileSocialStatus.TextWrapped = true
 ProfileSocialStatus.Parent = ProfileSocialCard
 
-local ProfilePfpCard = Instance.new("Frame")
+ProfilePfpCard = Instance.new("Frame")
 ProfilePfpCard.Size = UDim2.new(1, 0, 0, 112)
 ProfilePfpCard.Position = UDim2.new(0, 0, 0, 208)
 ProfilePfpCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfilePfpCard.BackgroundTransparency = 0.3
 ProfilePfpCard.BorderSizePixel = 0
 ProfilePfpCard.Parent = ProfileFrame
-local ProfilePfpCardCorner = Instance.new("UICorner")
+ProfilePfpCardCorner = Instance.new("UICorner")
 ProfilePfpCardCorner.CornerRadius = UDim.new(0, 10)
 ProfilePfpCardCorner.Parent = ProfilePfpCard
 
-local ProfilePfpTitle = Instance.new("TextLabel")
+ProfilePfpTitle = Instance.new("TextLabel")
 ProfilePfpTitle.Size = UDim2.new(1,-16,0,20)
 ProfilePfpTitle.Position = UDim2.new(0,8,0,6)
 ProfilePfpTitle.BackgroundTransparency = 1
@@ -2576,7 +2576,7 @@ ProfilePfpTitle.TextSize = 10
 ProfilePfpTitle.TextXAlignment = Enum.TextXAlignment.Left
 ProfilePfpTitle.Parent = ProfilePfpCard
 
-local PfpCustomInput = Instance.new("TextBox")
+PfpCustomInput = Instance.new("TextBox")
 PfpCustomInput.Size = UDim2.new(0.55, -4, 0, 27)
 PfpCustomInput.Position = UDim2.new(0,8,0,31)
 PfpCustomInput.BackgroundColor3 = Color3.fromRGB(25,25,38)
@@ -2588,14 +2588,14 @@ PfpCustomInput.Text = ""
 PfpCustomInput.TextColor3 = Color3.fromRGB(235,235,240)
 PfpCustomInput.TextSize = 9
 PfpCustomInput.Parent = ProfilePfpCard
-local PfpCustomCorner = Instance.new("UICorner")
+PfpCustomCorner = Instance.new("UICorner")
 PfpCustomCorner.CornerRadius = UDim.new(0,7)
 PfpCustomCorner.Parent = PfpCustomInput
 
-local PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0.55,4,0,31), UDim2.new(0.22,-4,0,27))
-local PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0.78,0,0,31), UDim2.new(0.22,-8,0,27))
+PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0.55,4,0,31), UDim2.new(0.22,-4,0,27))
+PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0.78,0,0,31), UDim2.new(0.22,-8,0,27))
 
-local PfpListScroller = Instance.new("ScrollingFrame")
+PfpListScroller = Instance.new("ScrollingFrame")
 PfpListScroller.Size = UDim2.new(1,-16,0,43)
 PfpListScroller.Position = UDim2.new(0,8,0,63)
 PfpListScroller.BackgroundTransparency = 1
@@ -2603,12 +2603,12 @@ PfpListScroller.BorderSizePixel = 0
 PfpListScroller.ScrollBarThickness = 2
 PfpListScroller.ScrollingDirection = Enum.ScrollingDirection.X
 PfpListScroller.Parent = ProfilePfpCard
-local PfpListLayout = Instance.new("UIListLayout")
+PfpListLayout = Instance.new("UIListLayout")
 PfpListLayout.FillDirection = Enum.FillDirection.Horizontal
 PfpListLayout.Padding = UDim.new(0,4)
 PfpListLayout.Parent = PfpListScroller
 
-local function SetProfilePfp(id)
+function SetProfilePfp(id)
     id = tostring(id or ""):match("%d+") or ""
     if id == "" then return end
     SavePfpIdLocally(id)
@@ -2618,13 +2618,13 @@ end
 
 for _, list in ipairs({BoyPfpList, GirlPfpList}) do
     for _, id in ipairs(list) do
-        local b = Instance.new("ImageButton")
+        b = Instance.new("ImageButton")
         b.Size = UDim2.new(0,36,0,36)
         b.BackgroundColor3 = Color3.fromRGB(25,25,38)
         b.BackgroundTransparency = 0.15
         b.Image = "rbxthumb://type=Asset&id=" .. tostring(id) .. "&w=100&h=100"
         b.Parent = PfpListScroller
-        local c = Instance.new("UICorner")
+        c = Instance.new("UICorner")
         c.CornerRadius = UDim.new(1,0)
         c.Parent = b
         b.MouseButton1Click:Connect(function() SetProfilePfp(id) end)
@@ -2639,7 +2639,7 @@ PfpRandomButton.MouseButton1Click:Connect(function()
     if #combined > 0 then SetProfilePfp(combined[math.random(1,#combined)]) end
 end)
 
-local ProfilePopup = Instance.new("Frame")
+ProfilePopup = Instance.new("Frame")
 ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
 ProfilePopup.Position = UDim2.new(0.5, -150, 0.5, -59)
 ProfilePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
@@ -2648,10 +2648,10 @@ ProfilePopup.BorderSizePixel = 0
 ProfilePopup.Visible = false
 ProfilePopup.ZIndex = 80
 ProfilePopup.Parent = ScreenGui
-local ProfilePopupCorner = Instance.new("UICorner")
+ProfilePopupCorner = Instance.new("UICorner")
 ProfilePopupCorner.CornerRadius = UDim.new(0,10)
 ProfilePopupCorner.Parent = ProfilePopup
-local ProfilePopupTitle = Instance.new("TextLabel")
+ProfilePopupTitle = Instance.new("TextLabel")
 ProfilePopupTitle.Size = UDim2.new(1,-16,0,22)
 ProfilePopupTitle.Position = UDim2.new(0,8,0,6)
 ProfilePopupTitle.BackgroundTransparency = 1
@@ -2661,7 +2661,7 @@ ProfilePopupTitle.TextColor3 = Color3.fromRGB(255,255,255)
 ProfilePopupTitle.TextSize = 11
 ProfilePopupTitle.TextXAlignment = Enum.TextXAlignment.Left
 ProfilePopupTitle.Parent = ProfilePopup
-local ProfilePopupInput = Instance.new("TextBox")
+ProfilePopupInput = Instance.new("TextBox")
 ProfilePopupInput.Size = UDim2.new(1,-16,0,30)
 ProfilePopupInput.Position = UDim2.new(0,8,0,32)
 ProfilePopupInput.BackgroundColor3 = Color3.fromRGB(30,30,42)
@@ -2672,14 +2672,14 @@ ProfilePopupInput.TextColor3 = Color3.fromRGB(240,240,245)
 ProfilePopupInput.TextSize = 10
 ProfilePopupInput.ClearTextOnFocus = false
 ProfilePopupInput.Parent = ProfilePopup
-local ProfilePopupInputCorner = Instance.new("UICorner")
+ProfilePopupInputCorner = Instance.new("UICorner")
 ProfilePopupInputCorner.CornerRadius = UDim.new(0,7)
 ProfilePopupInputCorner.Parent = ProfilePopupInput
-local ProfilePopupSave = MusicMakeButton(ProfilePopup, "ProfilePopupSave", "SAVE", UDim2.new(0,8,0,68), UDim2.new(0.48,-6,0,28))
-local ProfilePopupCancel = MusicMakeButton(ProfilePopup, "ProfilePopupCancel", "CANCEL", UDim2.new(0.52,0,0,68), UDim2.new(0.48,-8,0,28))
+ProfilePopupSave = MusicMakeButton(ProfilePopup, "ProfilePopupSave", "SAVE", UDim2.new(0,8,0,68), UDim2.new(0.48,-6,0,28))
+ProfilePopupCancel = MusicMakeButton(ProfilePopup, "ProfilePopupCancel", "CANCEL", UDim2.new(0.52,0,0,68), UDim2.new(0.48,-8,0,28))
 
-local ActiveSocialKey = nil
-local function OpenSocialPopup(key)
+ActiveSocialKey = nil
+function OpenSocialPopup(key)
     ActiveSocialKey = key
     ProfilePopupTitle.Text = string.upper(key) .. " USERNAME"
     ProfilePopupInput.Text = ProfileSocials[key] or ""
@@ -2700,7 +2700,7 @@ ProfilePopupSave.MouseButton1Click:Connect(function()
     ProfilePopup.Visible = false
 end)
 
-local ProfileSharePopup = Instance.new("Frame")
+ProfileSharePopup = Instance.new("Frame")
 ProfileSharePopup.Size = UDim2.new(0, 260, 0, 90)
 ProfileSharePopup.Position = UDim2.new(0.5,-130,0.5,-45)
 ProfileSharePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
@@ -2709,10 +2709,10 @@ ProfileSharePopup.BorderSizePixel = 0
 ProfileSharePopup.Visible = false
 ProfileSharePopup.ZIndex = 80
 ProfileSharePopup.Parent = ScreenGui
-local ShareCorner = Instance.new("UICorner")
+ShareCorner = Instance.new("UICorner")
 ShareCorner.CornerRadius = UDim.new(0,10)
 ShareCorner.Parent = ProfileSharePopup
-local ShareTitle = Instance.new("TextLabel")
+ShareTitle = Instance.new("TextLabel")
 ShareTitle.Size = UDim2.new(1,-16,0,22)
 ShareTitle.Position = UDim2.new(0,8,0,6)
 ShareTitle.BackgroundTransparency = 1
@@ -2721,10 +2721,10 @@ ShareTitle.Text = "SHARE PROFILE TO"
 ShareTitle.TextColor3 = Color3.fromRGB(255,255,255)
 ShareTitle.TextSize = 11
 ShareTitle.Parent = ProfileSharePopup
-local ShareGlobal = MusicMakeButton(ProfileSharePopup, "ShareGlobal", "GLOBAL", UDim2.new(0,8,0,36), UDim2.new(0.48,-6,0,28))
-local ShareServer = MusicMakeButton(ProfileSharePopup, "ShareServer", "SERVER", UDim2.new(0.52,0,0,36), UDim2.new(0.48,-8,0,28))
+ShareGlobal = MusicMakeButton(ProfileSharePopup, "ShareGlobal", "GLOBAL", UDim2.new(0,8,0,36), UDim2.new(0.48,-6,0,28))
+ShareServer = MusicMakeButton(ProfileSharePopup, "ShareServer", "SERVER", UDim2.new(0.52,0,0,36), UDim2.new(0.48,-8,0,28))
 ProfileShareButton.MouseButton1Click:Connect(function() ProfileSharePopup.Visible = true end)
-local function SendProfileShare(isGlobal)
+function SendProfileShare(isGlobal)
     local instagram = ProfileSocials.Instagram
     local discord = ProfileSocials.Discord
     local snapchat = ProfileSocials.Snapchat
@@ -2761,7 +2761,7 @@ ShareGlobal.MouseButton1Click:Connect(function() SendProfileShare(true) end)
 ShareServer.MouseButton1Click:Connect(function() SendProfileShare(false) end)
 
 -- About Section Configuration
-local TagScrollFrame = Instance.new("ScrollingFrame")
+TagScrollFrame = Instance.new("ScrollingFrame")
 TagScrollFrame.Name = "TagScrollFrame"
 TagScrollFrame.Size = UDim2.new(1, 0, 0, 36)
 TagScrollFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -2774,17 +2774,17 @@ TagScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 TagScrollFrame.HorizontalScrollBarInset = Enum.ScrollBarInset.ScrollBar
 TagScrollFrame.Parent = AboutFrame
 
-local TagScrollCorner = Instance.new("UICorner")
+TagScrollCorner = Instance.new("UICorner")
 TagScrollCorner.CornerRadius = UDim.new(0, 8)
 TagScrollCorner.Parent = TagScrollFrame
 
-local TagListLayout = Instance.new("UIListLayout")
+TagListLayout = Instance.new("UIListLayout")
 TagListLayout.FillDirection = Enum.FillDirection.Horizontal
 TagListLayout.SortOrder = Enum.SortOrder.Name
 TagListLayout.Padding = UDim.new(0, 6)
 TagListLayout.Parent = TagScrollFrame
 
-local TagPadding = Instance.new("UIPadding")
+TagPadding = Instance.new("UIPadding")
 TagPadding.PaddingLeft = UDim.new(0, 6)
 TagPadding.PaddingRight = UDim.new(0, 6)
 TagPadding.PaddingTop = UDim.new(0, 5)
@@ -2834,7 +2834,7 @@ end
 
 PopulateTagBar()
 
-local AboutInfoScroll = Instance.new("ScrollingFrame")
+AboutInfoScroll = Instance.new("ScrollingFrame")
 AboutInfoScroll.Name = "AboutInfoScroll"
 AboutInfoScroll.Size = UDim2.new(1, 0, 0, 125)
 AboutInfoScroll.Position = UDim2.new(0, 0, 0, 42)
@@ -2845,11 +2845,11 @@ AboutInfoScroll.ScrollBarThickness = 3
 AboutInfoScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
 AboutInfoScroll.Parent = AboutFrame
 
-local AboutInfoCorner = Instance.new("UICorner")
+AboutInfoCorner = Instance.new("UICorner")
 AboutInfoCorner.CornerRadius = UDim.new(0, 8)
 AboutInfoCorner.Parent = AboutInfoScroll
 
-local AboutTextLabel = Instance.new("TextLabel")
+AboutTextLabel = Instance.new("TextLabel")
 AboutTextLabel.Size = UDim2.new(1, -12, 0, 0)
 AboutTextLabel.Position = UDim2.new(0, 6, 0, 6)
 AboutTextLabel.AutomaticSize = Enum.AutomaticSize.Y
@@ -2885,7 +2885,7 @@ AboutTextLabel:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
     AboutInfoScroll.CanvasSize = UDim2.new(0, 0, 0, AboutTextLabel.AbsoluteSize.Y + 16)
 end)
 
-local RequestContainer = Instance.new("Frame")
+RequestContainer = Instance.new("Frame")
 RequestContainer.Name = "RequestContainer"
 RequestContainer.Size = UDim2.new(1, 0, 0, 98)
 RequestContainer.Position = UDim2.new(0, 0, 0, 172)
@@ -2894,11 +2894,11 @@ RequestContainer.BackgroundTransparency = 0.4
 RequestContainer.BorderSizePixel = 0
 RequestContainer.Parent = AboutFrame
 
-local RequestCorner = Instance.new("UICorner")
+RequestCorner = Instance.new("UICorner")
 RequestCorner.CornerRadius = UDim.new(0, 8)
 RequestCorner.Parent = RequestContainer
 
-local RequestHeader = Instance.new("TextLabel")
+RequestHeader = Instance.new("TextLabel")
 RequestHeader.Size = UDim2.new(1, -10, 0, 18)
 RequestHeader.Position = UDim2.new(0, 8, 0, 4)
 RequestHeader.BackgroundTransparency = 1
@@ -2909,7 +2909,7 @@ RequestHeader.TextSize = 10
 RequestHeader.TextXAlignment = Enum.TextXAlignment.Left
 RequestHeader.Parent = RequestContainer
 
-local RequestInput = Instance.new("TextBox")
+RequestInput = Instance.new("TextBox")
 RequestInput.Name = "RequestInput"
 RequestInput.Size = UDim2.new(1, -16, 0, 44)
 RequestInput.Position = UDim2.new(0, 8, 0, 22)
@@ -2927,11 +2927,11 @@ RequestInput.ClearTextOnFocus = false
 RequestInput.TextWrapped = true
 RequestInput.Parent = RequestContainer
 
-local RequestInputCorner = Instance.new("UICorner")
+RequestInputCorner = Instance.new("UICorner")
 RequestInputCorner.CornerRadius = UDim.new(0, 6)
 RequestInputCorner.Parent = RequestInput
 
-local SubmitRequestBtn = Instance.new("TextButton")
+SubmitRequestBtn = Instance.new("TextButton")
 SubmitRequestBtn.Name = "SubmitRequestBtn"
 SubmitRequestBtn.Size = UDim2.new(0, 110, 0, 22)
 SubmitRequestBtn.Position = UDim2.new(1, -118, 0, 70)
@@ -2943,7 +2943,7 @@ SubmitRequestBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SubmitRequestBtn.TextSize = 10
 SubmitRequestBtn.Parent = RequestContainer
 
-local SubmitCorner = Instance.new("UICorner")
+SubmitCorner = Instance.new("UICorner")
 SubmitCorner.CornerRadius = UDim.new(0, 6)
 SubmitCorner.Parent = SubmitRequestBtn
 
@@ -2980,7 +2980,7 @@ SubmitRequestBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Input Setup
-local InputBarFrame = Instance.new("Frame")
+InputBarFrame = Instance.new("Frame")
 InputBarFrame.Name = "InputBarFrame"
 InputBarFrame.Size = UDim2.new(1, -16, 0, 38)
 InputBarFrame.Position = UDim2.new(0, 8, 1, -44)
@@ -2989,7 +2989,7 @@ InputBarFrame.BackgroundTransparency = 0.4
 InputBarFrame.BorderSizePixel = 0
 InputBarFrame.Parent = MainFrame
 
-local InputCorner = Instance.new("UICorner")
+InputCorner = Instance.new("UICorner")
 InputCorner.CornerRadius = UDim.new(0, 12)
 InputCorner.Parent = InputBarFrame
 
@@ -3008,7 +3008,7 @@ MessageInput.TextXAlignment = Enum.TextXAlignment.Left
 MessageInput.ClearTextOnFocus = false
 MessageInput.Parent = InputBarFrame
 
-local StickerToggleButton = Instance.new("TextButton")
+StickerToggleButton = Instance.new("TextButton")
 StickerToggleButton.Name = "StickerToggleButton"
 StickerToggleButton.Size = UDim2.new(0, 34, 1, -8)
 StickerToggleButton.Position = UDim2.new(1, -80, 0, 4)
@@ -3020,7 +3020,7 @@ StickerToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 StickerToggleButton.TextSize = 14
 StickerToggleButton.Parent = InputBarFrame
 
-local StickerToggleCorner = Instance.new("UICorner")
+StickerToggleCorner = Instance.new("UICorner")
 StickerToggleCorner.CornerRadius = UDim.new(0, 8)
 StickerToggleCorner.Parent = StickerToggleButton
 
@@ -3041,7 +3041,7 @@ end)
 -- Global-chat-only server invite button. It is hidden whenever the
 -- active tab is not GLOBAL and sends the current PlaceId + JobId as a
 -- structured global message so recipients can join this exact server.
-local ServerInviteButton = Instance.new("TextButton")
+ServerInviteButton = Instance.new("TextButton")
 ServerInviteButton.Name = "ServerInviteButton"
 ServerInviteButton.Size = UDim2.new(0, 34, 1, -8)
 ServerInviteButton.Position = UDim2.new(1, -118, 0, 4)
@@ -3055,7 +3055,7 @@ ServerInviteButton.AutoButtonColor = true
 ServerInviteButton.ZIndex = 12
 ServerInviteButton.Parent = InputBarFrame
 
-local ServerInviteCorner = Instance.new("UICorner")
+ServerInviteCorner = Instance.new("UICorner")
 ServerInviteCorner.CornerRadius = UDim.new(0, 8)
 ServerInviteCorner.Parent = ServerInviteButton
 
@@ -3109,7 +3109,7 @@ PrivateModePill.TextSize = 9
 PrivateModePill.Visible = false
 PrivateModePill.ZIndex = 31
 PrivateModePill.Parent = InputBarFrame
-local privatePillCorner = Instance.new("UICorner")
+privatePillCorner = Instance.new("UICorner")
 privatePillCorner.CornerRadius = UDim.new(0, 8)
 privatePillCorner.Parent = PrivateModePill
 local function DisablePrivateModeFromPill()
@@ -3135,7 +3135,7 @@ PrivateModePill.InputBegan:Connect(function(input)
     end
 end)
 
-local ReplyStatusLabel = Instance.new("TextButton")
+ReplyStatusLabel = Instance.new("TextButton")
 ReplyStatusLabel.Name = "ReplyStatusLabel"
 ReplyStatusLabel.Size = UDim2.new(0, 250, 0, 22)
 ReplyStatusLabel.Position = UDim2.new(0, 165, 0, -25)
@@ -3149,7 +3149,7 @@ ReplyStatusLabel.Text = ""
 ReplyStatusLabel.Visible = false
 ReplyStatusLabel.ZIndex = 31
 ReplyStatusLabel.Parent = InputBarFrame
-local replyStatusCorner = Instance.new("UICorner")
+replyStatusCorner = Instance.new("UICorner")
 replyStatusCorner.CornerRadius = UDim.new(0, 8)
 replyStatusCorner.Parent = ReplyStatusLabel
 RefreshReplyUI = function()
@@ -3167,7 +3167,7 @@ ReplyStatusLabel.MouseButton1Click:Connect(function()
     MessageInput:CaptureFocus()
 end)
 
-local SendButton = Instance.new("TextButton")
+SendButton = Instance.new("TextButton")
 SendButton.Name = "SendButton"
 SendButton.Size = UDim2.new(0, 38, 1, -8)
 SendButton.Position = UDim2.new(1, -42, 0, 4)
@@ -3179,11 +3179,11 @@ SendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 SendButton.TextSize = 14
 SendButton.Parent = InputBarFrame
 
-local SendCorner = Instance.new("UICorner")
+SendCorner = Instance.new("UICorner")
 SendCorner.CornerRadius = UDim.new(0, 8)
 SendCorner.Parent = SendButton
 
-local AutoCompleteFrame = Instance.new("ScrollingFrame")
+AutoCompleteFrame = Instance.new("ScrollingFrame")
 AutoCompleteFrame.Name = "AutoCompleteFrame"
 AutoCompleteFrame.Size = UDim2.new(0, 235, 0, 132)
 AutoCompleteFrame.Position = UDim2.new(0, 8, 1, -182)
@@ -3198,11 +3198,11 @@ AutoCompleteFrame.Visible = false
 AutoCompleteFrame.ZIndex = 30
 AutoCompleteFrame.Parent = MainFrame
 
-local AutoCompleteCorner = Instance.new("UICorner")
+AutoCompleteCorner = Instance.new("UICorner")
 AutoCompleteCorner.CornerRadius = UDim.new(0, 8)
 AutoCompleteCorner.Parent = AutoCompleteFrame
 
-local AutoCompleteLayout = Instance.new("UIListLayout")
+AutoCompleteLayout = Instance.new("UIListLayout")
 AutoCompleteLayout.SortOrder = Enum.SortOrder.LayoutOrder
 AutoCompleteLayout.Padding = UDim.new(0, 2)
 AutoCompleteLayout.Parent = AutoCompleteFrame
@@ -3345,7 +3345,7 @@ AutoCompleteLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(funct
     AutoCompleteFrame.CanvasSize = UDim2.new(0, 0, 0, AutoCompleteLayout.AbsoluteContentSize.Y + 6)
 end)
 
-local ContextMenu = Instance.new("Frame")
+ContextMenu = Instance.new("Frame")
 ContextMenu.Name = "ContextMenu"
 ContextMenu.Size = UDim2.new(0, 160, 0, 125)
 ContextMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
@@ -3355,11 +3355,11 @@ ContextMenu.Visible = false
 ContextMenu.ZIndex = 20
 ContextMenu.Parent = ScreenGui
 
-local ContextCorner = Instance.new("UICorner")
+ContextCorner = Instance.new("UICorner")
 ContextCorner.CornerRadius = UDim.new(0, 10)
 ContextCorner.Parent = ContextMenu
 
-local ContextList = Instance.new("UIListLayout")
+ContextList = Instance.new("UIListLayout")
 ContextList.SortOrder = Enum.SortOrder.LayoutOrder
 ContextList.Parent = ContextMenu
 

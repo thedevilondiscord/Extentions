@@ -17,12 +17,27 @@ if not LocalPlayer then
 end
 
 -- ============================================================================
--- VERIFIED LOCAL IDENTITY
--- Uses UserId as the stable identity anchor. Privilege checks below use the
--- verified username snapshot, never a mutable local Player.Name value.
+-- HARDENED CLIENT IDENTITY SNAPSHOT
+--
+-- IMPORTANT:
+-- This is still a CLIENT-ONLY script. It cannot provide cryptographic identity
+-- attestation against an executor that already controls the Lua VM.
+--
+-- The goal here is to:
+--   1) capture the local identity as early as possible;
+--   2) immediately cross-check the captured ID against Roblox UserService;
+--   3) independently cross-check the same ID through users.roblox.com;
+--   4) freeze the resulting identity snapshot;
+--   5) use ONLY the frozen numeric UserId for local privilege decisions;
+--   6) fail closed if any check is missing or inconsistent.
+--
+-- Name/DisplayName remain presentation values only.
 -- ============================================================================
+
 local UserService = game:GetService("UserService")
-local LOCAL_USER_ID = LocalPlayer.UserId
+
+-- Capture ONCE, before the rest of the script initializes.
+local CAPTURED_LOCAL_USER_ID = tonumber(LocalPlayer.UserId)
 
 local function GetExecutorRequest()
     local ok, fn = pcall(function()
@@ -36,58 +51,116 @@ local function GetExecutorRequest()
     return ok and fn or nil
 end
 
-local function VerifyUsernameFromRoblox(userId)
+local function GetRobloxIdentityFromUserService(userId)
+    if type(userId) ~= "number" or userId <= 0 then
+        return nil
+    end
+
     local ok, result = pcall(function()
         return UserService:GetUserInfosByUserIdsAsync({userId})
     end)
 
-    if ok and type(result) == "table" then
-        local info = result[1]
-        if type(info) == "table" and type(info.Username) == "string" and info.Username ~= "" then
-            return info.Username
-        end
+    if not ok or type(result) ~= "table" then
+        return nil
+    end
+
+    local info = result[1]
+    if type(info) ~= "table"
+        or tonumber(info.Id) ~= userId
+        or type(info.Username) ~= "string"
+        or info.Username == "" then
+        return nil
+    end
+
+    return {
+        Id = tonumber(info.Id),
+        Username = info.Username,
+        DisplayName = type(info.DisplayName) == "string" and info.DisplayName or info.Username,
+    }
+end
+
+local function GetRobloxIdentityFromWebApi(userId)
+    if type(userId) ~= "number" or userId <= 0 then
+        return nil
     end
 
     local rawRequest = GetExecutorRequest()
-    if rawRequest then
-        local requestOk, response = pcall(function()
-            return rawRequest({
-                Url = "https://users.roblox.com/v1/users/" .. tostring(userId),
-                Method = "GET",
-                Headers = {["Content-Type"] = "application/json"},
-            })
-        end)
-
-        if requestOk and type(response) == "table" and type(response.Body) == "string" then
-            local decodeOk, data = pcall(function()
-                return HttpService:JSONDecode(response.Body)
-            end)
-
-            if decodeOk and type(data) == "table"
-                and type(data.id) == "number"
-                and data.id == userId
-                and type(data.name) == "string"
-                and data.name ~= "" then
-                return data.name
-            end
-        end
+    if type(rawRequest) ~= "function" then
+        return nil
     end
 
-    return nil
+    local requestOk, response = pcall(function()
+        return rawRequest({
+            Url = "https://users.roblox.com/v1/users/" .. tostring(userId),
+            Method = "GET",
+            Headers = {["Content-Type"] = "application/json"},
+        })
+    end)
+
+    if not requestOk or type(response) ~= "table" or type(response.Body) ~= "string" then
+        return nil
+    end
+
+    local decodeOk, data = pcall(function()
+        return HttpService:JSONDecode(response.Body)
+    end)
+
+    if not decodeOk or type(data) ~= "table"
+        or tonumber(data.id) ~= userId
+        or type(data.name) ~= "string"
+        or data.name == "" then
+        return nil
+    end
+
+    return {
+        Id = tonumber(data.id),
+        Username = data.name,
+        DisplayName = type(data.displayName) == "string" and data.displayName or data.name,
+    }
 end
 
-local VERIFIED_USERNAME = VerifyUsernameFromRoblox(LOCAL_USER_ID)
+local AUTHENTIC_USER_ID = nil
+local AUTHENTIC_USERNAME = nil
+local AUTHENTIC_DISPLAY_NAME = nil
+local IDENTITY_VERIFIED = false
 
--- This value is used exclusively for local authorization decisions.
--- If Roblox identity verification fails, privileged commands fail closed.
-local LOCAL_AUTH_USERNAME = VERIFIED_USERNAME or ""
+do
+    local captured = CAPTURED_LOCAL_USER_ID
 
--- Identity verification is intentionally fail-closed for privileged commands.
--- Ordinary message rendering may still use Player.Name/DisplayName for target players.
-if VERIFIED_USERNAME then
-    print("[Kronos] Verified identity: " .. VERIFIED_USERNAME)
+    if captured then
+        local serviceIdentity = GetRobloxIdentityFromUserService(captured)
+        local webIdentity = GetRobloxIdentityFromWebApi(captured)
+
+        if serviceIdentity and webIdentity
+            and serviceIdentity.Id == captured
+            and webIdentity.Id == captured
+            and string.lower(serviceIdentity.Username) == string.lower(webIdentity.Username) then
+
+            AUTHENTIC_USER_ID = captured
+            AUTHENTIC_USERNAME = serviceIdentity.Username
+            AUTHENTIC_DISPLAY_NAME = serviceIdentity.DisplayName
+            IDENTITY_VERIFIED = true
+        end
+    end
+end
+
+-- Immutable local authorization identity.
+local IDENTITY_SNAPSHOT = table.freeze({
+    Verified = IDENTITY_VERIFIED,
+    UserId = AUTHENTIC_USER_ID,
+    Username = AUTHENTIC_USERNAME,
+    DisplayName = AUTHENTIC_DISPLAY_NAME,
+})
+
+-- Privileged commands MUST fail closed.
+local LOCAL_AUTH_USER_ID = IDENTITY_SNAPSHOT.UserId
+local LOCAL_AUTH_USERNAME = IDENTITY_SNAPSHOT.Username or ""
+local LOCAL_AUTH_DISPLAY_NAME = IDENTITY_SNAPSHOT.DisplayName or ""
+
+if IDENTITY_SNAPSHOT.Verified then
+    print("[Kronos] Verified client identity: " .. LOCAL_AUTH_USERNAME .. " [" .. tostring(LOCAL_AUTH_USER_ID) .. "]")
 else
-    warn("[Kronos] Roblox identity verification failed; privileged local commands are disabled.")
+    warn("[Kronos] Identity verification failed; privileged local commands are disabled.")
 end
 local SERVER_JOB_ID = game.JobId ~= "" and game.JobId or "Studio_Local_Server"
 
@@ -237,7 +310,7 @@ WelcomeLabel.Name = "WelcomeLabel"
 WelcomeLabel.Size = UDim2.new(1, 0, 0, 20)
 WelcomeLabel.Position = UDim2.new(0, 0, 0, 48)
 WelcomeLabel.BackgroundTransparency = 1
-WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(LocalPlayer.DisplayName, true)
+WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true)
 WelcomeLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
 WelcomeLabel.Font = Enum.Font.Gotham
 WelcomeLabel.TextSize = 12
@@ -452,7 +525,7 @@ task.spawn(runIntro)
 -- [2] ROLEPLAY PROFILES LOAD MATRIX (KRONOS CHAT EDITION)
 -- ========================================================================
 local customRPName = " ᴋʀᴏɴᴏs ᴄʜᴀᴛ "
-local customRPBio  = " ωєℓ¢σмє вα¢к, " .. GetFormattedDisplayName(lplr.DisplayName, true) .. " "
+local customRPBio  = " ωєℓ¢σмє вα¢к, " .. GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true) .. " "
 
 local function applyRPProfile()
     local reFolder = ReplicatedStorage:WaitForChild("RE", 10)
@@ -529,7 +602,7 @@ local GITHUB_RANK_STYLES_URL = nil -- Role colours are local; only the GitHub ro
 
 local JOIN_SOUND_ID = "rbxassetid://7460825623"
 local NOTIFICATION_SOUND_ID = "rbxassetid://107978604605265"
-local JoinEventId = LocalPlayer.UserId .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
+local JoinEventId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
 
 local ActiveTab = "GLOBAL"
 
@@ -991,6 +1064,7 @@ local ClearPersistentPrivatePrefix = function() end
 
 local AssignedPlayerRoles = {}
 local AvailableUserRoles = {}
+local AvailableUserRolesByUserId = {}
 local DisabledTags = {}        
 local PersistentPvtPrefix = ""
 
@@ -1243,7 +1317,21 @@ local function GetAssignedOrCalculatedRole(username)
     return GetHighestRole(username)
 end
 
+local GetAssignedOrCalculatedRoleByUserId
+
 local function HasRolePermission(username, permission)
+    -- Local privilege checks are keyed to the frozen numeric identity.
+    -- Do not fall back to Player.Name/DisplayName when deciding privileges.
+    if username == LOCAL_AUTH_USERNAME then
+        if not IDENTITY_SNAPSHOT.Verified or type(LOCAL_AUTH_USER_ID) ~= "number" then
+            return false
+        end
+
+        local role = GetAssignedOrCalculatedRoleByUserId(LOCAL_AUTH_USER_ID)
+        local perms = role and ROLE_PERMISSIONS[role]
+        return perms and perms[permission] == true or false
+    end
+
     local role = GetAssignedOrCalculatedRole(username)
     local perms = ROLE_PERMISSIONS[role]
     return perms and perms[permission] == true or false
@@ -1318,6 +1406,59 @@ local function FetchRemoteRoles()
     end
 
     AvailableUserRoles = fresh
+
+    -- Numeric-ID role authority for the local authenticated identity.
+    -- A username-only roster entry is intentionally NOT accepted for local
+    -- privileged authorization. This prevents a spoofed local name from
+    -- becoming an authorization fallback.
+    AvailableUserRolesByUserId = AvailableUserRolesByUserId or {}
+    local numericRoles = {}
+    for rankName, playerList in pairs(jsonRoster) do
+        local canonicalRole = FindCanonicalRole(rankName)
+        if canonicalRole and type(playerList) == "table" then
+            local entries = playerList
+            if playerList.Usernames or playerList.UserIds then
+                entries = {}
+                if type(playerList.UserIds) == "table" then
+                    for _, userId in ipairs(playerList.UserIds) do
+                        table.insert(entries, {UserId = userId})
+                    end
+                end
+            end
+
+            for _, entry in ipairs(entries) do
+                local targetUserId
+                if type(entry) == "table" then
+                    targetUserId = tonumber(entry.UserId or entry.UserID or entry.Id)
+                elseif type(entry) == "number" then
+                    targetUserId = tonumber(entry)
+                end
+
+                if targetUserId then
+                    numericRoles[targetUserId] = numericRoles[targetUserId] or {}
+                    if not table.find(numericRoles[targetUserId], canonicalRole) then
+                        table.insert(numericRoles[targetUserId], canonicalRole)
+                    end
+                end
+            end
+        end
+    end
+
+    AvailableUserRolesByUserId = numericRoles
+
+    GetAssignedOrCalculatedRoleByUserId = function(userId)
+        local roles = AvailableUserRolesByUserId[tonumber(userId)] or {}
+        local best, bestIndex
+        for _, roleName in ipairs(roles) do
+            local canonical = FindCanonicalRole(roleName) or roleName
+            local idx = ROLE_PRIORITY_INDEX[canonical] or 9999
+            if not bestIndex or idx < bestIndex then
+                best, bestIndex = canonical, idx
+            end
+        end
+        return best or nil
+    end
+
     for _, player in ipairs(Players:GetPlayers()) do
         local highest = GetHighestRole(player.Name)
         if not AssignedPlayerRoles[player.Name] or not PlayerHasRole(player.Name, AssignedPlayerRoles[player.Name]) then
@@ -1668,15 +1809,15 @@ end
 
 local function DisplayNewMessageNotif(msgData, messageId)
     if not msgData then return end
-    if msgData.IsPrivate and msgData.Username ~= LocalPlayer.Name and msgData.TargetUsername ~= LocalPlayer.Name then return end
-    if msgData.Username == LocalPlayer.Name and not msgData.IsJoinMessage then return end
+    if msgData.IsPrivate and msgData.Username ~= LOCAL_AUTH_USERNAME and msgData.TargetUsername ~= LOCAL_AUTH_USERNAME then return end
+    if msgData.Username == LOCAL_AUTH_USERNAME and not msgData.IsJoinMessage then return end
 
     messageId = tostring(messageId or ((msgData.JoinEventId or "") .. "_" .. (msgData.Timestamp or "") .. "_" .. (msgData.Username or "")))
     if ShownNotificationIds[messageId] then return end
     ShownNotificationIds[messageId] = true
 
     local rawName = msgData.DisplayName or msgData.Username or "Unknown"
-    local isClient = (msgData.Username == LocalPlayer.Name)
+    local isClient = (msgData.Username == LOCAL_AUTH_USERNAME)
     local formattedName = GetFormattedDisplayName(rawName, isClient)
     local rawText = msgData.Text or ""
     if msgData.IsJoinMessage then
@@ -2079,9 +2220,9 @@ SubmitRequestBtn.MouseButton1Click:Connect(function()
     SubmitRequestBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 
     local payload = {
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-        UserId = LocalPlayer.UserId,
+        Username = LOCAL_AUTH_USERNAME,
+        DisplayName = GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true),
+        UserId = LOCAL_AUTH_USER_ID,
         RequestText = text,
         Timestamp = os.time()
     }
@@ -2186,7 +2327,7 @@ ServerInviteCorner.Parent = ServerInviteButton
 local function SendServerInvite()
     if ActiveTab ~= "GLOBAL" then return end
 
-    local clientMessageId = LocalPlayer.UserId .. "_invite_" ..
+    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_invite_" ..
         tostring(math.floor(os.clock() * 1000000)) .. "_" ..
         tostring(math.random(100000, 999999))
 
@@ -2196,7 +2337,7 @@ local function SendServerInvite()
         DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         Text = "invited you to join their current server",
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
+        Role = GetAssignedOrCalculatedRole(LOCAL_AUTH_USERNAME),
         PfpId = CurrentPfpId,
         IsPrivate = false,
         IsServerInvite = true,
@@ -2797,7 +2938,7 @@ CreateMessageCard = function(msgData, isGlobal)
 
     AnimateRoleFont(tagLabel, roleName, style)
 
-    local isClient = (msgData.Username == LocalPlayer.Name)
+    local isClient = (msgData.Username == LOCAL_AUTH_USERNAME)
     local formattedName = GetFormattedDisplayName(msgData.DisplayName or msgData.Username, isClient)
 
     local nameLabel = Instance.new("TextLabel")
@@ -3079,7 +3220,7 @@ end
 Moderation.SendAnnouncement = function(body)
     local isGlobal = ActiveTab == "GLOBAL"
     local text = "🚨 Okey Listen Up 📢 : " .. tostring(body)
-    local clientMessageId = LocalPlayer.UserId .. "_announcement_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_announcement_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
     local payload = {
         ClientMessageId = clientMessageId,
         Username = ANNOUNCER_NAME,
@@ -3100,7 +3241,7 @@ end
 Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinutes)
     local isGlobal = ActiveTab == "GLOBAL"
     local expiresAt = os.time() + (durationMinutes * 60)
-    local clientMessageId = LocalPlayer.UserId .. "_mute_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_mute_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
     local payload = {
         ClientMessageId = clientMessageId,
         Username = "AI_MoD",
@@ -3144,7 +3285,7 @@ SendChatMessage = function()
 
     if not isPrivate then
         local currentScope = (ActiveTab == "GLOBAL") and "GLOBAL" or "SERVER"
-        local ownMute = Moderation.GetActiveMute(currentScope, LocalPlayer.Name)
+        local ownMute = Moderation.GetActiveMute(currentScope, LOCAL_AUTH_USERNAME)
         if ownMute then
             local remaining = Moderation.FormatMuteRemaining((tonumber(ownMute.ExpiresAt) or os.time()) - os.time())
             local imposedBy = tostring(ownMute.ImposedByDisplayName or "Moderator")
@@ -3290,15 +3431,15 @@ SendChatMessage = function()
     LastMessageSendTime = now
 
     local reply = ReplyContextMessage
-    local clientMessageId = LocalPlayer.UserId .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
 
     local payload = {
         ClientMessageId = clientMessageId,
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        Username = LOCAL_AUTH_USERNAME,
+        DisplayName = GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true),
         Text = privateBody,
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
+        Role = GetAssignedOrCalculatedRole(LOCAL_AUTH_USERNAME),
         PfpId = CurrentPfpId,
         IsPrivate = isPrivate,
         TargetUsername = privateTargetUsername,
@@ -3372,8 +3513,8 @@ function BuildJoinMessagePayload()
     return {
         Username = "AI_MoD",
         DisplayName = "AI MoD",
-        JoinedDisplayName = LocalPlayer.DisplayName,
-        Text = LocalPlayer.DisplayName .. " has Joined the Server Chat",
+        JoinedDisplayName = LOCAL_AUTH_DISPLAY_NAME,
+        Text = LOCAL_AUTH_DISPLAY_NAME .. " has Joined the Server Chat",
         Timestamp = os.time(),
         Role = "BOT",
         PfpId = 78588114275746,
@@ -3414,9 +3555,9 @@ function PollMessages()
                     if tonumber(msg.ExpiresAt or 0) > os.time() and msg.TargetUsername and msg.Scope == "GLOBAL" then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("GLOBAL", msg.TargetUsername)] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LOCAL_AUTH_USERNAME or msg.TargetUsername == LOCAL_AUTH_USERNAME) then
                     local blockedByMute = Moderation.GetActiveMute("GLOBAL", msg.Username) ~= nil
-                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    if blockedByMute and msg.Username ~= LOCAL_AUTH_USERNAME then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
@@ -3443,9 +3584,9 @@ function PollMessages()
                     if tonumber(msg.ExpiresAt or 0) > os.time() and msg.TargetUsername and msg.Scope == "SERVER" then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("SERVER", msg.TargetUsername)] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LOCAL_AUTH_USERNAME or msg.TargetUsername == LOCAL_AUTH_USERNAME) then
                     local blockedByMute = Moderation.GetActiveMute("SERVER", msg.Username) ~= nil
-                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    if blockedByMute and msg.Username ~= LOCAL_AUTH_USERNAME then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil

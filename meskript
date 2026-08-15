@@ -12,82 +12,62 @@ local ContentProvider = game:GetService("ContentProvider")
 
 local LocalPlayer = Players.LocalPlayer
 local lplr = LocalPlayer
-local SERVER_JOB_ID = game.JobId ~= "" and game.JobId or "Studio_Local_Server"
-
-
--- ============================================================================
--- [SECURITY] VERIFIED CLIENT IDENTITY / PRIVATE SECURITY CONTEXT
--- ============================================================================
--- This is a client-side verification layer, not server-authoritative security.
--- The local UserId is captured once and the verified username is cached before
--- any role/permission decision is made. No _G/getgenv state is used.
-local UserService = game:GetService("UserService")
-
-local VERIFIED_LOCAL_USER_ID = LocalPlayer.UserId
-local VERIFIED_USERNAME = nil
-local IDENTITY_VERIFIED = false
-
-local function GetExecutorRequestFunction()
-    local candidates = {
-        function()
-            if syn and type(syn.request) == "function" then return syn.request end
-        end,
-        function()
-            if http and type(http.request) == "function" then return http.request end
-        end,
-        function()
-            if type(http_request) == "function" then return http_request end
-        end,
-        function()
-            if type(request) == "function" then return request end
-        end,
-        function()
-            if Fluxus and type(fluxus.request) == "function" then return fluxus.request end
-        end,
-    }
-
-    for _, resolver in ipairs(candidates) do
-        local ok, fn = pcall(resolver)
-        if ok and type(fn) == "function" then
-            return fn
-        end
-    end
-
-    return nil
+if not LocalPlayer then
+    return
 end
 
-local function GetVerifiedUsername(targetUserId)
-    -- Tier 1: Roblox engine UserService.
-    local success, result = pcall(function()
-        return UserService:GetUserInfosByUserIdsAsync({targetUserId})
+-- ============================================================================
+-- VERIFIED LOCAL IDENTITY
+-- Uses UserId as the stable identity anchor. Privilege checks below use the
+-- verified username snapshot, never a mutable local Player.Name value.
+-- ============================================================================
+local UserService = game:GetService("UserService")
+local LOCAL_USER_ID = LocalPlayer.UserId
+
+local function GetExecutorRequest()
+    local ok, fn = pcall(function()
+        if syn and type(syn.request) == "function" then return syn.request end
+        if http and type(http.request) == "function" then return http.request end
+        if type(http_request) == "function" then return http_request end
+        if type(request) == "function" then return request end
+        if Fluxus and type(Fluxus.request) == "function" then return Fluxus.request end
+        return nil
+    end)
+    return ok and fn or nil
+end
+
+local function VerifyUsernameFromRoblox(userId)
+    local ok, result = pcall(function()
+        return UserService:GetUserInfosByUserIdsAsync({userId})
     end)
 
-    if success and type(result) == "table" and type(result[1]) == "table" then
-        local username = result[1].Username
-        if type(username) == "string" and username ~= "" then
-            return username
+    if ok and type(result) == "table" then
+        local info = result[1]
+        if type(info) == "table" and type(info.Username) == "string" and info.Username ~= "" then
+            return info.Username
         end
     end
 
-    -- Tier 2: Roblox users API through an executor HTTP implementation.
-    local raw_req = GetExecutorRequestFunction()
-    if raw_req then
-        local httpSuccess, response = pcall(function()
-            return raw_req({
-                Url = "https://users.roblox.com/v1/users/" .. tostring(targetUserId),
+    local rawRequest = GetExecutorRequest()
+    if rawRequest then
+        local requestOk, response = pcall(function()
+            return rawRequest({
+                Url = "https://users.roblox.com/v1/users/" .. tostring(userId),
                 Method = "GET",
-                Headers = {
-                    ["Content-Type"] = "application/json"
-                }
+                Headers = {["Content-Type"] = "application/json"},
             })
         end)
 
-        if httpSuccess and type(response) == "table" and type(response.Body) == "string" then
-            local decodeSuccess, data = pcall(function()
+        if requestOk and type(response) == "table" and type(response.Body) == "string" then
+            local decodeOk, data = pcall(function()
                 return HttpService:JSONDecode(response.Body)
             end)
 
-            if decodeSuccess and type(data) == "table" and type(data.name) == "string" and data.name ~= "" then
+            if decodeOk and type(data) == "table"
+                and type(data.id) == "number"
+                and data.id == userId
+                and type(data.name) == "string"
+                and data.name ~= "" then
                 return data.name
             end
         end
@@ -96,27 +76,20 @@ local function GetVerifiedUsername(targetUserId)
     return nil
 end
 
--- Cache the authoritative username exactly once during startup.
-VERIFIED_USERNAME = GetVerifiedUsername(VERIFIED_LOCAL_USER_ID)
-IDENTITY_VERIFIED = type(VERIFIED_USERNAME) == "string" and VERIFIED_USERNAME ~= ""
+local VERIFIED_USERNAME = VerifyUsernameFromRoblox(LOCAL_USER_ID)
 
-if not IDENTITY_VERIFIED then
-    warn("[KRONOS SECURITY] Backend identity verification failed. Privileged actions are disabled.")
+-- This value is used exclusively for local authorization decisions.
+-- If Roblox identity verification fails, privileged commands fail closed.
+local LOCAL_AUTH_USERNAME = VERIFIED_USERNAME or ""
+
+-- Identity verification is intentionally fail-closed for privileged commands.
+-- Ordinary message rendering may still use Player.Name/DisplayName for target players.
+if VERIFIED_USERNAME then
+    print("[Kronos] Verified identity: " .. VERIFIED_USERNAME)
+else
+    warn("[Kronos] Roblox identity verification failed; privileged local commands are disabled.")
 end
-
-local VERIFIED_IDENTITY = table.freeze({
-    UserId = VERIFIED_LOCAL_USER_ID,
-    Username = VERIFIED_USERNAME,
-    Verified = IDENTITY_VERIFIED,
-})
-
-local function GetVerifiedLocalUsername()
-    if not VERIFIED_IDENTITY.Verified then
-        return nil
-    end
-    return VERIFIED_IDENTITY.Username
-end
-
+local SERVER_JOB_ID = game.JobId ~= "" and game.JobId or "Studio_Local_Server"
 
 -- Custom Spoofed Name State
 local SpoofedDisplayName = nil
@@ -141,22 +114,31 @@ local PFP_SAVE_KEY = "Kronos_UserPFP_AssetId"
 local DefaultPfpId = "110388265928893"
 
 local CurrentPfpId = (function()
-    if readfile and isfile and isfile(PFP_SAVE_KEY .. ".txt") then
-        local success, saved = pcall(function() return readfile(PFP_SAVE_KEY .. ".txt") end)
-        if success and saved and saved ~= "" then return saved end
+    local fileName = PFP_SAVE_KEY .. ".txt"
+    local hasFile = false
+
+    if type(isfile) == "function" then
+        local ok, result = pcall(isfile, fileName)
+        hasFile = ok and result == true
     end
+
+    if hasFile and type(readfile) == "function" then
+        local ok, saved = pcall(readfile, fileName)
+        if ok and type(saved) == "string" and saved ~= "" then
+            return saved
+        end
+    end
+
     return DefaultPfpId
--- ============================================================================
--- END PRIVATE KRONOS CLIENT CONTEXT
--- ============================================================================
 end)()
 
 local function SavePfpIdLocally(assetId)
     CurrentPfpId = tostring(assetId)
-    if writefile then
-        pcall(function() writefile(PFP_SAVE_KEY .. ".txt", CurrentPfpId) end)
+    if type(writefile) == "function" then
+        pcall(writefile, PFP_SAVE_KEY .. ".txt", CurrentPfpId)
     end
 end
+
 
 -- Helper function to truncate DisplayName to 14 chars + "..." if over 15 chars
 local function GetFormattedDisplayName(displayName, isClient)
@@ -827,7 +809,7 @@ for _, v in ipairs(baseStickers) do
         hash[v] = true
     end
 end
-baseStickers = table.freeze(uniqueStickers)
+baseStickers = uniqueStickers
 
 -- ============================================================================
 -- HARDCODED RANKS & DEFAULT STYLES
@@ -890,12 +872,6 @@ local RANK_STYLES = {
     ["Hokage"] = { Tier = 3, Start = Color3.fromRGB(50, 150, 235), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(110, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
     ["Soul Reaper"] = { Tier = 3, Start = Color3.fromRGB(0, 215, 245), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(100, 235, 255), Speed = 1.0, Mode = "FONT_LOOP" },
 }
-
-for _, style in pairs(RANK_STYLES) do
-    table.freeze(style)
-end
-RANK_STYLES = table.freeze(RANK_STYLES)
-
 -- ============================================================================
 -- ROLE/TAG FONT ANIMATION
 -- The entire role-name font smoothly transitions between its assigned colours.
@@ -1135,26 +1111,46 @@ end
 -- ============================================================================
 -- HTTP HANDLER (MULTI-EXECUTOR COMPATIBLE)
 -- ============================================================================
-local http_req = (syn and syn.request) or (http and http.request) or http_request or request or (Fluxus and fluxus.request)
+local http_req = GetExecutorRequest()
 
 local function HttpRequest(url, method, data)
-    if not http_req then return nil end
+    if type(http_req) ~= "function" or type(url) ~= "string" then
+        return nil
+    end
+
+    local encodedBody = nil
+    if data ~= nil then
+        local encodeOk, encoded = pcall(function()
+            return HttpService:JSONEncode(data)
+        end)
+        if not encodeOk then
+            return nil
+        end
+        encodedBody = encoded
+    end
+
     local success, response = pcall(function()
         return http_req({
             Url = url,
             Method = method or "GET",
-            Headers = { ["Content-Type"] = "application/json" },
-            Body = data and HttpService:JSONEncode(data) or nil
+            Headers = {["Content-Type"] = "application/json"},
+            Body = encodedBody,
         })
     end)
 
-    if success and response and response.Body then
-        local decodedSuccess, decodedData = pcall(function()
-            return HttpService:JSONDecode(response.Body)
-        end)
-        return decodedSuccess and decodedData or nil
+    if not success or type(response) ~= "table" or type(response.Body) ~= "string" then
+        return nil
     end
-    return nil
+
+    local decodedSuccess, decodedData = pcall(function()
+        return HttpService:JSONDecode(response.Body)
+    end)
+
+    if not decodedSuccess or type(decodedData) ~= "table" then
+        return nil
+    end
+
+    return decodedData
 end
 
 -- ============================================================================
@@ -1162,7 +1158,7 @@ end
 -- The GitHub roster is authoritative. ROLE_PRIORITY is the hierarchy used when
 -- a player appears in more than one role. Earlier entries have higher priority.
 -- ============================================================================
-local ROLE_PRIORITY = table.freeze({
+local ROLE_PRIORITY = {
     -- Tier 1
     "Architect", "Overseer", "Developer", "One of the OGs👑",
 
@@ -1178,25 +1174,31 @@ local ROLE_PRIORITY = table.freeze({
     "FF·HEROIC🔫", "BADMASH🚬", "BADNAM🥀", "LifeLess🥶", "Majdoor⛑️",
     "SIGMA🐺", "ELITE", "VIP", "BOT", "HASIRA", "DEVIL", "MONARCH",
     "SAGE OF SIX PATHS", "DEMON", "Hokage", "Soul Reaper"
-})
+}
 
-local ROLE_PRIORITY_INDEX_MUTABLE = {}
+local ROLE_PRIORITY_INDEX = {}
 for index, roleName in ipairs(ROLE_PRIORITY) do
-    ROLE_PRIORITY_INDEX_MUTABLE[roleName] = index
+    ROLE_PRIORITY_INDEX[roleName] = index
 end
-local ROLE_PRIORITY_INDEX = table.freeze(ROLE_PRIORITY_INDEX_MUTABLE)
+ROLE_PRIORITY_INDEX = table.freeze(ROLE_PRIORITY_INDEX)
+ROLE_PRIORITY = table.freeze(ROLE_PRIORITY)
 
-local ROLE_PERMISSIONS = table.freeze({
-    ["Architect"] = table.freeze({Spoof=true, Announce=true, Kick=true, Ban=true, Mute=true, PlayMusic=true}),
-    ["Overseer"] = table.freeze({Spoof=true, Announce=true, Kick=true, Mute=true, PlayMusic=true}),
-    ["Moderator"] = table.freeze({Spoof=true, Announce=true, Mute=true, Kick=true, PlayMusic=true}),
-    ["Developer"] = table.freeze({Spoof=true, PlayMusic=true}),
-    ["Hacker"] = table.freeze({Spoof=true, PlayMusic=true}),
-    ["One of the OGs👑"] = table.freeze({Spoof=true, PlayMusic=true}),
-    ["COM-GOD⛓️"] = table.freeze({Spoof=true}),
-    ["Regent of Clan🔥"] = table.freeze({Spoof=true}),
-    ["MALKIN🌸"] = table.freeze({Spoof=true}),
-})
+local ROLE_PERMISSIONS = {
+    ["Architect"] = {Spoof=true, Announce=true, Kick=true, Ban=true, Mute=true, PlayMusic=true},
+    ["Overseer"] = {Spoof=true, Announce=true, Kick=true, Mute=true, PlayMusic=true},
+    ["Moderator"] = {Spoof=true, Announce=true, Mute=true, Kick=true, PlayMusic=true},
+    ["Developer"] = {Spoof=true, PlayMusic=true},
+    ["Hacker"] = {Spoof=true, PlayMusic=true},
+    ["One of the OGs👑"] = {Spoof=true, PlayMusic=true},
+    ["COM-GOD⛓️"] = {Spoof=true},
+    ["Regent of Clan🔥"] = {Spoof=true},
+    ["MALKIN🌸"] = {Spoof=true},
+}
+
+for roleName, permissions in pairs(ROLE_PERMISSIONS) do
+    ROLE_PERMISSIONS[roleName] = table.freeze(permissions)
+end
+ROLE_PERMISSIONS = table.freeze(ROLE_PERMISSIONS)
 
 local function RoleNameEquals(a, b)
     return string.lower(tostring(a or "")) == string.lower(tostring(b or ""))
@@ -1242,19 +1244,6 @@ local function GetAssignedOrCalculatedRole(username)
 end
 
 local function HasRolePermission(username, permission)
-    -- Local privileged checks MUST use the backend-verified username.
-    if username == nil then
-        return false
-    end
-
-    local verifiedLocalUsername = GetVerifiedLocalUsername()
-    if username == verifiedLocalUsername then
-        -- Verified local identity is the only identity accepted for local privileges.
-        if not IDENTITY_VERIFIED then
-            return false
-        end
-    end
-
     local role = GetAssignedOrCalculatedRole(username)
     local perms = ROLE_PERMISSIONS[role]
     return perms and perms[permission] == true or false
@@ -1314,19 +1303,13 @@ local function FetchRemoteRoles()
                 targetEncodedId = targetEncodedId and tostring(targetEncodedId) or nil
 
                 for _, player in ipairs(Players:GetPlayers()) do
-                    local playerUserId = player.UserId
-                    local isLocalPlayer = playerUserId == VERIFIED_LOCAL_USER_ID
-                    local authoritativePlayerName = isLocalPlayer and VERIFIED_USERNAME or player.Name
-                    local usernameMatch = targetUsername and RoleNameEquals(authoritativePlayerName, targetUsername)
-                    local userIdMatch = targetUserId and playerUserId == targetUserId
-                    local encodedMatch = targetEncodedId and EncodePlayerId(playerUserId) == targetEncodedId
+                    local usernameMatch = targetUsername and RoleNameEquals(player.Name, targetUsername)
+                    local userIdMatch = targetUserId and player.UserId == targetUserId
+                    local encodedMatch = targetEncodedId and EncodePlayerId(player.UserId) == targetEncodedId
                     if usernameMatch or userIdMatch or encodedMatch then
-                        local roleKey = authoritativePlayerName
-                        if roleKey and roleKey ~= "" then
-                            fresh[roleKey] = fresh[roleKey] or {}
-                            if not table.find(fresh[roleKey], canonicalRole) then
-                                table.insert(fresh[roleKey], canonicalRole)
-                            end
+                        fresh[player.Name] = fresh[player.Name] or {}
+                        if not table.find(fresh[player.Name], canonicalRole) then
+                            table.insert(fresh[player.Name], canonicalRole)
                         end
                     end
                 end
@@ -1336,12 +1319,9 @@ local function FetchRemoteRoles()
 
     AvailableUserRoles = fresh
     for _, player in ipairs(Players:GetPlayers()) do
-        local playerKey = (player.UserId == VERIFIED_LOCAL_USER_ID) and VERIFIED_USERNAME or player.Name
-        if playerKey and playerKey ~= "" then
-            local highest = GetHighestRole(playerKey)
-            if not AssignedPlayerRoles[playerKey] or not PlayerHasRole(playerKey, AssignedPlayerRoles[playerKey]) then
-                AssignedPlayerRoles[playerKey] = highest
-            end
+        local highest = GetHighestRole(player.Name)
+        if not AssignedPlayerRoles[player.Name] or not PlayerHasRole(player.Name, AssignedPlayerRoles[player.Name]) then
+            AssignedPlayerRoles[player.Name] = highest
         end
     end
     Moderation.RefreshAllRoleAutocomplete()
@@ -1474,6 +1454,7 @@ ServerTabBtn.Parent = HeaderBar
 local ServerTabCorner = Instance.new("UICorner")
 ServerTabCorner.CornerRadius = UDim.new(0, 8)
 ServerTabCorner.Parent = ServerTabBtn
+
 
 local AboutTabBtn = Instance.new("TextButton")
 AboutTabBtn.Name = "AboutTabBtn"
@@ -2098,7 +2079,7 @@ SubmitRequestBtn.MouseButton1Click:Connect(function()
     SubmitRequestBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 
     local payload = {
-        Username = GetVerifiedLocalUsername() or "UNVERIFIED_USER",
+        Username = LocalPlayer.Name,
         DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         UserId = LocalPlayer.UserId,
         RequestText = text,
@@ -2211,11 +2192,11 @@ local function SendServerInvite()
 
     local payload = {
         ClientMessageId = clientMessageId,
-        Username = GetVerifiedLocalUsername() or "UNVERIFIED_USER",
+        Username = LocalPlayer.Name,
         DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         Text = "invited you to join their current server",
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(GetVerifiedLocalUsername() or ""),
+        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
         PfpId = CurrentPfpId,
         IsPrivate = false,
         IsServerInvite = true,
@@ -2390,7 +2371,7 @@ local function ShowCommandAutocomplete()
 
     if command == "!announce " then
         -- Show !announce in autocomplete only to roles that can actually use it.
-        if not CanUseAnnouncement(GetVerifiedLocalUsername()) then
+        if not CanUseAnnouncement(LOCAL_AUTH_USERNAME) then
             return
         end
         table.insert(suggestions, "!announce ")
@@ -2506,12 +2487,12 @@ local ContextList = Instance.new("UIListLayout")
 ContextList.SortOrder = Enum.SortOrder.LayoutOrder
 ContextList.Parent = ContextMenu
 
-local function HideMessageContextMenu()
+function HideMessageContextMenu()
     ContextMenu.Visible = false
     CurrentContextMessage = nil
 end
 
-local function ResolvePrivateRecipient(prefix)
+function ResolvePrivateRecipient(prefix)
     prefix = tostring(prefix or "")
     if prefix == "" then return nil end
     local needle = string.lower(string.sub(prefix, 1, 8))
@@ -2540,11 +2521,11 @@ local function ResolvePrivateRecipient(prefix)
     return nil
 end
 
-local function IsPrivateModeActive()
+function IsPrivateModeActive()
     return PrivateModeTargetUsername ~= nil and PrivateModeTargetDisplayName ~= nil
 end
 
-local function RefreshPrivateModeUI()
+function RefreshPrivateModeUI()
     if not PrivateModePill then return end
     local active = IsPrivateModeActive()
     PrivateModePill.Visible = active
@@ -2558,7 +2539,7 @@ end
 -- The /pvt command is NOT stored inside the TextBox anymore.
 -- PVT state lives entirely in these two variables. The pill is the explicit
 -- mode indicator/control and the textbox remains a normal editable textbox.
-local function SetPersistentPrivatePrefix(displayName, username)
+function SetPersistentPrivatePrefix(displayName, username)
     local safeName = tostring(displayName or username or "Unknown")
     PrivateModeTargetUsername = username
     PrivateModeTargetDisplayName = safeName
@@ -2583,7 +2564,7 @@ ClearPersistentPrivatePrefix = function()
     RefreshPrivateModeUI()
 end
 
-local function ShowMessageContextMenu(msgData, position)
+function ShowMessageContextMenu(msgData, position)
     CurrentContextMessage = msgData
     ContextMenu.Visible = true
     ContextMenu.Position = UDim2.fromOffset(position.X, position.Y)
@@ -2599,7 +2580,7 @@ local function ShowMessageContextMenu(msgData, position)
     end)
 end
 
-local function AddContextMenuButton(text, order, callback)
+function AddContextMenuButton(text, order, callback)
     local button = Instance.new("TextButton")
     button.Name = text:gsub("%s+", "") .. "Button"
     button.Size = UDim2.new(1, 0, 0, 40)
@@ -2625,7 +2606,7 @@ local function AddContextMenuButton(text, order, callback)
     return button
 end
 
-local function BuildMessageContextMenu()
+function BuildMessageContextMenu()
     for _, child in ipairs(ContextMenu:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
@@ -2672,7 +2653,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- Draggable Logic
-local function MakeDraggable(frame, dragHandle)
+function MakeDraggable(frame, dragHandle)
     local dragging, dragInput, dragStart, startPos
     dragHandle = dragHandle or frame
 
@@ -2708,7 +2689,7 @@ MakeDraggable(ToggleButton, ToggleButton)
 -- ============================================================================
 -- TAB SWITCHING ROUTINE
 -- ============================================================================
-local function SwitchTab(newTab)
+function SwitchTab(newTab)
     ActiveTab = newTab
     MessageContainer.Visible = (newTab == "GLOBAL" or newTab == "SERVER")
     InputBarFrame.Visible = (newTab == "GLOBAL" or newTab == "SERVER")
@@ -3189,7 +3170,7 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 9) == "!announce" then
-        if not CanUseAnnouncement(GetVerifiedLocalUsername()) then
+        if not CanUseAnnouncement(LOCAL_AUTH_USERNAME) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Only Architect, Overseer and Moderator can use !announce.", true)
             MessageInput.Text = ""
             return
@@ -3209,7 +3190,7 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!mute " then
-        if not CanUseModerationCommands(GetVerifiedLocalUsername()) then
+        if not CanUseModerationCommands(LOCAL_AUTH_USERNAME) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Only Architect, Overseer and Moderator can use !mute.", true)
             MessageInput.Text = ""
             return
@@ -3234,18 +3215,18 @@ SendChatMessage = function()
     elseif not isPrivate and string.sub(typedText, 1, 5) == "!tag " then
         local requestedRole = string.sub(typedText, 6):gsub("^%s+", ""):gsub("%s+$", "")
         local canonical = FindCanonicalRole(requestedRole)
-        if not canonical or not PlayerHasRole(GetVerifiedLocalUsername() or "", canonical) then
+        if not canonical or not PlayerHasRole(LOCAL_AUTH_USERNAME, canonical) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. You are not assigned to the role '" .. requestedRole .. "' in the GitHub roster.", true)
         else
-            AssignedPlayerRoles[GetVerifiedLocalUsername() or ""] = canonical
-            DisabledTags[GetVerifiedLocalUsername() or ""] = nil
+            AssignedPlayerRoles[LOCAL_AUTH_USERNAME] = canonical
+            DisabledTags[LOCAL_AUTH_USERNAME] = nil
             ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
         end
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!tag" then
-        DisabledTags[GetVerifiedLocalUsername() or ""] = not DisabledTags[GetVerifiedLocalUsername() or ""]
-        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[GetVerifiedLocalUsername() or ""] and "disabled" or "enabled") .. " ✓")
+        DisabledTags[LOCAL_AUTH_USERNAME] = not DisabledTags[LOCAL_AUTH_USERNAME]
+        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LOCAL_AUTH_USERNAME] and "disabled" or "enabled") .. " ✓")
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!role " then
@@ -3262,8 +3243,8 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!role" then
-        local roles = GetPlayerRoles(GetVerifiedLocalUsername() or "")
-        local highest = GetHighestRole(GetVerifiedLocalUsername() or "")
+        local roles = GetPlayerRoles(LOCAL_AUTH_USERNAME)
+        local highest = GetHighestRole(LOCAL_AUTH_USERNAME)
         ShowLocalSystemMessage("[AI MoD] : Your highest role is " .. highest .. ". Available roles: " .. (#roles > 0 and table.concat(roles, ", ") or "none") .. ".")
         MessageInput.Text = ""
         return
@@ -3272,7 +3253,7 @@ SendChatMessage = function()
         local lowered = string.lower(requested)
         if lowered == "architect" or lowered == "overseer" or lowered == "com-god" then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Architect, Overseer and Com-God cannot be spoofed.", true)
-        elseif CanUseSpoof(GetVerifiedLocalUsername()) then
+        elseif CanUseSpoof(LOCAL_AUTH_USERNAME) then
             SpoofedDisplayName = requested
             ShowLocalSystemMessage("[AI MoD] : Display name changed successfully ✓")
         else
@@ -3313,11 +3294,11 @@ SendChatMessage = function()
 
     local payload = {
         ClientMessageId = clientMessageId,
-        Username = GetVerifiedLocalUsername() or "UNVERIFIED_USER",
+        Username = LocalPlayer.Name,
         DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         Text = privateBody,
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(GetVerifiedLocalUsername() or ""),
+        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
         PfpId = CurrentPfpId,
         IsPrivate = isPrivate,
         TargetUsername = privateTargetUsername,
@@ -3387,7 +3368,7 @@ MessageInput.FocusLost:Connect(function(enterPressed)
     if enterPressed then SendChatMessage() end
 end)
 
-local function BuildJoinMessagePayload()
+function BuildJoinMessagePayload()
     return {
         Username = "AI_MoD",
         DisplayName = "AI MoD",
@@ -3402,7 +3383,7 @@ local function BuildJoinMessagePayload()
     }
 end
 
-local function ShowLocalJoinMessage()
+function ShowLocalJoinMessage()
     local payload = BuildJoinMessagePayload()
     local localId = "local_join_" .. JoinEventId
 
@@ -3414,14 +3395,14 @@ local function ShowLocalJoinMessage()
     DisplayNewMessageNotif(payload, localId)
 end
 
-local function PostServerJoinMessage()
+function PostServerJoinMessage()
     local payload = BuildJoinMessagePayload()
     task.spawn(function()
         HttpRequest(SERVER_MESSAGES_ENDPOINT, "POST", payload)
     end)
 end
 
-local function PollMessages()
+function PollMessages()
     while true do
         FetchRemoteRankStyles()
         FetchRemoteRoles()

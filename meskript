@@ -1,4 +1,3 @@
-(function()
 -- LocalScript inside StarterPlayerScripts / StarterGui
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -12,156 +11,6 @@ local ContentProvider = game:GetService("ContentProvider")
 
 local LocalPlayer = Players.LocalPlayer
 local lplr = LocalPlayer
-if not LocalPlayer then
-    return
-end
-
--- ============================================================================
--- HARDENED CLIENT IDENTITY SNAPSHOT
---
--- IMPORTANT:
--- This is still a CLIENT-ONLY script. It cannot provide cryptographic identity
--- attestation against an executor that already controls the Lua VM.
---
--- The goal here is to:
---   1) capture the local identity as early as possible;
---   2) immediately cross-check the captured ID against Roblox UserService;
---   3) independently cross-check the same ID through users.roblox.com;
---   4) freeze the resulting identity snapshot;
---   5) use ONLY the frozen numeric UserId for local privilege decisions;
---   6) fail closed if any check is missing or inconsistent.
---
--- Name/DisplayName remain presentation values only.
--- ============================================================================
-
-local UserService = game:GetService("UserService")
-
--- Capture ONCE, before the rest of the script initializes.
-local CAPTURED_LOCAL_USER_ID = tonumber(LocalPlayer.UserId)
-
-local function GetExecutorRequest()
-    local ok, fn = pcall(function()
-        if syn and type(syn.request) == "function" then return syn.request end
-        if http and type(http.request) == "function" then return http.request end
-        if type(http_request) == "function" then return http_request end
-        if type(request) == "function" then return request end
-        if Fluxus and type(Fluxus.request) == "function" then return Fluxus.request end
-        return nil
-    end)
-    return ok and fn or nil
-end
-
-local function GetRobloxIdentityFromUserService(userId)
-    if type(userId) ~= "number" or userId <= 0 then
-        return nil
-    end
-
-    local ok, result = pcall(function()
-        return UserService:GetUserInfosByUserIdsAsync({userId})
-    end)
-
-    if not ok or type(result) ~= "table" then
-        return nil
-    end
-
-    local info = result[1]
-    if type(info) ~= "table"
-        or tonumber(info.Id) ~= userId
-        or type(info.Username) ~= "string"
-        or info.Username == "" then
-        return nil
-    end
-
-    return {
-        Id = tonumber(info.Id),
-        Username = info.Username,
-        DisplayName = type(info.DisplayName) == "string" and info.DisplayName or info.Username,
-    }
-end
-
-local function GetRobloxIdentityFromWebApi(userId)
-    if type(userId) ~= "number" or userId <= 0 then
-        return nil
-    end
-
-    local rawRequest = GetExecutorRequest()
-    if type(rawRequest) ~= "function" then
-        return nil
-    end
-
-    local requestOk, response = pcall(function()
-        return rawRequest({
-            Url = "https://users.roblox.com/v1/users/" .. tostring(userId),
-            Method = "GET",
-            Headers = {["Content-Type"] = "application/json"},
-        })
-    end)
-
-    if not requestOk or type(response) ~= "table" or type(response.Body) ~= "string" then
-        return nil
-    end
-
-    local decodeOk, data = pcall(function()
-        return HttpService:JSONDecode(response.Body)
-    end)
-
-    if not decodeOk or type(data) ~= "table"
-        or tonumber(data.id) ~= userId
-        or type(data.name) ~= "string"
-        or data.name == "" then
-        return nil
-    end
-
-    return {
-        Id = tonumber(data.id),
-        Username = data.name,
-        DisplayName = type(data.displayName) == "string" and data.displayName or data.name,
-    }
-end
-
-local AUTHENTIC_USER_ID = nil
-local AUTHENTIC_USERNAME = nil
-local AUTHENTIC_DISPLAY_NAME = nil
-local IDENTITY_VERIFIED = false
-
-do
-    local captured = CAPTURED_LOCAL_USER_ID
-
-    if captured then
-        local serviceIdentity = GetRobloxIdentityFromUserService(captured)
-        local webIdentity = GetRobloxIdentityFromWebApi(captured)
-
-        if serviceIdentity and webIdentity
-            and serviceIdentity.Id == captured
-            and webIdentity.Id == captured
-            and string.lower(serviceIdentity.Username) == string.lower(webIdentity.Username) then
-
-            AUTHENTIC_USER_ID = captured
-            AUTHENTIC_USERNAME = serviceIdentity.Username
-            AUTHENTIC_DISPLAY_NAME = serviceIdentity.DisplayName
-            IDENTITY_VERIFIED = true
-        end
-    end
-end
-
--- Immutable local authorization identity.
-local IDENTITY_SNAPSHOT = table.freeze({
-    Verified = IDENTITY_VERIFIED,
-    UserId = AUTHENTIC_USER_ID,
-    Username = AUTHENTIC_USERNAME,
-    DisplayName = AUTHENTIC_DISPLAY_NAME,
-})
-
--- Privileged commands MUST fail closed.
-local LOCAL_AUTH_USER_ID = IDENTITY_SNAPSHOT.UserId
-local LOCAL_AUTH_USERNAME = IDENTITY_SNAPSHOT.Username or ""
-local LOCAL_AUTH_DISPLAY_NAME = IDENTITY_SNAPSHOT.DisplayName or ""
-
-if IDENTITY_SNAPSHOT.Verified then
-    print("[Kronos] Verified client identity: " .. LOCAL_AUTH_USERNAME .. " [" .. tostring(LOCAL_AUTH_USER_ID) .. "]")
-else
-    warn("[Kronos] Identity verification failed; privileged local commands are disabled.")
-end
 local SERVER_JOB_ID = game.JobId ~= "" and game.JobId or "Studio_Local_Server"
 
 -- Custom Spoofed Name State
@@ -174,6 +23,7 @@ local ScriptStartTime = os.time()
 local MessageInput = nil
 local SendChatMessage = nil
 local CreateMessageCard = nil
+local HttpRequest = nil
 
 -- Anti-Spam Tracking State
 local LastSentMessageText = ""
@@ -187,31 +37,48 @@ local PFP_SAVE_KEY = "Kronos_UserPFP_AssetId"
 local DefaultPfpId = "110388265928893"
 
 local CurrentPfpId = (function()
-    local fileName = PFP_SAVE_KEY .. ".txt"
-    local hasFile = false
-
-    if type(isfile) == "function" then
-        local ok, result = pcall(isfile, fileName)
-        hasFile = ok and result == true
+    if readfile and isfile and isfile(PFP_SAVE_KEY .. ".txt") then
+        local success, saved = pcall(function() return readfile(PFP_SAVE_KEY .. ".txt") end)
+        if success and saved and saved ~= "" then return saved end
     end
-
-    if hasFile and type(readfile) == "function" then
-        local ok, saved = pcall(readfile, fileName)
-        if ok and type(saved) == "string" and saved ~= "" then
-            return saved
-        end
-    end
-
     return DefaultPfpId
 end)()
 
 local function SavePfpIdLocally(assetId)
     CurrentPfpId = tostring(assetId)
-    if type(writefile) == "function" then
-        pcall(writefile, PFP_SAVE_KEY .. ".txt", CurrentPfpId)
+    if writefile then
+        pcall(function() writefile(PFP_SAVE_KEY .. ".txt", CurrentPfpId) end)
     end
 end
 
+local BoyPfpList = {
+    "110388265928893", "95859643981980", "130155182109980", "13256391094", "7141979877", "126321955109144",
+    "105811627876448", "117842977352398", "72892670694166", "83103469598025", "75074160606432", "102436713076194",
+    "73360959903200", "8044287275", "75575644706346", "135418144122968", "108362888723956", "72208791847173",
+    "126308173151046", "12589564218", "79957717292980", "9167461968", "14958453101", "15812656372",
+    "17742534348", "16512222623", "16512186702", "15139830823", "113690915196801", "13815759727",
+    "17209732396", "9465573085", "6828147162", "8798642997", "6931482888", "11465013207",
+    "6151184293", "11792088810", "11792051524", "12129851981", "7766253892", "11810744690",
+    "12129866999", "11792081695", "9812014649", "11566642562", "11566643877", "11566645628",
+    "15489228483", "139913462267814", "127087398265711", "15741130603", "15914059452", "135351963625525",
+    "116451771061047", "128665410481682", "80274332831847", "82099431184126", "133311251800519", "13120458633",
+    "115774065375902", "70802874073501", "13589962584", "14640595544", "13399057339", "10246136967",
+    "133023108030460", "119497955225507", "16167788172", "12972724276", "18955458678", "105883736105171", "77630895008923", "118862079408453", "106469663951907", "106301311535154", "80256028266444", "80138975757326", "88153948399084", "97074936820513", "122133569226021", "125791648012678", "81831086505070", "89843619861520"
+}
+
+local GirlPfpList = {
+    "12020075855", "11830086459", "11511962080", "7777672203", "11830084792", "7332178758",
+    "7430248978", "7766251418", "9093346004", "9093348980", "9093350889", "6784635852",
+    "12557398956", "11830087451", "10305162859", "13706350387", "14436945404", "11830083821",
+    "14436758178", "13135537390", "14428713593", "14436954850", "13135491186", "14428738204",
+    "14428743609", "14436960020", "14758917533", "14484307859", "14437087525", "14436744290",
+    "13835626125", "15317009082", "136596648757339", "81108881402205", "76266870536490", "16348401915",
+    "117499002290555", "123333305454544", "114201242358456", "14847097309", "14688664923", "16348395223",
+    "16348391354", "16348399148", "13843648183", "8705803091", "14549632840", "14111174579",
+    "9052821925", "18516850087", "1756451716", "4958082006", "10395117329", "15023167771",
+    "115457404558211", "14677866904", "106604782438383", "101003324274756", "99824761297039", "79899054463161",
+    "132498447517240", "14365830804", "14133573570", "84575585234733", "14740456559"
+}
 
 -- Helper function to truncate DisplayName to 14 chars + "..." if over 15 chars
 local function GetFormattedDisplayName(displayName, isClient)
@@ -310,7 +177,7 @@ WelcomeLabel.Name = "WelcomeLabel"
 WelcomeLabel.Size = UDim2.new(1, 0, 0, 20)
 WelcomeLabel.Position = UDim2.new(0, 0, 0, 48)
 WelcomeLabel.BackgroundTransparency = 1
-WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true)
+WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(LocalPlayer.DisplayName, true)
 WelcomeLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
 WelcomeLabel.Font = Enum.Font.Gotham
 WelcomeLabel.TextSize = 12
@@ -525,7 +392,7 @@ task.spawn(runIntro)
 -- [2] ROLEPLAY PROFILES LOAD MATRIX (KRONOS CHAT EDITION)
 -- ========================================================================
 local customRPName = " ᴋʀᴏɴᴏs ᴄʜᴀᴛ "
-local customRPBio  = " ωєℓ¢σмє вα¢к, " .. GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true) .. " "
+local customRPBio  = " ωєℓ¢σмє вα¢к, " .. GetFormattedDisplayName(lplr.DisplayName, true) .. " "
 
 local function applyRPProfile()
     local reFolder = ReplicatedStorage:WaitForChild("RE", 10)
@@ -597,12 +464,192 @@ local SERVER_MESSAGES_ENDPOINT = SERVER_FIREBASE_URL .. "server_chat/" .. SERVER
 local REQUEST_FIREBASE_URL = "https://gctagreq-default-rtdb.asia-southeast1.firebasedatabase.app/"
 local REQUEST_ENDPOINT = REQUEST_FIREBASE_URL .. "requests.json"
 
+-- ============================================================================
+-- KRONOS MUSIC SESSION
+-- !gplymsc <Roblox music ID> = global music for all Kronos clients
+-- !splymsc <Roblox music ID> = server music for clients in this JobId
+-- !stpmsc = stop music in the current GLOBAL/SERVER scope
+-- The Firebase node stores the current state so newly joined clients can sync.
+-- ============================================================================
+local MUSIC_FIREBASE_URL = "https://kmusicsessionxd-default-rtdb.asia-southeast1.firebasedatabase.app/"
+local GLOBAL_MUSIC_ENDPOINT = MUSIC_FIREBASE_URL .. "music/global.json"
+local SERVER_MUSIC_ENDPOINT = MUSIC_FIREBASE_URL .. "music/server/" .. SERVER_JOB_ID .. ".json"
+
+local KRONO_JOCKIE_USERNAME = "Krono_Jockie"
+local KRONO_JOCKIE_DISPLAY_NAME = "Krono Jockie"
+local KRONO_JOCKIE_PFP_ID = "7261787230"
+local KRONO_JOCKIE_ROLE = "BOT"
+
+local ActiveMusicScope = nil
+local ActiveMusicId = nil
+local ActiveMusicCommandId = nil
+local MusicSound = nil
+local MusicPollToken = 0
+
+local function GetMusicEndpoint(isGlobal)
+    return isGlobal and GLOBAL_MUSIC_ENDPOINT or SERVER_MUSIC_ENDPOINT
+end
+
+local function NormalizeMusicId(rawId)
+    rawId = tostring(rawId or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    rawId = rawId:gsub("^rbxassetid://", "")
+    if rawId == "" or not rawId:match("^%d+$") then
+        return nil
+    end
+    return rawId
+end
+
+local function StopKronosMusic()
+    MusicPollToken = MusicPollToken + 1
+    if MusicSound then
+        pcall(function()
+            MusicSound:Stop()
+            MusicSound:Destroy()
+        end)
+        MusicSound = nil
+    end
+    ActiveMusicScope = nil
+    ActiveMusicId = nil
+    ActiveMusicCommandId = nil
+end
+
+local function PlayKronosMusic(musicId, scope, commandId)
+    musicId = NormalizeMusicId(musicId)
+    if not musicId then return false end
+
+    if ActiveMusicScope == scope and ActiveMusicId == musicId and ActiveMusicCommandId == commandId and MusicSound and MusicSound.Parent then
+        if not MusicSound.IsPlaying then
+            pcall(function() MusicSound:Play() end)
+        end
+        return true
+    end
+
+    MusicPollToken = MusicPollToken + 1
+    local token = MusicPollToken
+
+    if MusicSound then
+        pcall(function()
+            MusicSound:Stop()
+            MusicSound:Destroy()
+        end)
+        MusicSound = nil
+    end
+
+    local sound = Instance.new("Sound")
+    sound.Name = "KronosMusicSession"
+    sound.SoundId = "rbxassetid://" .. musicId
+    sound.Volume = 0.5
+    sound.Looped = true
+    sound.Parent = game:GetService("SoundService")
+    MusicSound = sound
+    ActiveMusicScope = scope
+    ActiveMusicId = musicId
+    ActiveMusicCommandId = commandId
+
+    task.spawn(function()
+        local ok = pcall(function()
+            ContentProvider:PreloadAsync({sound})
+        end)
+        if token ~= MusicPollToken or not sound.Parent then return end
+        if ok then
+            pcall(function() sound:Play() end)
+        else
+            pcall(function() sound:Play() end)
+        end
+    end)
+
+    return true
+end
+
+local function BuildKronosMusicChatPayload(text, isGlobal, commandId)
+    return {
+        Username = KRONO_JOCKIE_USERNAME,
+        DisplayName = KRONO_JOCKIE_DISPLAY_NAME,
+        Text = tostring(text),
+        Timestamp = os.time(),
+        Role = KRONO_JOCKIE_ROLE,
+        PfpId = KRONO_JOCKIE_PFP_ID,
+        IsPrivate = false,
+        SystemMessage = true,
+        MusicSystemMessage = true,
+        MusicScope = isGlobal and "GLOBAL" or "SERVER",
+        MusicCommandId = commandId,
+    }
+end
+
+local function PostKronosMusicState(isGlobal, playing, musicId, commandId)
+    local endpoint = GetMusicEndpoint(isGlobal)
+    local payload = {
+        Playing = playing == true,
+        MusicId = playing and NormalizeMusicId(musicId) or nil,
+        UpdatedAt = os.time(),
+        UpdatedByUsername = LocalPlayer.Name,
+        UpdatedByDisplayName = LocalPlayer.DisplayName,
+        Scope = isGlobal and "GLOBAL" or "SERVER",
+        CommandId = tostring(commandId or (LocalPlayer.UserId .. "_" .. os.time() .. "_" .. math.random(100000, 999999))),
+    }
+
+    task.spawn(function()
+        pcall(function()
+            HttpRequest(endpoint, "PUT", payload)
+        end)
+    end)
+
+    return payload
+end
+
+local function PostKronosMusicChat(text, isGlobal, commandId)
+    local endpoint = isGlobal and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
+    local payload = BuildKronosMusicChatPayload(text, isGlobal, commandId)
+
+    task.spawn(function()
+        pcall(function()
+            HttpRequest(endpoint, "POST", payload)
+        end)
+    end)
+end
+
+local function SyncKronosMusicState(state, isGlobal)
+    if type(state) ~= "table" then return end
+
+    local scope = isGlobal and "GLOBAL" or "SERVER"
+    local playing = state.Playing == true
+    local musicId = NormalizeMusicId(state.MusicId)
+    local commandId = tostring(state.CommandId or "")
+
+    if not playing or not musicId then
+        if ActiveMusicScope == scope then
+            StopKronosMusic()
+        end
+        return
+    end
+
+    PlayKronosMusic(musicId, scope, commandId)
+end
+
+local function PollKronosMusic()
+    while true do
+        local globalState = HttpRequest(GLOBAL_MUSIC_ENDPOINT, "GET")
+        if globalState and type(globalState) == "table" then
+            SyncKronosMusicState(globalState, true)
+        end
+
+        local serverState = HttpRequest(SERVER_MUSIC_ENDPOINT, "GET")
+        if serverState and type(serverState) == "table" then
+            SyncKronosMusicState(serverState, false)
+        end
+
+        task.wait(2)
+    end
+end
+
+
 local GITHUB_ROLE_LIST_URL = "https://raw.githubusercontent.com/thedevilondiscord/GC/refs/heads/main/GC_RoleList.json"
 local GITHUB_RANK_STYLES_URL = nil -- Role colours are local; only the GitHub roster is dynamic.
 
 local JOIN_SOUND_ID = "rbxassetid://7460825623"
 local NOTIFICATION_SOUND_ID = "rbxassetid://107978604605265"
-local JoinEventId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
+local JoinEventId = LocalPlayer.UserId .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
 
 local ActiveTab = "GLOBAL"
 
@@ -1052,7 +1099,7 @@ local function AnimateRoleFont(textObject, roleName, style)
     end)
 end
 
-local ALL_AUTOCOMPLETE_OPTIONS = { "!tag", "!role", "!spoof", "!announce ", "!mute ", "/w " }
+local ALL_AUTOCOMPLETE_OPTIONS = { "!tag", "!role", "!spoof", "!announce ", "!mute ", "!gplymsc ", "!splymsc ", "!stpmsc", "/w " }
 local CurrentContextMessage = nil
 local ReplyContextMessage = nil
 local ReplyHighlightToken = 0
@@ -1064,7 +1111,6 @@ local ClearPersistentPrivatePrefix = function() end
 
 local AssignedPlayerRoles = {}
 local AvailableUserRoles = {}
-local AvailableUserRolesByUserId = {}
 local DisabledTags = {}        
 local PersistentPvtPrefix = ""
 
@@ -1185,46 +1231,26 @@ end
 -- ============================================================================
 -- HTTP HANDLER (MULTI-EXECUTOR COMPATIBLE)
 -- ============================================================================
-local http_req = GetExecutorRequest()
+local http_req = (syn and syn.request) or (http and http.request) or http_request or request or (Fluxus and fluxus.request)
 
-local function HttpRequest(url, method, data)
-    if type(http_req) ~= "function" or type(url) ~= "string" then
-        return nil
-    end
-
-    local encodedBody = nil
-    if data ~= nil then
-        local encodeOk, encoded = pcall(function()
-            return HttpService:JSONEncode(data)
-        end)
-        if not encodeOk then
-            return nil
-        end
-        encodedBody = encoded
-    end
-
+HttpRequest = function(url, method, data)
+    if not http_req then return nil end
     local success, response = pcall(function()
         return http_req({
             Url = url,
             Method = method or "GET",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = encodedBody,
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = data and HttpService:JSONEncode(data) or nil
         })
     end)
 
-    if not success or type(response) ~= "table" or type(response.Body) ~= "string" then
-        return nil
+    if success and response and response.Body then
+        local decodedSuccess, decodedData = pcall(function()
+            return HttpService:JSONDecode(response.Body)
+        end)
+        return decodedSuccess and decodedData or nil
     end
-
-    local decodedSuccess, decodedData = pcall(function()
-        return HttpService:JSONDecode(response.Body)
-    end)
-
-    if not decodedSuccess or type(decodedData) ~= "table" then
-        return nil
-    end
-
-    return decodedData
+    return nil
 end
 
 -- ============================================================================
@@ -1251,11 +1277,7 @@ local ROLE_PRIORITY = {
 }
 
 local ROLE_PRIORITY_INDEX = {}
-for index, roleName in ipairs(ROLE_PRIORITY) do
-    ROLE_PRIORITY_INDEX[roleName] = index
-end
-ROLE_PRIORITY_INDEX = table.freeze(ROLE_PRIORITY_INDEX)
-ROLE_PRIORITY = table.freeze(ROLE_PRIORITY)
+for index, roleName in ipairs(ROLE_PRIORITY) do ROLE_PRIORITY_INDEX[roleName] = index end
 
 local ROLE_PERMISSIONS = {
     ["Architect"] = {Spoof=true, Announce=true, Kick=true, Ban=true, Mute=true, PlayMusic=true},
@@ -1268,11 +1290,6 @@ local ROLE_PERMISSIONS = {
     ["Regent of Clan🔥"] = {Spoof=true},
     ["MALKIN🌸"] = {Spoof=true},
 }
-
-for roleName, permissions in pairs(ROLE_PERMISSIONS) do
-    ROLE_PERMISSIONS[roleName] = table.freeze(permissions)
-end
-ROLE_PERMISSIONS = table.freeze(ROLE_PERMISSIONS)
 
 local function RoleNameEquals(a, b)
     return string.lower(tostring(a or "")) == string.lower(tostring(b or ""))
@@ -1317,21 +1334,7 @@ local function GetAssignedOrCalculatedRole(username)
     return GetHighestRole(username)
 end
 
-local GetAssignedOrCalculatedRoleByUserId
-
 local function HasRolePermission(username, permission)
-    -- Local privilege checks are keyed to the frozen numeric identity.
-    -- Do not fall back to Player.Name/DisplayName when deciding privileges.
-    if username == LOCAL_AUTH_USERNAME then
-        if not IDENTITY_SNAPSHOT.Verified or type(LOCAL_AUTH_USER_ID) ~= "number" then
-            return false
-        end
-
-        local role = GetAssignedOrCalculatedRoleByUserId(LOCAL_AUTH_USER_ID)
-        local perms = role and ROLE_PERMISSIONS[role]
-        return perms and perms[permission] == true or false
-    end
-
     local role = GetAssignedOrCalculatedRole(username)
     local perms = ROLE_PERMISSIONS[role]
     return perms and perms[permission] == true or false
@@ -1406,59 +1409,6 @@ local function FetchRemoteRoles()
     end
 
     AvailableUserRoles = fresh
-
-    -- Numeric-ID role authority for the local authenticated identity.
-    -- A username-only roster entry is intentionally NOT accepted for local
-    -- privileged authorization. This prevents a spoofed local name from
-    -- becoming an authorization fallback.
-    AvailableUserRolesByUserId = AvailableUserRolesByUserId or {}
-    local numericRoles = {}
-    for rankName, playerList in pairs(jsonRoster) do
-        local canonicalRole = FindCanonicalRole(rankName)
-        if canonicalRole and type(playerList) == "table" then
-            local entries = playerList
-            if playerList.Usernames or playerList.UserIds then
-                entries = {}
-                if type(playerList.UserIds) == "table" then
-                    for _, userId in ipairs(playerList.UserIds) do
-                        table.insert(entries, {UserId = userId})
-                    end
-                end
-            end
-
-            for _, entry in ipairs(entries) do
-                local targetUserId
-                if type(entry) == "table" then
-                    targetUserId = tonumber(entry.UserId or entry.UserID or entry.Id)
-                elseif type(entry) == "number" then
-                    targetUserId = tonumber(entry)
-                end
-
-                if targetUserId then
-                    numericRoles[targetUserId] = numericRoles[targetUserId] or {}
-                    if not table.find(numericRoles[targetUserId], canonicalRole) then
-                        table.insert(numericRoles[targetUserId], canonicalRole)
-                    end
-                end
-            end
-        end
-    end
-
-    AvailableUserRolesByUserId = numericRoles
-
-    GetAssignedOrCalculatedRoleByUserId = function(userId)
-        local roles = AvailableUserRolesByUserId[tonumber(userId)] or {}
-        local best, bestIndex
-        for _, roleName in ipairs(roles) do
-            local canonical = FindCanonicalRole(roleName) or roleName
-            local idx = ROLE_PRIORITY_INDEX[canonical] or 9999
-            if not bestIndex or idx < bestIndex then
-                best, bestIndex = canonical, idx
-            end
-        end
-        return best or nil
-    end
-
     for _, player in ipairs(Players:GetPlayers()) do
         local highest = GetHighestRole(player.Name)
         if not AssignedPlayerRoles[player.Name] or not PlayerHasRole(player.Name, AssignedPlayerRoles[player.Name]) then
@@ -1595,7 +1545,6 @@ ServerTabBtn.Parent = HeaderBar
 local ServerTabCorner = Instance.new("UICorner")
 ServerTabCorner.CornerRadius = UDim.new(0, 8)
 ServerTabCorner.Parent = ServerTabBtn
-
 
 local AboutTabBtn = Instance.new("TextButton")
 AboutTabBtn.Name = "AboutTabBtn"
@@ -1809,15 +1758,15 @@ end
 
 local function DisplayNewMessageNotif(msgData, messageId)
     if not msgData then return end
-    if msgData.IsPrivate and msgData.Username ~= LOCAL_AUTH_USERNAME and msgData.TargetUsername ~= LOCAL_AUTH_USERNAME then return end
-    if msgData.Username == LOCAL_AUTH_USERNAME and not msgData.IsJoinMessage then return end
+    if msgData.IsPrivate and msgData.Username ~= LocalPlayer.Name and msgData.TargetUsername ~= LocalPlayer.Name then return end
+    if msgData.Username == LocalPlayer.Name and not msgData.IsJoinMessage then return end
 
     messageId = tostring(messageId or ((msgData.JoinEventId or "") .. "_" .. (msgData.Timestamp or "") .. "_" .. (msgData.Username or "")))
     if ShownNotificationIds[messageId] then return end
     ShownNotificationIds[messageId] = true
 
     local rawName = msgData.DisplayName or msgData.Username or "Unknown"
-    local isClient = (msgData.Username == LOCAL_AUTH_USERNAME)
+    local isClient = (msgData.Username == LocalPlayer.Name)
     local formattedName = GetFormattedDisplayName(rawName, isClient)
     local rawText = msgData.Text or ""
     if msgData.IsJoinMessage then
@@ -2220,9 +2169,9 @@ SubmitRequestBtn.MouseButton1Click:Connect(function()
     SubmitRequestBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 
     local payload = {
-        Username = LOCAL_AUTH_USERNAME,
-        DisplayName = GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true),
-        UserId = LOCAL_AUTH_USER_ID,
+        Username = LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        UserId = LocalPlayer.UserId,
         RequestText = text,
         Timestamp = os.time()
     }
@@ -2327,7 +2276,7 @@ ServerInviteCorner.Parent = ServerInviteButton
 local function SendServerInvite()
     if ActiveTab ~= "GLOBAL" then return end
 
-    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_invite_" ..
+    local clientMessageId = LocalPlayer.UserId .. "_invite_" ..
         tostring(math.floor(os.clock() * 1000000)) .. "_" ..
         tostring(math.random(100000, 999999))
 
@@ -2337,7 +2286,7 @@ local function SendServerInvite()
         DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         Text = "invited you to join their current server",
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LOCAL_AUTH_USERNAME),
+        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
         PfpId = CurrentPfpId,
         IsPrivate = false,
         IsServerInvite = true,
@@ -2503,6 +2452,15 @@ local function ShowCommandAutocomplete()
     elseif lower == "!announce" then
         command = "!announce "
         query = ""
+    elseif lower == "!gplymsc" or lower:sub(1, 9) == "!gplymsc " then
+        command = "!gplymsc "
+        query = typed:sub(10)
+    elseif lower == "!splymsc" or lower:sub(1, 9) == "!splymsc " then
+        command = "!splymsc "
+        query = typed:sub(10)
+    elseif lower == "!stpmsc" then
+        command = "!stpmsc"
+        query = ""
     else
         return
     end
@@ -2512,10 +2470,15 @@ local function ShowCommandAutocomplete()
 
     if command == "!announce " then
         -- Show !announce in autocomplete only to roles that can actually use it.
-        if not CanUseAnnouncement(LOCAL_AUTH_USERNAME) then
+        if not CanUseAnnouncement(LocalPlayer.Name) then
             return
         end
         table.insert(suggestions, "!announce ")
+    elseif command == "!gplymsc " or command == "!splymsc " or command == "!stpmsc" then
+        if not CanUsePlayMusic(LocalPlayer.Name) then
+            return
+        end
+        table.insert(suggestions, command)
     elseif command == "!tag " then
         for roleName in pairs(RANK_STYLES) do
             if not seen[roleName] then
@@ -2578,7 +2541,7 @@ local function ShowCommandAutocomplete()
                 button.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
             end)
             button.MouseButton1Click:Connect(function()
-                local selectedCommand = (command == "!announce ") and command or (command .. suggestion)
+                local selectedCommand = (suggestion == command) and suggestion or (command .. suggestion)
                 HideCommandAutocomplete()
 
                 -- Setting the textbox after removing the old suggestions avoids
@@ -2938,7 +2901,7 @@ CreateMessageCard = function(msgData, isGlobal)
 
     AnimateRoleFont(tagLabel, roleName, style)
 
-    local isClient = (msgData.Username == LOCAL_AUTH_USERNAME)
+    local isClient = (msgData.Username == LocalPlayer.Name)
     local formattedName = GetFormattedDisplayName(msgData.DisplayName or msgData.Username, isClient)
 
     local nameLabel = Instance.new("TextLabel")
@@ -3220,7 +3183,7 @@ end
 Moderation.SendAnnouncement = function(body)
     local isGlobal = ActiveTab == "GLOBAL"
     local text = "🚨 Okey Listen Up 📢 : " .. tostring(body)
-    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_announcement_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = LocalPlayer.UserId .. "_announcement_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
     local payload = {
         ClientMessageId = clientMessageId,
         Username = ANNOUNCER_NAME,
@@ -3241,7 +3204,7 @@ end
 Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinutes)
     local isGlobal = ActiveTab == "GLOBAL"
     local expiresAt = os.time() + (durationMinutes * 60)
-    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_mute_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = LocalPlayer.UserId .. "_mute_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
     local payload = {
         ClientMessageId = clientMessageId,
         Username = "AI_MoD",
@@ -3285,7 +3248,7 @@ SendChatMessage = function()
 
     if not isPrivate then
         local currentScope = (ActiveTab == "GLOBAL") and "GLOBAL" or "SERVER"
-        local ownMute = Moderation.GetActiveMute(currentScope, LOCAL_AUTH_USERNAME)
+        local ownMute = Moderation.GetActiveMute(currentScope, LocalPlayer.Name)
         if ownMute then
             local remaining = Moderation.FormatMuteRemaining((tonumber(ownMute.ExpiresAt) or os.time()) - os.time())
             local imposedBy = tostring(ownMute.ImposedByDisplayName or "Moderator")
@@ -3310,8 +3273,64 @@ SendChatMessage = function()
         ShowLocalSystemMessage("[AI MoD] : Join-message test triggered successfully ✓")
         MessageInput.Text = ""
         return
+    elseif not isPrivate and (typedText:match("^!gplymsc%s+") or typedText == "!gplymsc") then
+        if not CanUsePlayMusic(LocalPlayer.Name) then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to use music commands.", true)
+            MessageInput.Text = ""
+            return
+        end
+
+        local rawId = typedText:match("^!gplymsc%s+(.+)$")
+        local musicId = NormalizeMusicId(rawId)
+        if not musicId then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Usage: !gplymsc [Roblox Music ID].", true)
+            MessageInput.Text = ""
+            return
+        end
+
+        local commandId = LocalPlayer.UserId .. "_g_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
+        PostKronosMusicState(true, true, musicId, commandId)
+        PostKronosMusicChat(GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " Is Playing " .. musicId .. "🎵", true, commandId)
+        MessageInput.Text = ""
+        return
+
+    elseif not isPrivate and (typedText:match("^!splymsc%s+") or typedText == "!splymsc") then
+        if not CanUsePlayMusic(LocalPlayer.Name) then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to use music commands.", true)
+            MessageInput.Text = ""
+            return
+        end
+
+        local rawId = typedText:match("^!splymsc%s+(.+)$")
+        local musicId = NormalizeMusicId(rawId)
+        if not musicId then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Usage: !splymsc [Roblox Music ID].", true)
+            MessageInput.Text = ""
+            return
+        end
+
+        local commandId = LocalPlayer.UserId .. "_s_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
+        PostKronosMusicState(false, true, musicId, commandId)
+        PostKronosMusicChat(GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " Is Playing " .. musicId .. "🎵", false, commandId)
+        MessageInput.Text = ""
+        return
+
+    elseif not isPrivate and typedText == "!stpmsc" then
+        if not CanUsePlayMusic(LocalPlayer.Name) then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to use music commands.", true)
+            MessageInput.Text = ""
+            return
+        end
+
+        local isGlobalMusic = ActiveTab == "GLOBAL"
+        local commandId = LocalPlayer.UserId .. "_stop_" .. (isGlobalMusic and "g" or "s") .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
+        PostKronosMusicState(isGlobalMusic, false, nil, commandId)
+        PostKronosMusicChat(GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " Has Stopped the Music.", isGlobalMusic, commandId)
+        MessageInput.Text = ""
+        return
+
     elseif not isPrivate and string.sub(typedText, 1, 9) == "!announce" then
-        if not CanUseAnnouncement(LOCAL_AUTH_USERNAME) then
+        if not CanUseAnnouncement(LocalPlayer.Name) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Only Architect, Overseer and Moderator can use !announce.", true)
             MessageInput.Text = ""
             return
@@ -3331,7 +3350,7 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!mute " then
-        if not CanUseModerationCommands(LOCAL_AUTH_USERNAME) then
+        if not CanUseModerationCommands(LocalPlayer.Name) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Only Architect, Overseer and Moderator can use !mute.", true)
             MessageInput.Text = ""
             return
@@ -3356,18 +3375,18 @@ SendChatMessage = function()
     elseif not isPrivate and string.sub(typedText, 1, 5) == "!tag " then
         local requestedRole = string.sub(typedText, 6):gsub("^%s+", ""):gsub("%s+$", "")
         local canonical = FindCanonicalRole(requestedRole)
-        if not canonical or not PlayerHasRole(LOCAL_AUTH_USERNAME, canonical) then
+        if not canonical or not PlayerHasRole(LocalPlayer.Name, canonical) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. You are not assigned to the role '" .. requestedRole .. "' in the GitHub roster.", true)
         else
-            AssignedPlayerRoles[LOCAL_AUTH_USERNAME] = canonical
-            DisabledTags[LOCAL_AUTH_USERNAME] = nil
+            AssignedPlayerRoles[LocalPlayer.Name] = canonical
+            DisabledTags[LocalPlayer.Name] = nil
             ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
         end
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!tag" then
-        DisabledTags[LOCAL_AUTH_USERNAME] = not DisabledTags[LOCAL_AUTH_USERNAME]
-        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LOCAL_AUTH_USERNAME] and "disabled" or "enabled") .. " ✓")
+        DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
+        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!role " then
@@ -3384,8 +3403,8 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!role" then
-        local roles = GetPlayerRoles(LOCAL_AUTH_USERNAME)
-        local highest = GetHighestRole(LOCAL_AUTH_USERNAME)
+        local roles = GetPlayerRoles(LocalPlayer.Name)
+        local highest = GetHighestRole(LocalPlayer.Name)
         ShowLocalSystemMessage("[AI MoD] : Your highest role is " .. highest .. ". Available roles: " .. (#roles > 0 and table.concat(roles, ", ") or "none") .. ".")
         MessageInput.Text = ""
         return
@@ -3394,7 +3413,7 @@ SendChatMessage = function()
         local lowered = string.lower(requested)
         if lowered == "architect" or lowered == "overseer" or lowered == "com-god" then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Architect, Overseer and Com-God cannot be spoofed.", true)
-        elseif CanUseSpoof(LOCAL_AUTH_USERNAME) then
+        elseif CanUseSpoof(LocalPlayer.Name) then
             SpoofedDisplayName = requested
             ShowLocalSystemMessage("[AI MoD] : Display name changed successfully ✓")
         else
@@ -3431,15 +3450,15 @@ SendChatMessage = function()
     LastMessageSendTime = now
 
     local reply = ReplyContextMessage
-    local clientMessageId = tostring(LOCAL_AUTH_USER_ID or "unverified") .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = LocalPlayer.UserId .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
 
     local payload = {
         ClientMessageId = clientMessageId,
-        Username = LOCAL_AUTH_USERNAME,
-        DisplayName = GetFormattedDisplayName(LOCAL_AUTH_DISPLAY_NAME, true),
+        Username = LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         Text = privateBody,
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LOCAL_AUTH_USERNAME),
+        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
         PfpId = CurrentPfpId,
         IsPrivate = isPrivate,
         TargetUsername = privateTargetUsername,
@@ -3497,6 +3516,11 @@ MessageInput.FocusLost:Connect(function()
             or current:sub(1, 6) == "!mute "
             or current == "!announce"
             or current:sub(1, 9) == "!announce "
+            or current == "!gplymsc"
+            or current:sub(1, 9) == "!gplymsc "
+            or current == "!splymsc"
+            or current:sub(1, 9) == "!splymsc "
+            or current == "!stpmsc"
 
         if not isCommand then
             HideCommandAutocomplete()
@@ -3513,8 +3537,8 @@ function BuildJoinMessagePayload()
     return {
         Username = "AI_MoD",
         DisplayName = "AI MoD",
-        JoinedDisplayName = LOCAL_AUTH_DISPLAY_NAME,
-        Text = LOCAL_AUTH_DISPLAY_NAME .. " has Joined the Server Chat",
+        JoinedDisplayName = LocalPlayer.DisplayName,
+        Text = LocalPlayer.DisplayName .. " has Joined the Server Chat",
         Timestamp = os.time(),
         Role = "BOT",
         PfpId = 78588114275746,
@@ -3548,6 +3572,18 @@ function PollMessages()
         FetchRemoteRankStyles()
         FetchRemoteRoles()
 
+        -- Music session state is separate from chat state, but uses the same
+        -- two-second client polling cadence so every Kronos client stays synced.
+        local globalMusicState = HttpRequest(GLOBAL_MUSIC_ENDPOINT, "GET")
+        if globalMusicState and type(globalMusicState) == "table" then
+            SyncKronosMusicState(globalMusicState, true)
+        end
+
+        local serverMusicState = HttpRequest(SERVER_MUSIC_ENDPOINT, "GET")
+        if serverMusicState and type(serverMusicState) == "table" then
+            SyncKronosMusicState(serverMusicState, false)
+        end
+
         local globalData = HttpRequest(GLOBAL_MESSAGES_ENDPOINT, "GET")
         if globalData and type(globalData) == "table" then
             for id, msg in pairs(globalData) do
@@ -3555,9 +3591,9 @@ function PollMessages()
                     if tonumber(msg.ExpiresAt or 0) > os.time() and msg.TargetUsername and msg.Scope == "GLOBAL" then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("GLOBAL", msg.TargetUsername)] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LOCAL_AUTH_USERNAME or msg.TargetUsername == LOCAL_AUTH_USERNAME) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
                     local blockedByMute = Moderation.GetActiveMute("GLOBAL", msg.Username) ~= nil
-                    if blockedByMute and msg.Username ~= LOCAL_AUTH_USERNAME then
+                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
@@ -3584,9 +3620,9 @@ function PollMessages()
                     if tonumber(msg.ExpiresAt or 0) > os.time() and msg.TargetUsername and msg.Scope == "SERVER" then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("SERVER", msg.TargetUsername)] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LOCAL_AUTH_USERNAME or msg.TargetUsername == LOCAL_AUTH_USERNAME) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
                     local blockedByMute = Moderation.GetActiveMute("SERVER", msg.Username) ~= nil
-                    if blockedByMute and msg.Username ~= LOCAL_AUTH_USERNAME then
+                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
@@ -3619,8 +3655,7 @@ task.spawn(PollMessages)
 
 
 -- ARCHITECT / OVERSEER SPOOF PROTECTION
-local function KronosProtectedSpoofRole(name)
+function KronosProtectedSpoofRole(name)
     name = tostring(name or ""):lower()
     return name == "architect" or name == "overseer"
 end
-end)()

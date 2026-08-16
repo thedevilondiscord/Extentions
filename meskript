@@ -1997,6 +1997,49 @@ StickerPanelStroke.Color = Color3.fromRGB(220, 30, 30)
 StickerPanelStroke.Transparency = 0.4
 StickerPanelStroke.Parent = StickerPanel
 
+-- ============================================================================
+-- PERSISTENT CUSTOM STICKERS
+-- The saved list is local to this client and is deliberately stored separately
+-- from the built-in roster. New custom stickers are always inserted first.
+-- ============================================================================
+CUSTOM_STICKERS_SAVE_KEY = "Kronos_CustomStickers"
+PersistentCustomStickers = {}
+
+function LoadPersistentCustomStickers()
+    if not (readfile and isfile and isfile(CUSTOM_STICKERS_SAVE_KEY .. ".txt")) then return end
+    pcall(function()
+        local raw = readfile(CUSTOM_STICKERS_SAVE_KEY .. ".txt")
+        if raw and raw ~= "" then
+            local decoded = HttpService:JSONDecode(raw)
+            if type(decoded) == "table" then
+                for _, id in ipairs(decoded) do
+                    id = tostring(id or "")
+                    if id:match("^%d+$") and not table.find(PersistentCustomStickers, id) then
+                        table.insert(PersistentCustomStickers, id)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function SavePersistentCustomStickers()
+    if writefile then
+        pcall(function()
+            writefile(CUSTOM_STICKERS_SAVE_KEY .. ".txt", HttpService:JSONEncode(PersistentCustomStickers))
+        end)
+    end
+end
+
+function NormalizeStickerId(value)
+    value = tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local id = value:match("^%d+$") or value:match("(%d+)")
+    if not id then return nil end
+    return id
+end
+
+LoadPersistentCustomStickers()
+
 StickerScroller = Instance.new("ScrollingFrame")
 StickerScroller.Name = "StickerScroller"
 StickerScroller.Size = UDim2.new(1, -12, 1, -12)
@@ -2018,34 +2061,196 @@ StickerGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     StickerScroller.CanvasSize = UDim2.new(0, 0, 0, StickerGrid.AbsoluteContentSize.Y + 12)
 end)
 
-for _, stickerUrl in ipairs(baseStickers) do
-    local stickerCard = Instance.new("ImageButton")
-    stickerCard.Name = "StickerCard"
-    stickerCard.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
-    stickerCard.BackgroundTransparency = 0.3
-    stickerCard.Image = stickerUrl
-    stickerCard.ScaleType = Enum.ScaleType.Fit
-    stickerCard.ZIndex = 27
-    stickerCard.Parent = StickerScroller
+-- Add-sticker popup. It is kept inside the sticker panel so it remains usable
+-- on the compact Kronos layout.
+StickerAddPopup = Instance.new("Frame")
+StickerAddPopup.Name = "StickerAddPopup"
+StickerAddPopup.Size = UDim2.new(0, 238, 0, 116)
+StickerAddPopup.Position = UDim2.new(0, 11, 0, 42)
+StickerAddPopup.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+StickerAddPopup.BackgroundTransparency = 0.03
+StickerAddPopup.BorderSizePixel = 0
+StickerAddPopup.Visible = false
+StickerAddPopup.ZIndex = 40
+StickerAddPopup.Parent = StickerPanel
 
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 8)
-    cardCorner.Parent = stickerCard
+StickerAddCorner = Instance.new("UICorner")
+StickerAddCorner.CornerRadius = UDim.new(0, 10)
+StickerAddCorner.Parent = StickerAddPopup
+StickerAddStroke = Instance.new("UIStroke")
+StickerAddStroke.Thickness = 1.5
+StickerAddStroke.Color = Color3.fromRGB(220, 30, 30)
+StickerAddStroke.Parent = StickerAddPopup
 
-    local cardStroke = Instance.new("UIStroke")
-    cardStroke.Thickness = 1
-    cardStroke.Color = Color3.fromRGB(255, 255, 255)
-    cardStroke.Transparency = 0.8
-    cardStroke.Parent = stickerCard
+StickerAddTitle = Instance.new("TextLabel")
+StickerAddTitle.Size = UDim2.new(1, -16, 0, 22)
+StickerAddTitle.Position = UDim2.new(0, 8, 0, 6)
+StickerAddTitle.BackgroundTransparency = 1
+StickerAddTitle.Text = "+  SAVE NEW STICKER"
+StickerAddTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerAddTitle.Font = Enum.Font.GothamBold
+StickerAddTitle.TextSize = 12
+StickerAddTitle.TextXAlignment = Enum.TextXAlignment.Left
+StickerAddTitle.ZIndex = 41
+StickerAddTitle.Parent = StickerAddPopup
 
-    stickerCard.MouseButton1Click:Connect(function()
-        StickerPanel.Visible = false
-        if MessageInput then
-            MessageInput.Text = stickerUrl
-            if SendChatMessage then SendChatMessage() end
-        end
-    end)
+StickerIdInput = Instance.new("TextBox")
+StickerIdInput.Name = "StickerIdInput"
+StickerIdInput.Size = UDim2.new(1, -16, 0, 32)
+StickerIdInput.Position = UDim2.new(0, 8, 0, 32)
+StickerIdInput.BackgroundColor3 = Color3.fromRGB(8, 8, 15)
+StickerIdInput.BackgroundTransparency = 0.05
+StickerIdInput.BorderSizePixel = 0
+StickerIdInput.ClearTextOnFocus = false
+StickerIdInput.PlaceholderText = "Enter Roblox Sticker ID"
+StickerIdInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 160)
+StickerIdInput.Text = ""
+StickerIdInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerIdInput.Font = Enum.Font.GothamMedium
+StickerIdInput.TextSize = 12
+StickerIdInput.ZIndex = 41
+StickerIdInput.Parent = StickerAddPopup
+
+StickerInputCorner = Instance.new("UICorner")
+StickerInputCorner.CornerRadius = UDim.new(0, 7)
+StickerInputCorner.Parent = StickerIdInput
+
+StickerSaveButton = Instance.new("TextButton")
+StickerSaveButton.Size = UDim2.new(0.5, -10, 0, 28)
+StickerSaveButton.Position = UDim2.new(0, 8, 1, -34)
+StickerSaveButton.BackgroundColor3 = Color3.fromRGB(220, 30, 30)
+StickerSaveButton.BorderSizePixel = 0
+StickerSaveButton.Text = "SAVE"
+StickerSaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerSaveButton.Font = Enum.Font.GothamBold
+StickerSaveButton.TextSize = 11
+StickerSaveButton.ZIndex = 41
+StickerSaveButton.Parent = StickerAddPopup
+StickerSaveCorner = Instance.new("UICorner")
+StickerSaveCorner.CornerRadius = UDim.new(0, 7)
+StickerSaveCorner.Parent = StickerSaveButton
+
+StickerCancelButton = Instance.new("TextButton")
+StickerCancelButton.Size = UDim2.new(0.5, -10, 0, 28)
+StickerCancelButton.Position = UDim2.new(0.5, 2, 1, -34)
+StickerCancelButton.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+StickerCancelButton.BorderSizePixel = 0
+StickerCancelButton.Text = "CANCEL"
+StickerCancelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerCancelButton.Font = Enum.Font.GothamBold
+StickerCancelButton.TextSize = 11
+StickerCancelButton.ZIndex = 41
+StickerCancelButton.Parent = StickerAddPopup
+StickerCancelCorner = Instance.new("UICorner")
+StickerCancelCorner.CornerRadius = UDim.new(0, 7)
+StickerCancelCorner.Parent = StickerCancelButton
+
+function GetStickerUrlFromId(id)
+    return "rbxthumb://type=Asset&id=" .. tostring(id) .. "&w=420&h=420"
 end
+
+function SendStickerFromUrl(stickerUrl)
+    StickerPanel.Visible = false
+    StickerAddPopup.Visible = false
+    if MessageInput then
+        MessageInput.Text = stickerUrl
+        if SendChatMessage then SendChatMessage() end
+    end
+end
+
+function BuildStickerButton(imageUrl, order, isAddButton)
+    local button
+    if isAddButton then
+        button = Instance.new("TextButton")
+        button.Text = "+"
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.Font = Enum.Font.GothamBold
+        button.TextSize = 30
+    else
+        button = Instance.new("ImageButton")
+        button.Image = imageUrl
+        button.ScaleType = Enum.ScaleType.Fit
+    end
+    button.Name = isAddButton and "AddStickerButton" or "StickerCard"
+    button.LayoutOrder = order
+    button.BackgroundColor3 = isAddButton and Color3.fromRGB(190, 20, 30) or Color3.fromRGB(25, 25, 38)
+    button.BackgroundTransparency = isAddButton and 0.08 or 0.3
+    button.BorderSizePixel = 0
+    button.ZIndex = 27
+    button.Parent = StickerScroller
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = isAddButton and 1.5 or 1
+    stroke.Color = isAddButton and Color3.fromRGB(255, 90, 90) or Color3.fromRGB(255, 255, 255)
+    stroke.Transparency = isAddButton and 0.15 or 0.8
+    stroke.Parent = button
+
+    if isAddButton then
+        button.Activated:Connect(function()
+            StickerAddPopup.Visible = true
+            StickerIdInput.Text = ""
+            StickerIdInput:CaptureFocus()
+        end)
+    else
+        button.Activated:Connect(function()
+            SendStickerFromUrl(imageUrl)
+        end)
+    end
+    return button
+end
+
+-- First cell is ALWAYS the + button.
+BuildStickerButton(nil, 1, true)
+
+-- Newly saved stickers are inserted immediately after + and before every
+-- built-in sticker. Each custom ID remains persistent across executions.
+for index, stickerId in ipairs(PersistentCustomStickers) do
+    BuildStickerButton(GetStickerUrlFromId(stickerId), index + 1, false)
+end
+
+for index, stickerUrl in ipairs(baseStickers) do
+    BuildStickerButton(stickerUrl, #PersistentCustomStickers + index + 1, false)
+end
+
+StickerSaveButton.Activated:Connect(function()
+    local stickerId = NormalizeStickerId(StickerIdInput.Text)
+    if not stickerId then
+        StickerIdInput.Text = ""
+        StickerIdInput.PlaceholderText = "Enter a valid numeric ID"
+        return
+    end
+
+    for i = #PersistentCustomStickers, 1, -1 do
+        if PersistentCustomStickers[i] == stickerId then
+            table.remove(PersistentCustomStickers, i)
+        end
+    end
+    table.insert(PersistentCustomStickers, 1, stickerId)
+    SavePersistentCustomStickers()
+
+    -- Rebuild the grid so the newly saved sticker is immediately first.
+    for _, child in ipairs(StickerScroller:GetChildren()) do
+        if child:IsA("GuiButton") then child:Destroy() end
+    end
+    BuildStickerButton(nil, 1, true)
+    for index, id in ipairs(PersistentCustomStickers) do
+        BuildStickerButton(GetStickerUrlFromId(id), index + 1, false)
+    end
+    for index, stickerUrl in ipairs(baseStickers) do
+        BuildStickerButton(stickerUrl, #PersistentCustomStickers + index + 1, false)
+    end
+
+    StickerAddPopup.Visible = false
+    StickerIdInput.Text = ""
+end)
+
+StickerCancelButton.Activated:Connect(function()
+    StickerAddPopup.Visible = false
+    StickerIdInput.Text = ""
+end)
 
 -- About Section Configuration
 AboutFrame = Instance.new("Frame")

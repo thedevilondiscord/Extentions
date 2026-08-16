@@ -2238,6 +2238,9 @@ MusicCreateInfo.TextXAlignment = Enum.TextXAlignment.Left
 MusicCreateInfo.Parent = MusicCreatePanel
 
 MusicEndCreateButton = MusicMakeButton(MusicCreatePanel, "MusicEndCreateButton", "END SESSION / BACK TO CHOICE", UDim2.new(0, 10, 0, 72), UDim2.new(1, -20, 0, 26))
+MusicEndCreateButton.Active = true
+MusicEndCreateButton.AutoButtonColor = true
+MusicEndCreateButton.ZIndex = 100
 
 MusicInviteGlobalButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 10, 0, 106), UDim2.new(0.5, -15, 0, 27))
 MusicInviteServerButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 5, 0, 106), UDim2.new(0.5, -15, 0, 27))
@@ -2349,6 +2352,9 @@ MusicSessionIdCorner.Parent = MusicSessionIdInput
 
 MusicJoinNowButton = MusicMakeButton(MusicJoinPanel, "MusicJoinNowButton", "JOIN SESSION", UDim2.new(0, 10, 0, 126), UDim2.new(0.5, -15, 0, 30))
 MusicLeaveJoinButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicLeaveJoinButton", "LEAVE SESSION", UDim2.new(0.5, 5, 0, 126), UDim2.new(0.5, -15, 0, 30))
+MusicLeaveJoinButton.Active = true
+MusicLeaveJoinButton.AutoButtonColor = true
+MusicLeaveJoinButton.ZIndex = 100
 MusicJoinInviteGlobalButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicJoinInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 10, 0, 166), UDim2.new(0.5, -15, 0, 27))
 MusicJoinInviteServerButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicJoinInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 5, 0, 166), UDim2.new(0.5, -15, 0, 27))
 MusicJoinMuteButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicJoinMuteButton", "🔊 MUTE MY AUDIO", UDim2.new(0, 10, 0, 201), UDim2.new(1, -20, 0, 27))
@@ -2496,10 +2502,21 @@ MusicJoinNowButton.MouseButton1Click:Connect(function()
     UpdateMusicSessionMode()
 end)
 
-MusicLeaveJoinButton.MouseButton1Click:Connect(LeaveOrEndMusicSession)
-MusicEndCreateButton.MouseButton1Click:Connect(LeaveOrEndMusicSession)
-MusicCustomPlayButton.MouseButton1Click:Connect(function() HostSetMusic(MusicCustomIdInput.Text, nil) end)
-MusicStopButton.MouseButton1Click:Connect(HostStopMusic)
+-- Use wrapper callbacks here because the handler functions are declared later in the file.
+-- Passing the function variable directly at this point captured nil in the older build,
+-- which is why Leave/End appeared completely unresponsive.
+MusicLeaveJoinButton.Activated:Connect(function()
+    LeaveOrEndMusicSession()
+end)
+MusicEndCreateButton.Activated:Connect(function()
+    LeaveOrEndMusicSession()
+end)
+MusicCustomPlayButton.Activated:Connect(function()
+    HostSetMusic(MusicCustomIdInput.Text, nil)
+end)
+MusicStopButton.Activated:Connect(function()
+    HostStopMusic()
+end)
 MusicInviteGlobalButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(true) end)
 MusicInviteServerButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(false) end)
 MusicJoinInviteGlobalButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(true) end)

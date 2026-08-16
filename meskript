@@ -2063,131 +2063,6 @@ StickerGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     StickerScroller.CanvasSize = UDim2.new(0, 0, 0, StickerGrid.AbsoluteContentSize.Y + 12)
 end)
 
-
--- Sticker viewer: clicking a sticker opens a larger preview.
-StickerViewPopup = Instance.new("Frame")
-StickerViewPopup.Size = UDim2.new(0, 270, 0, 290)
-StickerViewPopup.Position = UDim2.new(0.5, -135, 0.5, -145)
-StickerViewPopup.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-StickerViewPopup.BorderSizePixel = 0
-StickerViewPopup.Visible = false
-StickerViewPopup.ZIndex = 70
-StickerViewPopup.Parent = ScreenGui
-local svCorner = Instance.new("UICorner"); svCorner.CornerRadius = UDim.new(0,12); svCorner.Parent = StickerViewPopup
-local svStroke = Instance.new("UIStroke"); svStroke.Thickness = 1.5; svStroke.Color = Color3.fromRGB(220,35,45); svStroke.Parent = StickerViewPopup
-
-StickerViewTitle = Instance.new("TextLabel")
-StickerViewTitle.Size = UDim2.new(1,-52,0,28)
-StickerViewTitle.Position = UDim2.new(0,12,0,7)
-StickerViewTitle.BackgroundTransparency = 1
-StickerViewTitle.Text = "STICKER PREVIEW"
-StickerViewTitle.TextColor3 = Color3.fromRGB(255,255,255)
-StickerViewTitle.Font = Enum.Font.GothamBold
-StickerViewTitle.TextSize = 12
-StickerViewTitle.TextXAlignment = Enum.TextXAlignment.Left
-StickerViewTitle.ZIndex = 71
-StickerViewTitle.Parent = StickerViewPopup
-
-StickerViewClose = Instance.new("TextButton")
-StickerViewClose.Size = UDim2.new(0,30,0,30)
-StickerViewClose.Position = UDim2.new(1,-38,0,6)
-StickerViewClose.BackgroundColor3 = Color3.fromRGB(155,25,35)
-StickerViewClose.BorderSizePixel = 0
-StickerViewClose.Text = "×"
-StickerViewClose.TextColor3 = Color3.fromRGB(255,255,255)
-StickerViewClose.Font = Enum.Font.GothamBold
-StickerViewClose.TextSize = 20
-StickerViewClose.ZIndex = 72
-StickerViewClose.Parent = StickerViewPopup
-local svc = Instance.new("UICorner"); svc.CornerRadius = UDim.new(0,8); svc.Parent = StickerViewClose
-
-StickerViewImage = Instance.new("ImageLabel")
-StickerViewImage.Size = UDim2.new(0,220,0,190)
-StickerViewImage.Position = UDim2.new(0.5,-110,0,43)
-StickerViewImage.BackgroundColor3 = Color3.fromRGB(8,8,15)
-StickerViewImage.BorderSizePixel = 0
-StickerViewImage.ScaleType = Enum.ScaleType.Fit
-StickerViewImage.ZIndex = 71
-StickerViewImage.Parent = StickerViewPopup
-local svic = Instance.new("UICorner"); svic.CornerRadius = UDim.new(0,10); svic.Parent = StickerViewImage
-
-StickerViewUse = Instance.new("TextButton")
-StickerViewUse.Size = UDim2.new(0,90,0,34)
-StickerViewUse.Position = UDim2.new(0.5,-98,1,-45)
-StickerViewUse.BackgroundColor3 = Color3.fromRGB(72,72,90)
-StickerViewUse.BorderSizePixel = 0
-StickerViewUse.Text = "USE"
-StickerViewUse.TextColor3 = Color3.fromRGB(255,255,255)
-StickerViewUse.Font = Enum.Font.GothamBold
-StickerViewUse.TextSize = 11
-StickerViewUse.ZIndex = 72
-StickerViewUse.Parent = StickerViewPopup
-local svuc = Instance.new("UICorner"); svuc.CornerRadius = UDim.new(0,8); svuc.Parent = StickerViewUse
-
-StickerViewSave = Instance.new("TextButton")
-StickerViewSave.Size = UDim2.new(0,105,0,34)
-StickerViewSave.Position = UDim2.new(0.5,2,1,-45)
-StickerViewSave.BackgroundColor3 = Color3.fromRGB(205,25,35)
-StickerViewSave.BorderSizePixel = 0
-StickerViewSave.Text = "SAVE"
-StickerViewSave.TextColor3 = Color3.fromRGB(255,255,255)
-StickerViewSave.Font = Enum.Font.GothamBold
-StickerViewSave.TextSize = 11
-StickerViewSave.ZIndex = 72
-StickerViewSave.Parent = StickerViewPopup
-local svsc = Instance.new("UICorner"); svsc.CornerRadius = UDim.new(0,8); svsc.Parent = StickerViewSave
-
-local CurrentStickerViewUrl = ""
-local CurrentStickerViewId = ""
-
-local function ExtractStickerIdFromUrl(url)
-    return tostring(url or ""):match("id=(%d+)")
-end
-
-local function StickerViewerAlreadySaved(id)
-    if not id or id == "" then return false end
-    for _, saved in ipairs(PersistentCustomStickers) do
-        if tostring(saved) == tostring(id) then return true end
-    end
-    local target = GetStickerUrlFromId(id)
-    for _, hardcoded in ipairs(baseStickers) do
-        if tostring(hardcoded) == target then return true end
-    end
-    return false
-end
-
-local function OpenStickerViewer(url)
-    CurrentStickerViewUrl = tostring(url or "")
-    CurrentStickerViewId = ExtractStickerIdFromUrl(CurrentStickerViewUrl) or ""
-    StickerViewImage.Image = CurrentStickerViewUrl
-    StickerViewSave.Visible = not StickerViewerAlreadySaved(CurrentStickerViewId)
-    StickerViewPopup.Visible = true
-end
-
-StickerViewClose.Activated:Connect(function()
-    StickerViewPopup.Visible = false
-end)
-
-StickerViewUse.Activated:Connect(function()
-    if CurrentStickerViewUrl ~= "" then
-        SendStickerFromUrl(CurrentStickerViewUrl)
-        StickerViewPopup.Visible = false
-    end
-end)
-
-StickerViewSave.Activated:Connect(function()
-    if CurrentStickerViewId == "" then return end
-    for i = #PersistentCustomStickers, 1, -1 do
-        if tostring(PersistentCustomStickers[i]) == CurrentStickerViewId then
-            table.remove(PersistentCustomStickers, i)
-        end
-    end
-    table.insert(PersistentCustomStickers, 1, CurrentStickerViewId)
-    SavePersistentCustomStickers()
-    StickerViewSave.Visible = false
-    ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
-end)
-
 -- Add-sticker popup. It is kept inside the sticker panel so it remains usable
 -- on the compact Kronos layout.
 StickerAddPopup = Instance.new("Frame")
@@ -2284,6 +2159,174 @@ function SendStickerFromUrl(stickerUrl)
         if SendChatMessage then SendChatMessage() end
     end
 end
+
+-- ============================================================================
+-- STICKER VIEWER
+-- ============================================================================
+-- Clicking a sticker opens a larger preview so small sticker text/details are
+-- easier to see. SAVE stores the sticker ID locally when it is not already
+-- saved or present in the hardcoded sticker roster.
+StickerViewPopup = Instance.new("Frame")
+StickerViewPopup.Name = "StickerViewPopup"
+StickerViewPopup.Size = UDim2.new(0, 286, 0, 310)
+StickerViewPopup.Position = UDim2.new(0.5, -143, 0.5, -155)
+StickerViewPopup.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+StickerViewPopup.BackgroundTransparency = 0.02
+StickerViewPopup.BorderSizePixel = 0
+StickerViewPopup.Visible = false
+StickerViewPopup.ZIndex = 150
+StickerViewPopup.Parent = ScreenGui
+
+local stickerViewCorner = Instance.new("UICorner")
+stickerViewCorner.CornerRadius = UDim.new(0, 12)
+stickerViewCorner.Parent = StickerViewPopup
+
+local stickerViewStroke = Instance.new("UIStroke")
+stickerViewStroke.Thickness = 1.6
+stickerViewStroke.Color = Color3.fromRGB(220, 35, 45)
+stickerViewStroke.Transparency = 0.1
+stickerViewStroke.Parent = StickerViewPopup
+
+StickerViewTitle = Instance.new("TextLabel")
+StickerViewTitle.Size = UDim2.new(1, -54, 0, 30)
+StickerViewTitle.Position = UDim2.new(0, 13, 0, 7)
+StickerViewTitle.BackgroundTransparency = 1
+StickerViewTitle.Text = "STICKER PREVIEW"
+StickerViewTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerViewTitle.Font = Enum.Font.GothamBold
+StickerViewTitle.TextSize = 12
+StickerViewTitle.TextXAlignment = Enum.TextXAlignment.Left
+StickerViewTitle.ZIndex = 151
+StickerViewTitle.Parent = StickerViewPopup
+
+StickerViewClose = Instance.new("TextButton")
+StickerViewClose.Size = UDim2.new(0, 30, 0, 30)
+StickerViewClose.Position = UDim2.new(1, -39, 0, 6)
+StickerViewClose.BackgroundColor3 = Color3.fromRGB(150, 25, 35)
+StickerViewClose.BorderSizePixel = 0
+StickerViewClose.Text = "×"
+StickerViewClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerViewClose.Font = Enum.Font.GothamBold
+StickerViewClose.TextSize = 20
+StickerViewClose.AutoButtonColor = true
+StickerViewClose.ZIndex = 152
+StickerViewClose.Parent = StickerViewPopup
+
+local stickerViewCloseCorner = Instance.new("UICorner")
+stickerViewCloseCorner.CornerRadius = UDim.new(0, 8)
+stickerViewCloseCorner.Parent = StickerViewClose
+
+StickerViewImage = Instance.new("ImageLabel")
+StickerViewImage.Size = UDim2.new(0, 230, 0, 205)
+StickerViewImage.Position = UDim2.new(0.5, -115, 0, 43)
+StickerViewImage.BackgroundColor3 = Color3.fromRGB(8, 8, 15)
+StickerViewImage.BackgroundTransparency = 0.04
+StickerViewImage.BorderSizePixel = 0
+StickerViewImage.ScaleType = Enum.ScaleType.Fit
+StickerViewImage.ZIndex = 151
+StickerViewImage.Parent = StickerViewPopup
+
+local stickerViewImageCorner = Instance.new("UICorner")
+stickerViewImageCorner.CornerRadius = UDim.new(0, 10)
+stickerViewImageCorner.Parent = StickerViewImage
+
+StickerViewUse = Instance.new("TextButton")
+StickerViewUse.Size = UDim2.new(0, 100, 0, 34)
+StickerViewUse.Position = UDim2.new(0.5, -107, 1, -46)
+StickerViewUse.BackgroundColor3 = Color3.fromRGB(65, 65, 82)
+StickerViewUse.BorderSizePixel = 0
+StickerViewUse.Text = "USE"
+StickerViewUse.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerViewUse.Font = Enum.Font.GothamBold
+StickerViewUse.TextSize = 11
+StickerViewUse.AutoButtonColor = true
+StickerViewUse.ZIndex = 152
+StickerViewUse.Parent = StickerViewPopup
+
+local stickerViewUseCorner = Instance.new("UICorner")
+stickerViewUseCorner.CornerRadius = UDim.new(0, 8)
+stickerViewUseCorner.Parent = StickerViewUse
+
+StickerViewSave = Instance.new("TextButton")
+StickerViewSave.Size = UDim2.new(0, 100, 0, 34)
+StickerViewSave.Position = UDim2.new(0.5, 7, 1, -46)
+StickerViewSave.BackgroundColor3 = Color3.fromRGB(205, 25, 35)
+StickerViewSave.BorderSizePixel = 0
+StickerViewSave.Text = "SAVE"
+StickerViewSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+StickerViewSave.Font = Enum.Font.GothamBold
+StickerViewSave.TextSize = 11
+StickerViewSave.AutoButtonColor = true
+StickerViewSave.ZIndex = 152
+StickerViewSave.Parent = StickerViewPopup
+
+local stickerViewSaveCorner = Instance.new("UICorner")
+stickerViewSaveCorner.CornerRadius = UDim.new(0, 8)
+stickerViewSaveCorner.Parent = StickerViewSave
+
+local CurrentStickerViewUrl = ""
+local CurrentStickerViewId = ""
+
+local function ExtractStickerIdFromUrl(url)
+    url = tostring(url or "")
+    return url:match("[?&]id=(%d+)") or url:match("id=(%d+)")
+end
+
+local function StickerViewerAlreadySaved(id)
+    id = tostring(id or "")
+    if id == "" then
+        return false
+    end
+
+    for _, savedId in ipairs(PersistentCustomStickers) do
+        if tostring(savedId) == id then
+            return true
+        end
+    end
+
+    local hardcodedUrl = GetStickerUrlFromId(id)
+    for _, hardcodedSticker in ipairs(baseStickers) do
+        if tostring(hardcodedSticker) == hardcodedUrl then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function OpenStickerViewer(stickerUrl)
+    CurrentStickerViewUrl = tostring(stickerUrl or "")
+    CurrentStickerViewId = ExtractStickerIdFromUrl(CurrentStickerViewUrl) or ""
+
+    StickerViewImage.Image = CurrentStickerViewUrl
+    StickerViewSave.Visible = not StickerViewerAlreadySaved(CurrentStickerViewId)
+    StickerViewPopup.Visible = true
+end
+
+StickerViewClose.Activated:Connect(function()
+    StickerViewPopup.Visible = false
+end)
+
+StickerViewUse.Activated:Connect(function()
+    if CurrentStickerViewUrl ~= "" then
+        SendStickerFromUrl(CurrentStickerViewUrl)
+    end
+    StickerViewPopup.Visible = false
+end)
+
+StickerViewSave.Activated:Connect(function()
+    if CurrentStickerViewId == "" then
+        return
+    end
+
+    if not StickerViewerAlreadySaved(CurrentStickerViewId) then
+        table.insert(PersistentCustomStickers, 1, CurrentStickerViewId)
+        SavePersistentCustomStickers()
+    end
+
+    StickerViewSave.Visible = false
+    ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
+end)
 
 function BuildStickerButton(imageUrl, order, isAddButton)
     local button
@@ -3092,7 +3135,6 @@ function SendMusicSessionInvite(isGlobal)
     task.spawn(function() HttpRequest(endpoint, "POST", payload) end)
 end
 
-
 -- ============================================================================
 -- PROFILE TAB
 -- ============================================================================
@@ -3105,7 +3147,7 @@ ProfileFrame.BorderSizePixel = 0
 ProfileFrame.ScrollBarThickness = 3
 ProfileFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
 ProfileFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 700)
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 680)
 ProfileFrame.Visible = false
 ProfileFrame.Parent = MainFrame
 
@@ -3284,7 +3326,6 @@ PfpCustomCorner.Parent = PfpCustomInput
 PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0, 218, 0, 32), UDim2.new(0, 105, 0, 29))
 PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0, 331, 0, 32), UDim2.new(0, 105, 0, 29))
 
-
 function BuildPfpSection(parent, title, emoji, ids, topY, sectionName)
     local section = Instance.new("Frame")
     section.Name = sectionName
@@ -3393,7 +3434,7 @@ PfpRandomButton.MouseButton1Click:Connect(function()
     end
 end)
 
-ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 700)
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 744)
 
 ProfilePopup = Instance.new("Frame")
 ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
@@ -4427,8 +4468,6 @@ end
 MakeDraggable(MainFrame, HeaderBar)
 MakeDraggable(ToggleButton, ToggleButton)
 
-
-
 -- ============================================================================
 -- TAB SWITCHING ROUTINE
 -- ============================================================================
@@ -4508,6 +4547,7 @@ CreateMessageCard = function(msgData, isGlobal)
     local msgPfpCorner = Instance.new("UICorner")
     msgPfpCorner.CornerRadius = UDim.new(1, 0)
     msgPfpCorner.Parent = msgPfpImg
+
 
     local roleName = msgData.Role or GetAssignedOrCalculatedRole(msgData.Username)
     local style = RANK_STYLES[roleName] or RANK_STYLES["VIP"]

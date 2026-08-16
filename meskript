@@ -4265,24 +4265,23 @@ function BuildMessageContextMenu()
         AddContextMenuButton("Delete Message", 5, function()
             if not CurrentContextMessage then return end
             local target = CurrentContextMessage
-            task.spawn(function()
-                local endpoint = (ActiveTab == "GLOBAL") and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
-                local clientId = tostring(target.ClientMessageId or "")
-                if clientId == "" then
-                    ShowLocalSystemMessage("[AI MoD] : This message cannot be deleted.", true)
-                    return
-                end
-                local deletedAt = os.time()
-                PendingMessageMutations[clientId] = {Deleted = true, DeletedAt = deletedAt, DeletedBy = LocalPlayer.Name}
-                local firebaseKeys = FindAllFirebaseMessageKeys(endpoint, clientId)
-                for _, firebaseKey in ipairs(firebaseKeys) do
-                    HttpRequest(endpoint .. "/" .. firebaseKey .. ".json", "PATCH", {
-                        Deleted = true,
-                        DeletedAt = deletedAt,
-                        DeletedBy = LocalPlayer.Name,
-                    })
-                end
-            end)
+            local endpoint = (ActiveTab == "GLOBAL") and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
+            local clientId = tostring(target.ClientMessageId or "")
+            if clientId == "" then
+                ShowLocalSystemMessage("[AI MoD] : This message cannot be deleted.", true)
+                return
+            end
+
+            -- Register the pending deletion BEFORE touching the UI.  This prevents
+            -- the polling loop from recreating the old Firebase copy during the
+            -- small window while the delete request is travelling.
+            local deletedAt = os.time()
+            PendingMessageMutations[clientId] = {
+                Deleted = true,
+                DeletedAt = deletedAt,
+                DeletedBy = LocalPlayer.Name,
+                MutationType = "DELETE",
+            }
 
             local cache = (ActiveTab == "GLOBAL") and GlobalCachedMessages or ServerCachedMessages
             for key, value in pairs(cache) do
@@ -4295,6 +4294,38 @@ function BuildMessageContextMenu()
                     card:Destroy()
                 end
             end
+
+            -- Delete every Firebase record carrying this ClientMessageId, with
+            -- verification/retries.  A local-only disappearance is not enough:
+            -- the authoritative Firebase record must be gone before the pending
+            -- mutation is cleared, otherwise polling can resurrect the message.
+            task.spawn(function()
+                local confirmed = false
+                for attempt = 1, 4 do
+                    local keys = FindAllFirebaseMessageKeys(endpoint, clientId)
+                    if #keys == 0 then
+                        confirmed = true
+                        break
+                    end
+                    for _, firebaseKey in ipairs(keys) do
+                        pcall(function()
+                            HttpRequest(endpoint .. "/" .. tostring(firebaseKey) .. ".json", "DELETE")
+                        end)
+                    end
+                    task.wait(0.35)
+                    local remaining = FindAllFirebaseMessageKeys(endpoint, clientId)
+                    if #remaining == 0 then
+                        confirmed = true
+                        break
+                    end
+                end
+                if confirmed then
+                    PendingMessageMutations[clientId] = nil
+                else
+                    ShowLocalSystemMessage("[AI MoD] : Firebase did not confirm deletion. The message is being kept hidden locally while the delete is retried.", true)
+                end
+            end)
+
             EditingContextMessage = nil
             EditingContextIsGlobal = false
             ShowLocalSystemMessage("[AI MoD] : Message deleted.")
@@ -5089,21 +5120,49 @@ local function SaveEditedMessage(message, newText, isGlobal)
         EditedAt = os.time(),
         EditedBy = LocalPlayer.Name,
     }
-    PendingMessageMutations[clientId] = patch
-    local firebaseKeys = FindAllFirebaseMessageKeys(endpoint, clientId)
-    if #firebaseKeys == 0 then
-        ShowLocalSystemMessage("[AI MoD] : Could not find the original Firebase message.", true)
-        PendingMessageMutations[clientId] = nil
-        return false
-    end
-    for _, firebaseKey in ipairs(firebaseKeys) do
-        HttpRequest(endpoint .. "/" .. firebaseKey .. ".json", "PATCH", patch)
-    end
 
+    -- Keep the new value authoritative locally until Firebase itself confirms
+    -- it.  Polling must never be allowed to overwrite an edit with stale data.
+    PendingMessageMutations[clientId] = patch
     message.Text = newText
     message.Edited = true
     message.EditedAt = patch.EditedAt
     UpdateLocalMessageCard(clientId, newText, true)
+
+    task.spawn(function()
+        local confirmed = false
+        for attempt = 1, 4 do
+            local firebaseKeys = FindAllFirebaseMessageKeys(endpoint, clientId)
+            if #firebaseKeys > 0 then
+                for _, firebaseKey in ipairs(firebaseKeys) do
+                    pcall(function()
+                        HttpRequest(endpoint .. "/" .. tostring(firebaseKey) .. ".json", "PATCH", patch)
+                    end)
+                end
+                task.wait(0.35)
+                local latest = HttpRequest(endpoint, "GET")
+                if type(latest) == "table" then
+                    confirmed = true
+                    for _, remote in pairs(latest) do
+                        if type(remote) == "table" and tostring(remote.ClientMessageId or "") == clientId then
+                            if tostring(remote.Text or "") ~= newText or remote.Edited ~= true then
+                                confirmed = false
+                                break
+                            end
+                        end
+                    end
+                end
+                if confirmed then break end
+            end
+            task.wait(0.35)
+        end
+
+        if confirmed then
+            PendingMessageMutations[clientId] = nil
+        else
+            ShowLocalSystemMessage("[AI MoD] : Firebase did not confirm the edit. The edited text will remain protected from stale polling while you are connected.", true)
+        end
+    end)
     return true
 end
 
@@ -5484,7 +5543,16 @@ function PollMessages()
                                 msg[mutationKey] = mutationValue
                             end
                         end
-                        if pendingMutation.Deleted or (pendingMutation.Edited and tostring(msg.Text or "") == tostring(pendingMutation.Text or "")) then
+                        -- Never clear a pending DELETE merely because we locally
+                        -- overlaid Deleted=true onto a stale Firebase object.
+                        -- DELETE is cleared only by the mutation worker after a
+                        -- fresh Firebase GET confirms that no record remains.
+                        -- EDIT is cleared only when Firebase actually echoes the
+                        -- edited text and Edited=true.
+                        if pendingMutation.MutationType ~= "DELETE"
+                            and pendingMutation.Edited
+                            and tostring(msg.Text or "") == tostring(pendingMutation.Text or "")
+                            and msg.Edited == true then
                             PendingMessageMutations[clientIdForMutation] = nil
                         end
                     end
@@ -5543,7 +5611,16 @@ function PollMessages()
                                 msg[mutationKey] = mutationValue
                             end
                         end
-                        if pendingMutation.Deleted or (pendingMutation.Edited and tostring(msg.Text or "") == tostring(pendingMutation.Text or "")) then
+                        -- Never clear a pending DELETE merely because we locally
+                        -- overlaid Deleted=true onto a stale Firebase object.
+                        -- DELETE is cleared only by the mutation worker after a
+                        -- fresh Firebase GET confirms that no record remains.
+                        -- EDIT is cleared only when Firebase actually echoes the
+                        -- edited text and Edited=true.
+                        if pendingMutation.MutationType ~= "DELETE"
+                            and pendingMutation.Edited
+                            and tostring(msg.Text or "") == tostring(pendingMutation.Text or "")
+                            and msg.Edited == true then
                             PendingMessageMutations[clientIdForMutation] = nil
                         end
                     end

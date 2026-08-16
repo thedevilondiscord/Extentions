@@ -1114,6 +1114,12 @@ local function SaveLocalText(key, value)
     end
 end
 for key in pairs(ProfileSocials) do ProfileSocials[key] = LoadLocalText(key) end
+ProfileBio = LoadLocalText("Bio")
+
+-- Server-only profile directory. Profiles are intentionally scoped to the
+-- current Roblox JobId so the profile popup only exposes people in this server.
+SERVER_PROFILE_ROOT = SERVER_FIREBASE_URL .. "server_profiles/" .. SERVER_JOB_ID
+
 
 local function MusicSessionRandomId()
     local chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -1562,7 +1568,7 @@ HeaderCorner.Parent = HeaderBar
 GlobalTabBtn = Instance.new("TextButton")
 GlobalTabBtn.Name = "GlobalTabBtn"
 GlobalTabBtn.Size = UDim2.new(0, 65, 0, 26)
-GlobalTabBtn.Position = UDim2.new(0, 6, 0, 5)
+GlobalTabBtn.Position = UDim2.new(0, 75, 0, 5)
 GlobalTabBtn.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
 GlobalTabBtn.BackgroundTransparency = 0.2
 GlobalTabBtn.Font = Enum.Font.GothamBold
@@ -1578,7 +1584,7 @@ GlobalTabCorner.Parent = GlobalTabBtn
 ServerTabBtn = Instance.new("TextButton")
 ServerTabBtn.Name = "ServerTabBtn"
 ServerTabBtn.Size = UDim2.new(0, 65, 0, 26)
-ServerTabBtn.Position = UDim2.new(0, 75, 0, 5)
+ServerTabBtn.Position = UDim2.new(0, 6, 0, 5)
 ServerTabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 ServerTabBtn.BackgroundTransparency = 0.4
 ServerTabBtn.Font = Enum.Font.GothamBold
@@ -1594,7 +1600,7 @@ ServerTabCorner.Parent = ServerTabBtn
 AboutTabBtn = Instance.new("TextButton")
 AboutTabBtn.Name = "AboutTabBtn"
 AboutTabBtn.Size = UDim2.new(0, 60, 0, 26)
-AboutTabBtn.Position = UDim2.new(0, 144, 0, 5)
+AboutTabBtn.Position = UDim2.new(0, 298, 0, 5)
 AboutTabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 AboutTabBtn.BackgroundTransparency = 0.4
 AboutTabBtn.Font = Enum.Font.GothamBold
@@ -1610,7 +1616,7 @@ AboutTabCorner.Parent = AboutTabBtn
 MusicTabBtn = Instance.new("TextButton")
 MusicTabBtn.Name = "MusicSessionTabBtn"
 MusicTabBtn.Size = UDim2.new(0, 84, 0, 26)
-MusicTabBtn.Position = UDim2.new(0, 209, 0, 5)
+MusicTabBtn.Position = UDim2.new(0, 144, 0, 5)
 MusicTabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 MusicTabBtn.BackgroundTransparency = 0.4
 MusicTabBtn.Font = Enum.Font.GothamBold
@@ -1625,7 +1631,7 @@ MusicTabCorner.Parent = MusicTabBtn
 ProfileTabBtn = Instance.new("TextButton")
 ProfileTabBtn.Name = "ProfileTabBtn"
 ProfileTabBtn.Size = UDim2.new(0, 70, 0, 26)
-ProfileTabBtn.Position = UDim2.new(0, 298, 0, 5)
+ProfileTabBtn.Position = UDim2.new(0, 228, 0, 5)
 ProfileTabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 ProfileTabBtn.BackgroundTransparency = 0.4
 ProfileTabBtn.Font = Enum.Font.GothamBold
@@ -2755,6 +2761,41 @@ function SendMusicSessionInvite(isGlobal)
 end
 
 -- ============================================================================
+-- SERVER PLAYER PROFILE DIRECTORY
+-- ============================================================================
+local function ServerProfileUrl(userId)
+    return SERVER_PROFILE_ROOT .. "/" .. tostring(userId) .. ".json"
+end
+
+local function PublishOwnServerProfile()
+    local payload = {
+        UserId = LocalPlayer.UserId,
+        Username = LocalPlayer.Name,
+        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        PfpId = CurrentPfpId,
+        Instagram = ProfileSocials.Instagram or "",
+        Discord = ProfileSocials.Discord or "",
+        Snapchat = ProfileSocials.Snapchat or "",
+        Bio = tostring(ProfileBio or ""):sub(1, 160),
+        UpdatedAt = os.time(),
+    }
+    task.spawn(function()
+        pcall(function() HttpRequest(ServerProfileUrl(LocalPlayer.UserId), "PUT", payload) end)
+    end)
+end
+
+local function ResolveServerProfilePlayer(msgData)
+    local player = nil
+    if msgData and msgData.UserId then
+        player = Players:GetPlayerByUserId(tonumber(msgData.UserId) or 0)
+    end
+    if not player and msgData and msgData.Username then
+        player = Players:FindFirstChild(tostring(msgData.Username))
+    end
+    return player
+end
+
+-- ============================================================================
 -- PROFILE TAB
 -- ============================================================================
 ProfileFrame = Instance.new("ScrollingFrame")
@@ -2905,7 +2946,7 @@ ProfileShareStroke.Parent = ProfileShareButton
 -- Girl and boy lists are deliberately separated into independent sections.
 -- ============================================================================
 ProfilePfpCard = Instance.new("Frame")
-ProfilePfpCard.Size = UDim2.new(1, 0, 0, 590)
+ProfilePfpCard.Size = UDim2.new(1, 0, 0, 624)
 ProfilePfpCard.Position = UDim2.new(0, 0, 0, 104)
 ProfilePfpCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfilePfpCard.BackgroundTransparency = 0.3
@@ -2944,6 +2985,45 @@ PfpCustomCorner.Parent = PfpCustomInput
 
 PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0, 218, 0, 32), UDim2.new(0, 105, 0, 29))
 PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0, 331, 0, 32), UDim2.new(0, 105, 0, 29))
+
+ProfileBioLabel = Instance.new("TextLabel")
+ProfileBioLabel.Size = UDim2.new(0, 40, 0, 24)
+ProfileBioLabel.Position = UDim2.new(0, 8, 0, 68)
+ProfileBioLabel.BackgroundTransparency = 1
+ProfileBioLabel.Font = Enum.Font.GothamBold
+ProfileBioLabel.Text = "BIO"
+ProfileBioLabel.TextColor3 = Color3.fromRGB(245,245,250)
+ProfileBioLabel.TextSize = 9
+ProfileBioLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProfileBioLabel.Parent = ProfilePfpCard
+
+ProfileBioInput = Instance.new("TextBox")
+ProfileBioInput.Size = UDim2.new(1, -116, 0, 26)
+ProfileBioInput.Position = UDim2.new(0, 48, 0, 66)
+ProfileBioInput.BackgroundColor3 = Color3.fromRGB(55,55,72)
+ProfileBioInput.BackgroundTransparency = 0
+ProfileBioInput.BorderSizePixel = 0
+ProfileBioInput.Font = Enum.Font.Gotham
+ProfileBioInput.PlaceholderText = "Write a short bio..."
+ProfileBioInput.PlaceholderColor3 = Color3.fromRGB(175,175,190)
+ProfileBioInput.Text = ProfileBio or ""
+ProfileBioInput.TextColor3 = Color3.fromRGB(255,255,255)
+ProfileBioInput.TextSize = 9
+ProfileBioInput.ClearTextOnFocus = false
+ProfileBioInput.TextXAlignment = Enum.TextXAlignment.Left
+ProfileBioInput.Parent = ProfilePfpCard
+local bioCorner = Instance.new("UICorner")
+bioCorner.CornerRadius = UDim.new(0,7)
+bioCorner.Parent = ProfileBioInput
+
+ProfileBioSaveButton = MusicMakeButton(ProfilePfpCard, "ProfileBioSaveButton", "SAVE BIO", UDim2.new(1, -60, 0, 66), UDim2.new(0, 52, 0, 26))
+ProfileBioSaveButton.MouseButton1Click:Connect(function()
+    ProfileBio = tostring(ProfileBioInput.Text or ""):gsub("[%c]", " "):sub(1, 160)
+    ProfileBioInput.Text = ProfileBio
+    SaveLocalText("Bio", ProfileBio)
+    PublishOwnServerProfile()
+    ShowLocalSystemMessage("[AI MoD] : Bio saved for this server ✓")
+end)
 
 function BuildPfpSection(parent, title, emoji, ids, topY, sectionName)
     local section = Instance.new("Frame")
@@ -3032,11 +3112,12 @@ function SetProfilePfp(id)
         ProfilePfpRing.Transparency = 0
     end
     ShowLocalSystemMessage("[AI MoD] : Profile picture saved locally ✓")
+    if PublishOwnServerProfile then PublishOwnServerProfile() end
 end
 
 -- IMPORTANT: the two supplied arrays are not combined in the selector.
-BuildPfpSection(ProfilePfpCard, "HER PFP CHOICE", "🌸", GirlPfpList, 72, "HerPfpSection")
-BuildPfpSection(ProfilePfpCard, "HIS PFP CHOICE", "🔥", BoyPfpList, 326, "HisPfpSection")
+BuildPfpSection(ProfilePfpCard, "HER PFP CHOICE", "🌸", GirlPfpList, 100, "HerPfpSection")
+BuildPfpSection(ProfilePfpCard, "HIS PFP CHOICE", "🔥", BoyPfpList, 354, "HisPfpSection")
 
 PfpCustomSetButton.MouseButton1Click:Connect(function()
     SetProfilePfp(PfpCustomInput.Text)
@@ -3053,7 +3134,7 @@ PfpRandomButton.MouseButton1Click:Connect(function()
     end
 end)
 
-ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 710)
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 744)
 
 ProfilePopup = Instance.new("Frame")
 ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
@@ -3131,6 +3212,7 @@ ProfilePopupSave.MouseButton1Click:Connect(function()
         local value = ProfilePopupInput.Text:gsub("^@", ""):gsub("%s+", "")
         ProfileSocials[ActiveSocialKey] = value
         SaveLocalText(ActiveSocialKey, value)
+        PublishOwnServerProfile()
     end
     ProfilePopup.Visible = false
 end)
@@ -4004,6 +4086,86 @@ MakeDraggable(MainFrame, HeaderBar)
 MakeDraggable(ToggleButton, ToggleButton)
 
 -- ============================================================================
+-- SERVER PLAYER PROFILE POPUP
+-- ============================================================================
+ServerPlayerProfilePopup = Instance.new("Frame")
+ServerPlayerProfilePopup.Size = UDim2.new(0, 300, 0, 205)
+ServerPlayerProfilePopup.Position = UDim2.new(0.5, -150, 0.5, -102)
+ServerPlayerProfilePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
+ServerPlayerProfilePopup.BackgroundTransparency = 0.04
+ServerPlayerProfilePopup.BorderSizePixel = 0
+ServerPlayerProfilePopup.Visible = false
+ServerPlayerProfilePopup.ZIndex = 90
+ServerPlayerProfilePopup.Parent = ScreenGui
+local sppc = Instance.new("UICorner")
+sppc.CornerRadius = UDim.new(0,12)
+sppc.Parent = ServerPlayerProfilePopup
+local sppstroke = Instance.new("UIStroke")
+sppstroke.Thickness = 1.5
+sppstroke.Color = Color3.fromRGB(220,35,45)
+sppstroke.Parent = ServerPlayerProfilePopup
+
+ServerPlayerProfilePfp = Instance.new("ImageLabel")
+ServerPlayerProfilePfp.Size = UDim2.new(0,58,0,58)
+ServerPlayerProfilePfp.Position = UDim2.new(0,12,0,12)
+ServerPlayerProfilePfp.BackgroundColor3 = Color3.fromRGB(30,30,42)
+ServerPlayerProfilePfp.BackgroundTransparency = 0
+ServerPlayerProfilePfp.ScaleType = Enum.ScaleType.Crop
+ServerPlayerProfilePfp.ZIndex = 91
+ServerPlayerProfilePfp.Parent = ServerPlayerProfilePopup
+local sppc2=Instance.new("UICorner") sppc2.CornerRadius=UDim.new(1,0) sppc2.Parent=ServerPlayerProfilePfp
+local sppcopy=Instance.new("TextButton")
+sppcopy.Size=UDim2.new(0,58,0,58) sppcopy.Position=UDim2.new(0,12,0,12) sppcopy.BackgroundTransparency=1 sppcopy.Text="" sppcopy.ZIndex=92 sppcopy.Parent=ServerPlayerProfilePopup
+
+ServerPlayerProfileName = Instance.new("TextLabel")
+ServerPlayerProfileName.Size=UDim2.new(1,-86,0,25) ServerPlayerProfileName.Position=UDim2.new(0,80,0,12)
+ServerPlayerProfileName.BackgroundTransparency=1 ServerPlayerProfileName.Font=Enum.Font.GothamBold ServerPlayerProfileName.TextColor3=Color3.fromRGB(255,255,255) ServerPlayerProfileName.TextSize=15 ServerPlayerProfileName.TextXAlignment=Enum.TextXAlignment.Left ServerPlayerProfileName.ZIndex=91 ServerPlayerProfileName.Parent=ServerPlayerProfilePopup
+ServerPlayerProfileUser = ServerPlayerProfileName:Clone() ServerPlayerProfileUser.Name="ServerPlayerProfileUser" ServerPlayerProfileUser.Size=UDim2.new(1,-86,0,18) ServerPlayerProfileUser.Position=UDim2.new(0,80,0,38) ServerPlayerProfileUser.Font=Enum.Font.Gotham ServerPlayerProfileUser.TextSize=9 ServerPlayerProfileUser.Parent=ServerPlayerProfilePopup
+
+ServerPlayerProfileBio = Instance.new("TextLabel")
+ServerPlayerProfileBio.Size=UDim2.new(1,-24,0,42) ServerPlayerProfileBio.Position=UDim2.new(0,12,0,78) ServerPlayerProfileBio.BackgroundColor3=Color3.fromRGB(24,24,36) ServerPlayerProfileBio.BackgroundTransparency=0.05 ServerPlayerProfileBio.BorderSizePixel=0 ServerPlayerProfileBio.Font=Enum.Font.Gotham ServerPlayerProfileBio.TextColor3=Color3.fromRGB(225,225,235) ServerPlayerProfileBio.TextSize=9 ServerPlayerProfileBio.TextWrapped=true ServerPlayerProfileBio.TextXAlignment=Enum.TextXAlignment.Left ServerPlayerProfileBio.TextYAlignment=Enum.TextYAlignment.Top ServerPlayerProfileBio.ZIndex=91 ServerPlayerProfileBio.Parent=ServerPlayerProfilePopup
+local spbc=Instance.new("UICorner") spbc.CornerRadius=UDim.new(0,7) spbc.Parent=ServerPlayerProfileBio
+
+ServerPlayerProfileSocials = Instance.new("TextLabel")
+ServerPlayerProfileSocials.Size=UDim2.new(1,-24,0,48) ServerPlayerProfileSocials.Position=UDim2.new(0,12,0,125) ServerPlayerProfileSocials.BackgroundTransparency=1 ServerPlayerProfileSocials.Font=Enum.Font.Gotham ServerPlayerProfileSocials.TextColor3=Color3.fromRGB(245,245,250) ServerPlayerProfileSocials.TextSize=9 ServerPlayerProfileSocials.TextWrapped=true ServerPlayerProfileSocials.TextXAlignment=Enum.TextXAlignment.Left ServerPlayerProfileSocials.ZIndex=91 ServerPlayerProfileSocials.Parent=ServerPlayerProfilePopup
+
+ServerPlayerProfileClose = MusicMakeButton(ServerPlayerProfilePopup,"ServerPlayerProfileClose","CLOSE",UDim2.new(1,-92,1,-34),UDim2.new(0,80,0,26))
+ServerPlayerProfileId = ""
+local function CopyServerProfileId()
+    if ServerPlayerProfileId ~= "" and setclipboard then pcall(function() setclipboard(ServerPlayerProfileId) end) end
+end
+sppcopy.MouseButton1Click:Connect(CopyServerProfileId)
+ServerPlayerProfileClose.MouseButton1Click:Connect(function() ServerPlayerProfilePopup.Visible=false end)
+
+local function OpenServerPlayerProfile(msgData)
+    local player = ResolveServerProfilePlayer(msgData)
+    if not player or player == LocalPlayer then return end
+    local userId = player.UserId
+    ServerPlayerProfileId = tostring(userId)
+    local data = HttpRequest(ServerProfileUrl(userId), "GET")
+    if type(data) ~= "table" then
+        data = {UserId=userId, Username=player.Name, DisplayName=player.DisplayName, PfpId=msgData.PfpId or DefaultPfpId, Bio="No bio set.", Instagram="", Discord="", Snapchat=""}
+    end
+    ServerPlayerProfilePfp.Image = KronosPfpImage(data.PfpId or msgData.PfpId or DefaultPfpId, 300)
+    ServerPlayerProfileName.Text = tostring(data.DisplayName or player.DisplayName)
+    ServerPlayerProfileUser.Text = "@" .. tostring(data.Username or player.Name) .. "  •  ID: " .. tostring(userId) .. "  (tap PFP to copy ID)"
+    ServerPlayerProfileBio.Text = "BIO
+" .. (tostring(data.Bio or "") ~= "" and tostring(data.Bio) or "No bio set.")
+    local socials = {}
+    if tostring(data.Instagram or "") ~= "" then table.insert(socials,"Instagram  @"..tostring(data.Instagram)) end
+    if tostring(data.Snapchat or "") ~= "" then table.insert(socials,"Snapchat   @"..tostring(data.Snapchat)) end
+    if tostring(data.Discord or "") ~= "" then table.insert(socials,"Discord   @"..tostring(data.Discord)) end
+    ServerPlayerProfileSocials.Text = (#socials > 0 and "SOCIALS
+" .. table.concat(socials,"   •   ") or "SOCIALS
+No socials set.")
+    ServerPlayerProfilePopup.Visible=true
+end
+
+task.defer(function()
+    PublishOwnServerProfile()
+end)
+
+-- ============================================================================
 -- TAB SWITCHING ROUTINE
 -- ============================================================================
 function SwitchTab(newTab)
@@ -4017,6 +4179,7 @@ function SwitchTab(newTab)
     ServerInviteButton.Visible = (newTab == "GLOBAL")
     ProfilePopup.Visible = false
     ProfileSharePopup.Visible = false
+    ServerPlayerProfilePopup.Visible = false
 
     GlobalTabBtn.BackgroundColor3 = (newTab == "GLOBAL") and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 55)
     ServerTabBtn.BackgroundColor3 = (newTab == "SERVER") and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 55)
@@ -4082,6 +4245,21 @@ CreateMessageCard = function(msgData, isGlobal)
     local msgPfpCorner = Instance.new("UICorner")
     msgPfpCorner.CornerRadius = UDim.new(1, 0)
     msgPfpCorner.Parent = msgPfpImg
+
+    if not isGlobal then
+        local msgPfpButton = Instance.new("ImageButton")
+        msgPfpButton.Name = "ServerProfilePfpButton"
+        msgPfpButton.Size = UDim2.new(0, 26, 0, 26)
+        msgPfpButton.Position = UDim2.new(0, 6, 0, 6)
+        msgPfpButton.BackgroundTransparency = 1
+        msgPfpButton.ImageTransparency = 1
+        msgPfpButton.AutoButtonColor = false
+        msgPfpButton.ZIndex = 15
+        msgPfpButton.Parent = frame
+        msgPfpButton.MouseButton1Click:Connect(function()
+            OpenServerPlayerProfile(msgData)
+        end)
+    end
 
     local roleName = msgData.Role or GetAssignedOrCalculatedRole(msgData.Username)
     local style = RANK_STYLES[roleName] or RANK_STYLES["VIP"]
@@ -4802,6 +4980,7 @@ SendChatMessage = function()
     local payload = {
         ClientMessageId = clientMessageId,
         Username = LocalPlayer.Name,
+        UserId = LocalPlayer.UserId,
         DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         Text = privateBody,
         Timestamp = os.time(),

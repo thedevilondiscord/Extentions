@@ -2766,7 +2766,7 @@ ProfileFrame.BorderSizePixel = 0
 ProfileFrame.ScrollBarThickness = 3
 ProfileFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
 ProfileFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 850)
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 860)
 ProfileFrame.Visible = false
 ProfileFrame.Parent = MainFrame
 
@@ -2781,19 +2781,26 @@ local function KronosPfpImage(id, size)
 end
 
 ProfileHeaderCard = Instance.new("Frame")
-ProfileHeaderCard.Size = UDim2.new(1, 0, 0, 86)
+ProfileHeaderCard.Size = UDim2.new(1, 0, 0, 96)
 ProfileHeaderCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-ProfileHeaderCard.BackgroundTransparency = 0.28
+ProfileHeaderCard.BackgroundTransparency = 0.22
 ProfileHeaderCard.BorderSizePixel = 0
 ProfileHeaderCard.Parent = ProfileFrame
 ProfileHeaderCorner = Instance.new("UICorner")
-ProfileHeaderCorner.CornerRadius = UDim.new(0, 10)
+ProfileHeaderCorner.CornerRadius = UDim.new(0, 11)
 ProfileHeaderCorner.Parent = ProfileHeaderCard
+ProfileHeaderStroke = Instance.new("UIStroke")
+ProfileHeaderStroke.Thickness = 1.2
+ProfileHeaderStroke.Color = Color3.fromRGB(70, 70, 82)
+ProfileHeaderStroke.Transparency = 0.35
+ProfileHeaderStroke.Parent = ProfileHeaderCard
 
+-- PROFILE IDENTITY: selected PFP on the left, identity in the middle,
+-- and the four compact social actions on the right.
 ProfilePfp = Instance.new("ImageLabel")
 ProfilePfp.Name = "ProfilePfp"
-ProfilePfp.Size = UDim2.new(0, 62, 0, 62)
-ProfilePfp.Position = UDim2.new(0, 10, 0, 10)
+ProfilePfp.Size = UDim2.new(0, 68, 0, 68)
+ProfilePfp.Position = UDim2.new(0, 9, 0, 14)
 ProfilePfp.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 ProfilePfp.Image = KronosPfpImage(CurrentPfpId, 420)
 ProfilePfp.ScaleType = Enum.ScaleType.Crop
@@ -2802,9 +2809,18 @@ ProfilePfpCorner = Instance.new("UICorner")
 ProfilePfpCorner.CornerRadius = UDim.new(1, 0)
 ProfilePfpCorner.Parent = ProfilePfp
 
+-- Bright red selection ring around the currently selected profile picture.
+ProfilePfpRing = Instance.new("UIStroke")
+ProfilePfpRing.Name = "SelectedPfpRedRing"
+ProfilePfpRing.Thickness = 3
+ProfilePfpRing.Color = Color3.fromRGB(255, 35, 35)
+ProfilePfpRing.Transparency = 0
+ProfilePfpRing.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ProfilePfpRing.Parent = ProfilePfp
+
 ProfileDisplayName = Instance.new("TextLabel")
-ProfileDisplayName.Size = UDim2.new(1, -238, 0, 31)
-ProfileDisplayName.Position = UDim2.new(0, 226, 0, 8)
+ProfileDisplayName.Size = UDim2.new(0, 190, 0, 32)
+ProfileDisplayName.Position = UDim2.new(0, 88, 0, 17)
 ProfileDisplayName.BackgroundTransparency = 1
 ProfileDisplayName.Font = Enum.Font.GothamBold
 ProfileDisplayName.Text = GetFormattedDisplayName(LocalPlayer.DisplayName, true)
@@ -2813,30 +2829,27 @@ ProfileDisplayName.TextSize = 20
 ProfileDisplayName.TextXAlignment = Enum.TextXAlignment.Left
 ProfileDisplayName.TextTruncate = Enum.TextTruncate.AtEnd
 ProfileDisplayName.Parent = ProfileHeaderCard
-ProfileRole = GetAssignedOrCalculatedRole(LocalPlayer.Name)
-AnimateRoleFont(ProfileDisplayName, ProfileRole, RANK_STYLES[ProfileRole] or RANK_STYLES["VIP"])
 
+-- Profile identity is intentionally static white: no role/rainbow transition.
 ProfileUsername = Instance.new("TextLabel")
-ProfileUsername.Size = UDim2.new(1, -238, 0, 19)
-ProfileUsername.Position = UDim2.new(0, 226, 0, 43)
+ProfileUsername.Size = UDim2.new(0, 190, 0, 20)
+ProfileUsername.Position = UDim2.new(0, 88, 0, 51)
 ProfileUsername.BackgroundTransparency = 1
 ProfileUsername.Font = Enum.Font.Gotham
 ProfileUsername.Text = "@" .. LocalPlayer.Name
-ProfileRoleStyle = RANK_STYLES[ProfileRole] or RANK_STYLES["VIP"]
-ProfileUsername.TextColor3 = (ProfileRoleStyle and (ProfileRoleStyle.Name or ProfileRoleStyle.Start)) or Color3.fromRGB(255, 255, 255)
+ProfileUsername.TextColor3 = Color3.fromRGB(255, 255, 255)
 ProfileUsername.TextSize = 11
 ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
+ProfileUsername.TextTruncate = Enum.TextTruncate.AtEnd
 ProfileUsername.Parent = ProfileHeaderCard
 
--- SOCIAL BUTTONS: compact icon-only controls placed to the LEFT of the
--- DisplayName so the profile header stays compact and readable.
 function ProfileSocialImage(name, imageId, pos)
     local b = Instance.new("ImageButton")
     b.Name = name
-    b.Size = UDim2.new(0, 30, 0, 30)
+    b.Size = UDim2.new(0, 28, 0, 28)
     b.Position = pos
-    b.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
-    b.BackgroundTransparency = 0.02
+    b.BackgroundColor3 = Color3.fromRGB(72, 72, 90)
+    b.BackgroundTransparency = 0
     b.BorderSizePixel = 0
     b.Image = "rbxthumb://type=Asset&id=" .. tostring(imageId) .. "&w=150&h=150"
     b.ImageTransparency = 0
@@ -2849,28 +2862,29 @@ function ProfileSocialImage(name, imageId, pos)
     c.CornerRadius = UDim.new(0, 7)
     c.Parent = b
     local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1
-    stroke.Transparency = 0.2
-    stroke.Color = Color3.fromRGB(150, 150, 170)
+    stroke.Thickness = 1.2
+    stroke.Transparency = 0.05
+    stroke.Color = Color3.fromRGB(185, 185, 200)
     stroke.Parent = b
     return b
 end
 
-InstagramButton = ProfileSocialImage("InstagramButton", "18355586412", UDim2.new(0, 84, 0, 8))
-DiscordButton = ProfileSocialImage("DiscordButton", "18505728250", UDim2.new(0, 120, 0, 8))
-SnapchatButton = ProfileSocialImage("SnapchatButton", "385616312", UDim2.new(0, 156, 0, 8))
+-- Four compact actions on the RIGHT of the profile identity.
+InstagramButton = ProfileSocialImage("InstagramButton", "18355586412", UDim2.new(0, 285, 0, 20))
+DiscordButton = ProfileSocialImage("DiscordButton", "18505728250", UDim2.new(0, 319, 0, 20))
+SnapchatButton = ProfileSocialImage("SnapchatButton", "385616312", UDim2.new(0, 353, 0, 20))
 
 ProfileShareButton = Instance.new("TextButton")
 ProfileShareButton.Name = "ProfileShareButton"
-ProfileShareButton.Size = UDim2.new(0, 30, 0, 30)
-ProfileShareButton.Position = UDim2.new(0, 192, 0, 8)
-ProfileShareButton.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
-ProfileShareButton.BackgroundTransparency = 0.02
+ProfileShareButton.Size = UDim2.new(0, 28, 0, 28)
+ProfileShareButton.Position = UDim2.new(0, 387, 0, 20)
+ProfileShareButton.BackgroundColor3 = Color3.fromRGB(72, 72, 90)
+ProfileShareButton.BackgroundTransparency = 0
 ProfileShareButton.BorderSizePixel = 0
 ProfileShareButton.Text = "↗"
 ProfileShareButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ProfileShareButton.Font = Enum.Font.GothamBold
-ProfileShareButton.TextSize = 18
+ProfileShareButton.TextSize = 17
 ProfileShareButton.AutoButtonColor = true
 ProfileShareButton.ZIndex = 4
 ProfileShareButton.Parent = ProfileHeaderCard
@@ -2878,9 +2892,9 @@ ProfileShareCorner = Instance.new("UICorner")
 ProfileShareCorner.CornerRadius = UDim.new(0, 7)
 ProfileShareCorner.Parent = ProfileShareButton
 ProfileShareStroke = Instance.new("UIStroke")
-ProfileShareStroke.Thickness = 1
-ProfileShareStroke.Transparency = 0.2
-ProfileShareStroke.Color = Color3.fromRGB(150, 150, 170)
+ProfileShareStroke.Thickness = 1.2
+ProfileShareStroke.Transparency = 0.05
+ProfileShareStroke.Color = Color3.fromRGB(185, 185, 200)
 ProfileShareStroke.Parent = ProfileShareButton
 
 -- No social-status label is placed under the four buttons. The popup opened
@@ -2892,7 +2906,7 @@ ProfileShareStroke.Parent = ProfileShareButton
 -- ============================================================================
 ProfilePfpCard = Instance.new("Frame")
 ProfilePfpCard.Size = UDim2.new(1, 0, 0, 590)
-ProfilePfpCard.Position = UDim2.new(0, 0, 0, 96)
+ProfilePfpCard.Position = UDim2.new(0, 0, 0, 104)
 ProfilePfpCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfilePfpCard.BackgroundTransparency = 0.3
 ProfilePfpCard.BorderSizePixel = 0
@@ -3012,6 +3026,11 @@ function SetProfilePfp(id)
     if id == "" then return end
     SavePfpIdLocally(id)
     ProfilePfp.Image = KronosPfpImage(id, 420)
+    if ProfilePfpRing and ProfilePfpRing.Parent then
+        ProfilePfpRing.Color = Color3.fromRGB(255, 35, 35)
+        ProfilePfpRing.Thickness = 3
+        ProfilePfpRing.Transparency = 0
+    end
     ShowLocalSystemMessage("[AI MoD] : Profile picture saved locally ✓")
 end
 

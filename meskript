@@ -2230,90 +2230,41 @@ local stickerViewImageCorner = Instance.new("UICorner")
 stickerViewImageCorner.CornerRadius = UDim.new(0, 10)
 stickerViewImageCorner.Parent = StickerViewImage
 
-StickerViewUse = Instance.new("TextButton")
-StickerViewUse.Size = UDim2.new(0, 100, 0, 34)
-StickerViewUse.Position = UDim2.new(0.5, -107, 1, -46)
-StickerViewUse.BackgroundColor3 = Color3.fromRGB(65, 65, 82)
-StickerViewUse.BorderSizePixel = 0
-StickerViewUse.Text = "USE"
-StickerViewUse.TextColor3 = Color3.fromRGB(255, 255, 255)
-StickerViewUse.Font = Enum.Font.GothamBold
-StickerViewUse.TextSize = 11
-StickerViewUse.AutoButtonColor = true
-StickerViewUse.ZIndex = 152
-StickerViewUse.Parent = StickerViewPopup
-
-local stickerViewUseCorner = Instance.new("UICorner")
-stickerViewUseCorner.CornerRadius = UDim.new(0, 8)
-stickerViewUseCorner.Parent = StickerViewUse
-
 StickerViewSave = Instance.new("TextButton")
-StickerViewSave.Size = UDim2.new(0, 100, 0, 34)
-StickerViewSave.Position = UDim2.new(0.5, 7, 1, -46)
+StickerViewSave.Name = "StickerViewSave"
+StickerViewSave.Size = UDim2.new(0, 110, 0, 34)
+StickerViewSave.Position = UDim2.new(0.5, -55, 1, -45)
 StickerViewSave.BackgroundColor3 = Color3.fromRGB(205, 25, 35)
 StickerViewSave.BorderSizePixel = 0
 StickerViewSave.Text = "SAVE"
 StickerViewSave.TextColor3 = Color3.fromRGB(255, 255, 255)
 StickerViewSave.Font = Enum.Font.GothamBold
 StickerViewSave.TextSize = 11
-StickerViewSave.AutoButtonColor = true
-StickerViewSave.ZIndex = 152
+StickerViewSave.ZIndex = 72
 StickerViewSave.Parent = StickerViewPopup
+local svsc_final = Instance.new("UICorner")
+svsc_final.CornerRadius = UDim.new(0, 8)
+svsc_final.Parent = StickerViewSave
 
-local stickerViewSaveCorner = Instance.new("UICorner")
-stickerViewSaveCorner.CornerRadius = UDim.new(0, 8)
-stickerViewSaveCorner.Parent = StickerViewSave
+StickerViewSave.Activated:Connect(function()
+    if CurrentStickerViewId == "" then return end
 
-local CurrentStickerViewUrl = ""
-local CurrentStickerViewId = ""
-
-local function ExtractStickerIdFromUrl(url)
-    url = tostring(url or "")
-    return url:match("[?&]id=(%d+)") or url:match("id=(%d+)")
-end
-
-local function StickerViewerAlreadySaved(id)
-    id = tostring(id or "")
-    if id == "" then
-        return false
-    end
-
-    for _, savedId in ipairs(PersistentCustomStickers) do
-        if tostring(savedId) == id then
-            return true
+    local alreadySaved = false
+    for _, saved in ipairs(PersistentCustomStickers) do
+        if tostring(saved) == tostring(CurrentStickerViewId) then
+            alreadySaved = true
+            break
         end
     end
 
-    local hardcodedUrl = GetStickerUrlFromId(id)
-    for _, hardcodedSticker in ipairs(baseStickers) do
-        if tostring(hardcodedSticker) == hardcodedUrl then
-            return true
-        end
+    if not alreadySaved then
+        table.insert(PersistentCustomStickers, 1, tostring(CurrentStickerViewId))
+        SavePersistentCustomStickers()
     end
 
-    return false
-end
-
-local function OpenStickerViewer(stickerUrl)
-    CurrentStickerViewUrl = tostring(stickerUrl or "")
-    CurrentStickerViewId = ExtractStickerIdFromUrl(CurrentStickerViewUrl) or ""
-
-    StickerViewImage.Image = CurrentStickerViewUrl
     StickerViewSave.Visible = not StickerViewerAlreadySaved(CurrentStickerViewId)
-    StickerViewPopup.Visible = true
-end
-
-StickerViewClose.Activated:Connect(function()
-    StickerViewPopup.Visible = false
+    ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
 end)
-
-StickerViewUse.Activated:Connect(function()
-    if CurrentStickerViewUrl ~= "" then
-        SendStickerFromUrl(CurrentStickerViewUrl)
-    end
-    StickerViewPopup.Visible = false
-end)
-
 StickerViewSave.Activated:Connect(function()
     if CurrentStickerViewId == "" then
         return
@@ -2324,7 +2275,7 @@ StickerViewSave.Activated:Connect(function()
         SavePersistentCustomStickers()
     end
 
-    StickerViewSave.Visible = false
+    StickerViewSave.Visible = not StickerViewerAlreadySaved(CurrentStickerViewId)
     ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
 end)
 
@@ -4883,38 +4834,6 @@ CreateMessageCard = function(msgData, isGlobal)
 
     -- Transparent interaction layer: long-pressing any part of the message opens the options menu.
     
--- Sticker-message viewer: only attached to stickers that have already been
--- rendered in chat. Palette stickers are intentionally not wired to this.
-local function AttachStickerChatViewer(frame, msgData, messageText)
-    local raw = tostring(messageText or "")
-    local stickerUrl = nil
-
-    if string.sub(raw, 1, 11) == "rbxthumb://" or string.sub(raw, 1, 13) == "rbxassetid://" then
-        stickerUrl = raw
-    end
-
-    if not stickerUrl then
-        return
-    end
-
-    local StickerChatViewButton = Instance.new("ImageButton")
-    StickerChatViewButton.Name = "StickerChatViewButton"
-    StickerChatViewButton.BackgroundTransparency = 1
-    StickerChatViewButton.BorderSizePixel = 0
-    StickerChatViewButton.Image = stickerUrl
-    StickerChatViewButton.ScaleType = Enum.ScaleType.Fit
-    StickerChatViewButton.Size = UDim2.new(0, 90, 0, 90)
-    StickerChatViewButton.Position = UDim2.new(0, 8, 0, 8)
-    StickerChatViewButton.AutoButtonColor = false
-    StickerChatViewButton.Active = true
-    StickerChatViewButton.ZIndex = 30
-    StickerChatViewButton.Parent = frame
-
-    StickerChatViewButton.Activated:Connect(function()
-        OpenStickerViewer(stickerUrl)
-    end)
-end
-
 local interactionButton = Instance.new("TextButton")
     interactionButton.Name = "MessageInteraction"
     interactionButton.Size = UDim2.new(1, 0, 1, 0)
@@ -4924,8 +4843,7 @@ local interactionButton = Instance.new("TextButton")
     interactionButton.Text = ""
     interactionButton.AutoButtonColor = false
     interactionButton.ZIndex = 5
-    interactionButton.Parent = frame
-    AttachStickerChatViewer(frame, msgData, tostring(msgData.Text or msgData.Message or ""))
+    interactionButton.Parent = frame)
 
     local pressToken = 0
     interactionButton.InputBegan:Connect(function(input)

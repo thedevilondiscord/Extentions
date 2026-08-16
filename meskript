@@ -4149,15 +4149,12 @@ local function OpenServerPlayerProfile(msgData)
     ServerPlayerProfilePfp.Image = KronosPfpImage(data.PfpId or msgData.PfpId or DefaultPfpId, 300)
     ServerPlayerProfileName.Text = tostring(data.DisplayName or player.DisplayName)
     ServerPlayerProfileUser.Text = "@" .. tostring(data.Username or player.Name) .. "  •  ID: " .. tostring(userId) .. "  (tap PFP to copy ID)"
-    ServerPlayerProfileBio.Text = "BIO
-" .. (tostring(data.Bio or "") ~= "" and tostring(data.Bio) or "No bio set.")
+    ServerPlayerProfileBio.Text = "BIO\n" .. (tostring(data.Bio or "") ~= "" and tostring(data.Bio) or "No bio set.")
     local socials = {}
     if tostring(data.Instagram or "") ~= "" then table.insert(socials,"Instagram  @"..tostring(data.Instagram)) end
     if tostring(data.Snapchat or "") ~= "" then table.insert(socials,"Snapchat   @"..tostring(data.Snapchat)) end
     if tostring(data.Discord or "") ~= "" then table.insert(socials,"Discord   @"..tostring(data.Discord)) end
-    ServerPlayerProfileSocials.Text = (#socials > 0 and "SOCIALS
-" .. table.concat(socials,"   •   ") or "SOCIALS
-No socials set.")
+    ServerPlayerProfileSocials.Text = (#socials > 0 and "SOCIALS\n" .. table.concat(socials,"   •   ") or "SOCIALS\nNo socials set.")
     ServerPlayerProfilePopup.Visible=true
 end
 

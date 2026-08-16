@@ -2281,12 +2281,17 @@ function OpenStickerViewer(stickerUrl)
     CurrentStickerViewId = ExtractStickerIdFromUrl(CurrentStickerViewUrl) or ""
 
     StickerViewImage.Image = CurrentStickerViewUrl
-    StickerViewSave.Visible = CurrentStickerViewId ~= "" and not StickerViewerAlreadySaved(CurrentStickerViewId)
+    local alreadySaved = StickerViewerAlreadySaved(CurrentStickerViewId)
+    StickerViewSave.Visible = CurrentStickerViewId ~= ""
+    StickerViewSave.Text = alreadySaved and "SAVED ✓" or "SAVE STICKER"
+    StickerViewSave.BackgroundColor3 = alreadySaved and Color3.fromRGB(55, 145, 75) or Color3.fromRGB(205, 25, 35)
     StickerViewPopup.Visible = CurrentStickerViewUrl ~= ""
 end
 
 StickerViewClose.Activated:Connect(function()
     StickerViewPopup.Visible = false
+    StickerViewSave.Text = "SAVE STICKER"
+    StickerViewSave.BackgroundColor3 = Color3.fromRGB(205, 25, 35)
 end)
 
 StickerViewSave.Activated:Connect(function()
@@ -2294,12 +2299,16 @@ StickerViewSave.Activated:Connect(function()
         return
     end
 
-    if not StickerViewerAlreadySaved(CurrentStickerViewId) then
-        table.insert(PersistentCustomStickers, 1, tostring(CurrentStickerViewId))
-        SavePersistentCustomStickers()
+    if StickerViewerAlreadySaved(CurrentStickerViewId) then
+        ShowLocalSystemMessage("[AI MoD] : This sticker is already saved ✓")
+        return
     end
 
-    StickerViewSave.Visible = false
+    table.insert(PersistentCustomStickers, 1, tostring(CurrentStickerViewId))
+    SavePersistentCustomStickers()
+
+    StickerViewSave.Text = "SAVED ✓"
+    StickerViewSave.BackgroundColor3 = Color3.fromRGB(55, 145, 75)
     ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
 end)
 

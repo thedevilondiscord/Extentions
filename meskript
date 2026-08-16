@@ -2246,36 +2246,60 @@ local svsc_final = Instance.new("UICorner")
 svsc_final.CornerRadius = UDim.new(0, 8)
 svsc_final.Parent = StickerViewSave
 
-StickerViewSave.Activated:Connect(function()
-    if CurrentStickerViewId == "" then return end
+local CurrentStickerViewUrl = ""
+local CurrentStickerViewId = ""
 
-    local alreadySaved = false
+local function ExtractStickerIdFromUrl(url)
+    local s = tostring(url or "")
+    return s:match("id=(%d+)")
+end
+
+local function StickerViewerAlreadySaved(id)
+    id = tostring(id or "")
+    if id == "" then
+        return false
+    end
+
     for _, saved in ipairs(PersistentCustomStickers) do
-        if tostring(saved) == tostring(CurrentStickerViewId) then
-            alreadySaved = true
-            break
+        if tostring(saved) == id then
+            return true
         end
     end
 
-    if not alreadySaved then
-        table.insert(PersistentCustomStickers, 1, tostring(CurrentStickerViewId))
-        SavePersistentCustomStickers()
+    local normalized = GetStickerUrlFromId(id)
+    for _, hardcoded in ipairs(baseStickers) do
+        if tostring(hardcoded) == normalized then
+            return true
+        end
     end
 
-    StickerViewSave.Visible = not StickerViewerAlreadySaved(CurrentStickerViewId)
-    ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
+    return false
+end
+
+function OpenStickerViewer(stickerUrl)
+    CurrentStickerViewUrl = tostring(stickerUrl or "")
+    CurrentStickerViewId = ExtractStickerIdFromUrl(CurrentStickerViewUrl) or ""
+
+    StickerViewImage.Image = CurrentStickerViewUrl
+    StickerViewSave.Visible = CurrentStickerViewId ~= "" and not StickerViewerAlreadySaved(CurrentStickerViewId)
+    StickerViewPopup.Visible = CurrentStickerViewUrl ~= ""
+end
+
+StickerViewClose.Activated:Connect(function()
+    StickerViewPopup.Visible = false
 end)
+
 StickerViewSave.Activated:Connect(function()
     if CurrentStickerViewId == "" then
         return
     end
 
     if not StickerViewerAlreadySaved(CurrentStickerViewId) then
-        table.insert(PersistentCustomStickers, 1, CurrentStickerViewId)
+        table.insert(PersistentCustomStickers, 1, tostring(CurrentStickerViewId))
         SavePersistentCustomStickers()
     end
 
-    StickerViewSave.Visible = not StickerViewerAlreadySaved(CurrentStickerViewId)
+    StickerViewSave.Visible = false
     ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
 end)
 
@@ -4790,14 +4814,20 @@ CreateMessageCard = function(msgData, isGlobal)
         pad.PaddingBottom = UDim.new(0, 8)
         pad.Parent = frame
     elseif isSticker then
-        local stickerImg = Instance.new("ImageLabel")
+        local stickerImg = Instance.new("ImageButton")
         stickerImg.Name = "StickerMsg"
         stickerImg.Size = UDim2.new(0, 80, 0, 80)
         stickerImg.Position = UDim2.new(0, 38, 0, msgData.ReplyToText and 60 or 26)
         stickerImg.BackgroundTransparency = 1
+        stickerImg.BorderSizePixel = 0
         stickerImg.Image = msgData.Text
         stickerImg.ScaleType = Enum.ScaleType.Fit
+        stickerImg.AutoButtonColor = false
+        stickerImg.ZIndex = 10
         stickerImg.Parent = frame
+        stickerImg.Activated:Connect(function()
+            OpenStickerViewer(msgData.Text)
+        end)
 
         local pad = Instance.new("UIPadding")
         pad.PaddingBottom = UDim.new(0, 8)
@@ -4842,8 +4872,8 @@ local interactionButton = Instance.new("TextButton")
     interactionButton.BorderSizePixel = 0
     interactionButton.Text = ""
     interactionButton.AutoButtonColor = false
-    interactionButton.ZIndex = 5
-    interactionButton.Parent = frame)
+    interactionButton.ZIndex = 4
+    interactionButton.Parent = frame
 
     local pressToken = 0
     interactionButton.InputBegan:Connect(function(input)

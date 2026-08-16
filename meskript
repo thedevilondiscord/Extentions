@@ -921,6 +921,8 @@ end
 
 local ALL_AUTOCOMPLETE_OPTIONS = { "!tag", "!role", "!spoof", "!announce ", "!mute ", "/w " }
 local CurrentContextMessage = nil
+local EditingContextMessage = nil
+local EditingContextIsGlobal = false
 local ReplyContextMessage = nil
 local ReplyHighlightToken = 0
 local PrivateModeTargetUsername = nil
@@ -4170,6 +4172,9 @@ end
 
 function ShowMessageContextMenu(msgData, position)
     CurrentContextMessage = msgData
+    -- Rebuild on every long-press so self-message-only actions are decided
+    -- from the message currently being viewed.
+    pcall(BuildMessageContextMenu)
     ContextMenu.Visible = true
     ContextMenu.Position = UDim2.fromOffset(position.X, position.Y)
 
@@ -4234,6 +4239,73 @@ function BuildMessageContextMenu()
         local displayName = msg.DisplayName or msg.Username or "Unknown"
         SetPersistentPrivatePrefix(displayName, msg.Username)
     end)
+
+    -- Edit/Delete are deliberately available only for the local player's
+    -- own normal messages. Bot/system/sticker/invite messages cannot be edited.
+    if CurrentContextMessage
+        and tostring(CurrentContextMessage.Username or "") == tostring(LocalPlayer.Name)
+        and not CurrentContextMessage.SystemMessage
+        and not CurrentContextMessage.IsMusicSessionInvite
+        and not CurrentContextMessage.IsServerInvite
+        and not CurrentContextMessage.IsProfileShare
+        and not CurrentContextMessage.IsSticker
+        and not CurrentContextMessage.Deleted then
+
+        AddContextMenuButton("Edit Message", 4, function()
+            if not CurrentContextMessage then return end
+            EditingContextMessage = CurrentContextMessage
+            EditingContextIsGlobal = (ActiveTab == "GLOBAL")
+            MessageInput.Text = tostring(CurrentContextMessage.Text or "")
+            MessageInput.CursorPosition = #MessageInput.Text + 1
+            MessageInput:CaptureFocus()
+            ShowLocalSystemMessage("[AI MoD] : Editing message — press Send to save the change.")
+        end)
+
+        AddContextMenuButton("Delete Message", 5, function()
+            if not CurrentContextMessage then return end
+            local target = CurrentContextMessage
+            task.spawn(function()
+                local endpoint = (ActiveTab == "GLOBAL") and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
+                local clientId = tostring(target.ClientMessageId or "")
+                if clientId == "" then
+                    ShowLocalSystemMessage("[AI MoD] : This message cannot be deleted.", true)
+                    return
+                end
+                local data = HttpRequest(endpoint, "GET")
+                local firebaseKey = nil
+                if type(data) == "table" then
+                    for key, remote in pairs(data) do
+                        if type(remote) == "table" and tostring(remote.ClientMessageId or "") == clientId then
+                            firebaseKey = key
+                            break
+                        end
+                    end
+                end
+                if firebaseKey then
+                    HttpRequest(endpoint .. "/" .. tostring(firebaseKey) .. ".json", "PATCH", {
+                        Deleted = true,
+                        DeletedAt = os.time(),
+                        DeletedBy = LocalPlayer.Name,
+                    })
+                end
+            end)
+
+            local cache = (ActiveTab == "GLOBAL") and GlobalCachedMessages or ServerCachedMessages
+            for key, value in pairs(cache) do
+                if type(value) == "table" and tostring(value.ClientMessageId or "") == tostring(target.ClientMessageId or "") then
+                    cache[key] = nil
+                end
+            end
+            for _, card in ipairs((ActiveTab == "GLOBAL") and GlobalUIElements or ServerUIElements) do
+                if card and card.Parent and tostring(card:GetAttribute("ClientMessageId") or "") == tostring(target.ClientMessageId or "") then
+                    card:Destroy()
+                end
+            end
+            EditingContextMessage = nil
+            EditingContextIsGlobal = false
+            ShowLocalSystemMessage("[AI MoD] : Message deleted.")
+        end)
+    end
 end
 
 BuildMessageContextMenu()
@@ -4783,6 +4855,9 @@ CreateMessageCard = function(msgData, isGlobal)
         contentLabel.TextYAlignment = Enum.TextYAlignment.Top
         contentLabel.TextWrapped = true
         contentLabel.Parent = frame
+        if msgData.Edited then
+            contentLabel.Text = tostring(msgData.Text or "") .. "  (edited)"
+        end
 
         local pad = Instance.new("UIPadding")
         pad.PaddingBottom = UDim.new(0, 6)
@@ -4823,6 +4898,7 @@ CreateMessageCard = function(msgData, isGlobal)
     frame.Parent = MessageContainer
     frame:SetAttribute("MessageTimestamp", msgData.Timestamp or 0)
     frame:SetAttribute("MessageUsername", msgData.Username or "")
+    frame:SetAttribute("ClientMessageId", tostring(msgData.ClientMessageId or ""))
 
     if msgData.ReplyToTimestamp then
         task.delay(0.15, function()
@@ -4959,9 +5035,88 @@ Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinute
     ShowLocalSystemMessage("[AI MoD] : 🔇 " .. targetDisplayName .. " has been muted for " .. tostring(durationMinutes) .. " minute(s).", true)
 end
 
+local function FindFirebaseMessageKey(endpoint, clientMessageId)
+    local data = HttpRequest(endpoint, "GET")
+    if type(data) ~= "table" then return nil end
+    for key, remote in pairs(data) do
+        if type(remote) == "table" and tostring(remote.ClientMessageId or "") == tostring(clientMessageId or "") then
+            return tostring(key)
+        end
+    end
+    return nil
+end
+
+local function UpdateLocalMessageCard(clientMessageId, newText, edited)
+    local wanted = tostring(clientMessageId or "")
+    for _, list in ipairs({GlobalUIElements, ServerUIElements}) do
+        for _, card in ipairs(list) do
+            if card and card.Parent and tostring(card:GetAttribute("ClientMessageId") or "") == wanted then
+                local label = card:FindFirstChild("ContentLabel")
+                if label then
+                    label.Text = tostring(newText or "") .. (edited and "  (edited)" or "")
+                end
+            end
+        end
+    end
+end
+
+local function EnterEditMode(message)
+    if not message or tostring(message.Username or "") ~= tostring(LocalPlayer.Name) then return end
+    EditingContextMessage = message
+    EditingContextIsGlobal = (ActiveTab == "GLOBAL")
+    MessageInput.Text = tostring(message.Text or "")
+    MessageInput.CursorPosition = #MessageInput.Text + 1
+    MessageInput:CaptureFocus()
+end
+
+local function SaveEditedMessage(message, newText, isGlobal)
+    if not message or tostring(message.Username or "") ~= tostring(LocalPlayer.Name) then return false end
+    local clientId = tostring(message.ClientMessageId or "")
+    if clientId == "" then return false end
+    newText = tostring(newText or "")
+    if newText:match("^%s*$") then return false end
+
+    local endpoint = isGlobal and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
+    local key = FindFirebaseMessageKey(endpoint, clientId)
+    if not key then
+        ShowLocalSystemMessage("[AI MoD] : Could not find the original Firebase message.", true)
+        return false
+    end
+
+    local patch = {
+        Text = newText,
+        Edited = true,
+        EditedAt = os.time(),
+        EditedBy = LocalPlayer.Name,
+    }
+    HttpRequest(endpoint .. "/" .. key .. ".json", "PATCH", patch)
+
+    message.Text = newText
+    message.Edited = true
+    message.EditedAt = patch.EditedAt
+    UpdateLocalMessageCard(clientId, newText, true)
+    return true
+end
+
 SendChatMessage = function()
     local typedText = MessageInput.Text or ""
     if typedText == "" or typedText:match("^%s*$") then return end
+
+    -- Editing is a separate send path: it updates the original Firebase
+    -- record instead of creating a new chat message.
+    if EditingContextMessage then
+        local editing = EditingContextMessage
+        local isGlobalEdit = EditingContextIsGlobal
+        if SaveEditedMessage(editing, typedText, isGlobalEdit) then
+            MessageInput.Text = ""
+            EditingContextMessage = nil
+            EditingContextIsGlobal = false
+            ReplyContextMessage = nil
+            RefreshReplyUI()
+            ShowLocalSystemMessage("[AI MoD] : Message edited ✓")
+        end
+        return
+    end
 
     local isPrivate = IsPrivateModeActive()
     local privateTargetUsername = PrivateModeTargetUsername
@@ -5298,6 +5453,7 @@ function PollMessages()
         local globalData = HttpRequest(GLOBAL_MESSAGES_ENDPOINT, "GET")
         if globalData and type(globalData) == "table" then
             for id, msg in pairs(globalData) do
+                if type(msg) == "table" then msg._FirebaseKey = tostring(id) end
                 if type(msg) == "table" and msg.MuteAction then
                     if tonumber(msg.ExpiresAt or 0) > os.time() and msg.TargetUsername and msg.Scope == "GLOBAL" then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("GLOBAL", msg.TargetUsername)] = msg
@@ -5308,9 +5464,22 @@ function PollMessages()
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
-                    if clientKey and GlobalCachedMessages[clientKey] then
+                    if msg.Deleted then
+                        local targetId = tostring(msg.ClientMessageId or "")
                         GlobalCachedMessages[id] = msg
-                    elseif not GlobalCachedMessages[id] then
+                        for _, card in ipairs(GlobalUIElements) do
+                            if card and card.Parent and tostring(card:GetAttribute("ClientMessageId") or "") == targetId then
+                                card:Destroy()
+                            end
+                        end
+                    elseif clientKey and GlobalCachedMessages[clientKey] then
+                        GlobalCachedMessages[clientKey] = msg
+                        GlobalCachedMessages[id] = msg
+                        UpdateLocalMessageCard(msg.ClientMessageId, msg.Text, msg.Edited)
+                    elseif GlobalCachedMessages[id] then
+                        GlobalCachedMessages[id] = msg
+                        UpdateLocalMessageCard(msg.ClientMessageId, msg.Text, msg.Edited)
+                    else
                         GlobalCachedMessages[id] = msg
                         local card = CreateMessageCard(msg, true)
                         card.Visible = (ActiveTab == "GLOBAL")
@@ -5325,6 +5494,7 @@ function PollMessages()
         local serverData = HttpRequest(SERVER_MESSAGES_ENDPOINT, "GET")
         if serverData and type(serverData) == "table" then
             for id, msg in pairs(serverData) do
+                if type(msg) == "table" then msg._FirebaseKey = tostring(id) end
                 if type(msg) == "table" and msg.JoinEventId == JoinEventId then
                     -- Already rendered locally.
                 elseif type(msg) == "table" and msg.MuteAction then
@@ -5337,9 +5507,22 @@ function PollMessages()
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
-                    if clientKey and ServerCachedMessages[clientKey] then
+                    if msg.Deleted then
+                        local targetId = tostring(msg.ClientMessageId or "")
                         ServerCachedMessages[id] = msg
-                    elseif not ServerCachedMessages[id] then
+                        for _, card in ipairs(ServerUIElements) do
+                            if card and card.Parent and tostring(card:GetAttribute("ClientMessageId") or "") == targetId then
+                                card:Destroy()
+                            end
+                        end
+                    elseif clientKey and ServerCachedMessages[clientKey] then
+                        ServerCachedMessages[clientKey] = msg
+                        ServerCachedMessages[id] = msg
+                        UpdateLocalMessageCard(msg.ClientMessageId, msg.Text, msg.Edited)
+                    elseif ServerCachedMessages[id] then
+                        ServerCachedMessages[id] = msg
+                        UpdateLocalMessageCard(msg.ClientMessageId, msg.Text, msg.Edited)
+                    else
                         ServerCachedMessages[id] = msg
                         local card = CreateMessageCard(msg, false)
                         card.Visible = (ActiveTab == "SERVER")

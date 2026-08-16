@@ -4387,7 +4387,7 @@ ServerPlayerProfilePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
 ServerPlayerProfilePopup.BackgroundTransparency = 0.04
 ServerPlayerProfilePopup.BorderSizePixel = 0
 ServerPlayerProfilePopup.Visible = false
-ServerPlayerProfilePopup.ZIndex = 90
+ServerPlayerProfilePopup.ZIndex = 200
 ServerPlayerProfilePopup.Parent = ScreenGui
 ServerPlayerProfilePopup.ZIndex = 90
 local sppc = Instance.new("UICorner")
@@ -4432,7 +4432,7 @@ ServerPlayerProfileClose.MouseButton1Click:Connect(function() ServerPlayerProfil
 
 local function OpenServerPlayerProfile(msgData)
     local player = ResolveServerProfilePlayer(msgData)
-    if not player or player == LocalPlayer then return end
+    if not player then return end
     local userId = player.UserId
     ServerPlayerProfileId = tostring(userId)
     local data = HttpRequest(ServerProfileUrl(userId), "GET")

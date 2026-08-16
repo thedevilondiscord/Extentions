@@ -1972,6 +1972,8 @@ AboutFrame.Parent = MainFrame
 
 -- ============================================================================
 -- MUSIC SESSION TAB
+-- Choice-driven layout: new users first choose JOIN or CREATE. The detailed
+-- controls are only shown after that choice.
 -- ============================================================================
 MusicSessionFrame = Instance.new("ScrollingFrame")
 MusicSessionFrame.Name = "MusicSessionFrame"
@@ -1981,7 +1983,7 @@ MusicSessionFrame.BackgroundTransparency = 1
 MusicSessionFrame.BorderSizePixel = 0
 MusicSessionFrame.ScrollBarThickness = 3
 MusicSessionFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
-MusicSessionFrame.CanvasSize = UDim2.new(0, 0, 0, 390)
+MusicSessionFrame.CanvasSize = UDim2.new(0, 0, 0, 470)
 MusicSessionFrame.Visible = false
 MusicSessionFrame.Parent = MainFrame
 
@@ -2047,8 +2049,8 @@ MusicSessionIdLabel.Parent = MusicTopCard
 MusicMuteButton = Instance.new("TextButton")
 MusicMuteButton.Size = UDim2.new(0, 90, 0, 25)
 MusicMuteButton.Position = UDim2.new(1, -99, 0, 52)
-MusicMuteButton.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-MusicMuteButton.BackgroundTransparency = 0.2
+MusicMuteButton.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
+MusicMuteButton.BackgroundTransparency = 0.08
 MusicMuteButton.Font = Enum.Font.GothamBold
 MusicMuteButton.Text = "🔊 MUTE"
 MusicMuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -2069,7 +2071,7 @@ function MusicMakeButton(parent, name, text, pos, size)
     b.Size = size
     b.Position = pos
     b.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
-    b.BackgroundTransparency = 0.18
+    b.BackgroundTransparency = 0.12
     b.BorderSizePixel = 0
     b.Font = Enum.Font.GothamBold
     b.Text = text
@@ -2082,74 +2084,127 @@ function MusicMakeButton(parent, name, text, pos, size)
     return b
 end
 
-StartMusicSessionButton = MusicMakeButton(MusicSessionFrame, "StartMusicSessionButton", "START SESSION", UDim2.new(0, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
-JoinMusicSessionButton = MusicMakeButton(MusicSessionFrame, "JoinMusicSessionButton", "JOIN SESSION", UDim2.new(0.34, 0, 0, 88), UDim2.new(0.32, -5, 0, 28))
-EndMusicSessionButton = MusicMakeButton(MusicSessionFrame, "EndMusicSessionButton", "LEAVE / END", UDim2.new(0.68, 0, 0, 88), UDim2.new(0.32, 0, 0, 28))
+function MusicMakeSecondaryButton(parent, name, text, pos, size)
+    local b = MusicMakeButton(parent, name, text, pos, size)
+    b.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    b.BackgroundTransparency = 0.05
+    return b
+end
 
-MusicSessionIdInput = Instance.new("TextBox")
-MusicSessionIdInput.Size = UDim2.new(1, 0, 0, 30)
-MusicSessionIdInput.Position = UDim2.new(0, 0, 0, 120)
-MusicSessionIdInput.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-MusicSessionIdInput.BackgroundTransparency = 0.25
-MusicSessionIdInput.BorderSizePixel = 0
-MusicSessionIdInput.Font = Enum.Font.Code
-MusicSessionIdInput.PlaceholderText = "Enter Session ID to join..."
-MusicSessionIdInput.PlaceholderColor3 = Color3.fromRGB(130, 130, 145)
-MusicSessionIdInput.Text = ""
-MusicSessionIdInput.TextColor3 = Color3.fromRGB(240, 240, 245)
-MusicSessionIdInput.TextSize = 11
-MusicSessionIdInput.ClearTextOnFocus = false
-MusicSessionIdInput.Parent = MusicSessionFrame
-MusicSessionIdCorner = Instance.new("UICorner")
-MusicSessionIdCorner.CornerRadius = UDim.new(0, 8)
-MusicSessionIdCorner.Parent = MusicSessionIdInput
+-- First screen: only the two choices.
+MusicChoiceTitle = Instance.new("TextLabel")
+MusicChoiceTitle.Size = UDim2.new(1, -12, 0, 24)
+MusicChoiceTitle.Position = UDim2.new(0, 6, 0, 96)
+MusicChoiceTitle.BackgroundTransparency = 1
+MusicChoiceTitle.Font = Enum.Font.GothamBold
+MusicChoiceTitle.Text = "What would you like to do?"
+MusicChoiceTitle.TextColor3 = Color3.fromRGB(235, 235, 245)
+MusicChoiceTitle.TextSize = 12
+MusicChoiceTitle.TextXAlignment = Enum.TextXAlignment.Center
+MusicChoiceTitle.Parent = MusicSessionFrame
 
-MusicInviteGlobalButton = MusicMakeButton(MusicSessionFrame, "MusicInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 0, 0, 156), UDim2.new(0.5, -4, 0, 27))
-MusicInviteServerButton = MusicMakeButton(MusicSessionFrame, "MusicInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 4, 0, 156), UDim2.new(0.5, -4, 0, 27))
+MusicCreateChoiceButton = MusicMakeButton(MusicSessionFrame, "MusicCreateChoiceButton", "🎵  CREATE A SESSION", UDim2.new(0, 6, 0, 128), UDim2.new(0.5, -9, 0, 54))
+MusicJoinChoiceButton = MusicMakeButton(MusicSessionFrame, "MusicJoinChoiceButton", "🔗  JOIN A SESSION", UDim2.new(0.5, 3, 0, 128), UDim2.new(0.5, -9, 0, 54))
+MusicCreateChoiceButton.TextSize = 10
+MusicJoinChoiceButton.TextSize = 10
+
+MusicChoiceHint = Instance.new("TextLabel")
+MusicChoiceHint.Size = UDim2.new(1, -20, 0, 42)
+MusicChoiceHint.Position = UDim2.new(0, 10, 0, 192)
+MusicChoiceHint.BackgroundTransparency = 1
+MusicChoiceHint.Font = Enum.Font.Gotham
+MusicChoiceHint.Text = "Create a session to play music for everyone who joins, or join a friend's session using their Session ID."
+MusicChoiceHint.TextColor3 = Color3.fromRGB(155, 155, 170)
+MusicChoiceHint.TextSize = 9
+MusicChoiceHint.TextWrapped = true
+MusicChoiceHint.TextXAlignment = Enum.TextXAlignment.Center
+MusicChoiceHint.Parent = MusicSessionFrame
+
+-- Create-session screen.
+MusicCreatePanel = Instance.new("Frame")
+MusicCreatePanel.Size = UDim2.new(1, 0, 0, 365)
+MusicCreatePanel.Position = UDim2.new(0, 0, 0, 96)
+MusicCreatePanel.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MusicCreatePanel.BackgroundTransparency = 0.25
+MusicCreatePanel.BorderSizePixel = 0
+MusicCreatePanel.Visible = false
+MusicCreatePanel.Parent = MusicSessionFrame
+MusicCreateCorner = Instance.new("UICorner")
+MusicCreateCorner.CornerRadius = UDim.new(0, 10)
+MusicCreateCorner.Parent = MusicCreatePanel
+
+MusicCreateTitle = Instance.new("TextLabel")
+MusicCreateTitle.Size = UDim2.new(1, -20, 0, 24)
+MusicCreateTitle.Position = UDim2.new(0, 10, 0, 8)
+MusicCreateTitle.BackgroundTransparency = 1
+MusicCreateTitle.Font = Enum.Font.GothamBold
+MusicCreateTitle.Text = "CREATE MUSIC SESSION"
+MusicCreateTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicCreateTitle.TextSize = 12
+MusicCreateTitle.TextXAlignment = Enum.TextXAlignment.Left
+MusicCreateTitle.Parent = MusicCreatePanel
+
+MusicCreateInfo = Instance.new("TextLabel")
+MusicCreateInfo.Size = UDim2.new(1, -20, 0, 34)
+MusicCreateInfo.Position = UDim2.new(0, 10, 0, 34)
+MusicCreateInfo.BackgroundTransparency = 1
+MusicCreateInfo.Font = Enum.Font.Gotham
+MusicCreateInfo.Text = "You become the host. Pick a song below or enter your own Roblox audio ID."
+MusicCreateInfo.TextColor3 = Color3.fromRGB(175, 175, 190)
+MusicCreateInfo.TextSize = 9
+MusicCreateInfo.TextWrapped = true
+MusicCreateInfo.TextXAlignment = Enum.TextXAlignment.Left
+MusicCreateInfo.Parent = MusicCreatePanel
+
+MusicBackCreateButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicBackCreateButton", "← BACK", UDim2.new(0, 10, 0, 72), UDim2.new(0, 72, 0, 26))
+MusicEndCreateButton = MusicMakeButton(MusicCreatePanel, "MusicEndCreateButton", "END SESSION", UDim2.new(1, -112, 0, 72), UDim2.new(0, 102, 0, 26))
+
+MusicInviteGlobalButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 10, 0, 106), UDim2.new(0.5, -15, 0, 27))
+MusicInviteServerButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 5, 0, 106), UDim2.new(0.5, -15, 0, 27))
 
 MusicCustomIdInput = Instance.new("TextBox")
-MusicCustomIdInput.Size = UDim2.new(1, 0, 0, 28)
-MusicCustomIdInput.Position = UDim2.new(0, 0, 0, 191)
-MusicCustomIdInput.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-MusicCustomIdInput.BackgroundTransparency = 0.25
+MusicCustomIdInput.Size = UDim2.new(0.62, -5, 0, 29)
+MusicCustomIdInput.Position = UDim2.new(0, 10, 0, 141)
+MusicCustomIdInput.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+MusicCustomIdInput.BackgroundTransparency = 0.08
 MusicCustomIdInput.BorderSizePixel = 0
 MusicCustomIdInput.Font = Enum.Font.Code
 MusicCustomIdInput.PlaceholderText = "Custom Roblox Music ID..."
-MusicCustomIdInput.PlaceholderColor3 = Color3.fromRGB(130, 130, 145)
+MusicCustomIdInput.PlaceholderColor3 = Color3.fromRGB(145, 145, 160)
 MusicCustomIdInput.Text = ""
-MusicCustomIdInput.TextColor3 = Color3.fromRGB(240, 240, 245)
+MusicCustomIdInput.TextColor3 = Color3.fromRGB(245, 245, 250)
 MusicCustomIdInput.TextSize = 10
 MusicCustomIdInput.ClearTextOnFocus = false
-MusicCustomIdInput.Parent = MusicSessionFrame
+MusicCustomIdInput.Parent = MusicCreatePanel
 MusicCustomCorner = Instance.new("UICorner")
 MusicCustomCorner.CornerRadius = UDim.new(0, 8)
 MusicCustomCorner.Parent = MusicCustomIdInput
 
-MusicCustomPlayButton = MusicMakeButton(MusicSessionFrame, "MusicCustomPlayButton", "PLAY CUSTOM", UDim2.new(0, 0, 0, 223), UDim2.new(0.5, -4, 0, 27))
-MusicStopButton = MusicMakeButton(MusicSessionFrame, "MusicStopButton", "STOP MUSIC", UDim2.new(0.5, 4, 0, 223), UDim2.new(0.5, -4, 0, 27))
+MusicCustomPlayButton = MusicMakeButton(MusicCreatePanel, "MusicCustomPlayButton", "PLAY CUSTOM", UDim2.new(0.64, 3, 0, 141), UDim2.new(0.36, -13, 0, 29))
+MusicStopButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicStopButton", "STOP MUSIC", UDim2.new(0, 10, 0, 176), UDim2.new(0.5, -15, 0, 27))
 
 MusicCategoryFrame = Instance.new("ScrollingFrame")
-MusicCategoryFrame.Size = UDim2.new(1, 0, 0, 29)
-MusicCategoryFrame.Position = UDim2.new(0, 0, 0, 255)
+MusicCategoryFrame.Size = UDim2.new(1, -20, 0, 28)
+MusicCategoryFrame.Position = UDim2.new(0, 10, 0, 211)
 MusicCategoryFrame.BackgroundTransparency = 1
 MusicCategoryFrame.BorderSizePixel = 0
 MusicCategoryFrame.ScrollBarThickness = 2
 MusicCategoryFrame.ScrollingDirection = Enum.ScrollingDirection.X
-MusicCategoryFrame.Parent = MusicSessionFrame
+MusicCategoryFrame.Parent = MusicCreatePanel
 MusicCategoryLayout = Instance.new("UIListLayout")
 MusicCategoryLayout.FillDirection = Enum.FillDirection.Horizontal
 MusicCategoryLayout.Padding = UDim.new(0, 5)
 MusicCategoryLayout.Parent = MusicCategoryFrame
 
 MusicSongScroller = Instance.new("ScrollingFrame")
-MusicSongScroller.Size = UDim2.new(1, 0, 0, 95)
-MusicSongScroller.Position = UDim2.new(0, 0, 0, 286)
-MusicSongScroller.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-MusicSongScroller.BackgroundTransparency = 0.3
+MusicSongScroller.Size = UDim2.new(1, -20, 0, 105)
+MusicSongScroller.Position = UDim2.new(0, 10, 0, 244)
+MusicSongScroller.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
+MusicSongScroller.BackgroundTransparency = 0.12
 MusicSongScroller.BorderSizePixel = 0
 MusicSongScroller.ScrollBarThickness = 3
 MusicSongScroller.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
-MusicSongScroller.Parent = MusicSessionFrame
+MusicSongScroller.Parent = MusicCreatePanel
 MusicSongLayout = Instance.new("UIListLayout")
 MusicSongLayout.SortOrder = Enum.SortOrder.Name
 MusicSongLayout.Padding = UDim.new(0, 3)
@@ -2157,6 +2212,66 @@ MusicSongLayout.Parent = MusicSongScroller
 MusicSongLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     MusicSongScroller.CanvasSize = UDim2.new(0, 0, 0, MusicSongLayout.AbsoluteContentSize.Y + 8)
 end)
+
+-- Join-session screen.
+MusicJoinPanel = Instance.new("Frame")
+MusicJoinPanel.Size = UDim2.new(1, 0, 0, 250)
+MusicJoinPanel.Position = UDim2.new(0, 0, 0, 96)
+MusicJoinPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MusicJoinPanel.BackgroundTransparency = 0.25
+MusicJoinPanel.BorderSizePixel = 0
+MusicJoinPanel.Visible = false
+MusicJoinPanel.Parent = MusicSessionFrame
+MusicJoinCorner = Instance.new("UICorner")
+MusicJoinCorner.CornerRadius = UDim.new(0, 10)
+MusicJoinCorner.Parent = MusicJoinPanel
+
+MusicJoinTitle = Instance.new("TextLabel")
+MusicJoinTitle.Size = UDim2.new(1, -20, 0, 24)
+MusicJoinTitle.Position = UDim2.new(0, 10, 0, 8)
+MusicJoinTitle.BackgroundTransparency = 1
+MusicJoinTitle.Font = Enum.Font.GothamBold
+MusicJoinTitle.Text = "JOIN MUSIC SESSION"
+MusicJoinTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicJoinTitle.TextSize = 12
+MusicJoinTitle.TextXAlignment = Enum.TextXAlignment.Left
+MusicJoinTitle.Parent = MusicJoinPanel
+
+MusicJoinInfo = Instance.new("TextLabel")
+MusicJoinInfo.Size = UDim2.new(1, -20, 0, 38)
+MusicJoinInfo.Position = UDim2.new(0, 10, 0, 34)
+MusicJoinInfo.BackgroundTransparency = 1
+MusicJoinInfo.Font = Enum.Font.Gotham
+MusicJoinInfo.Text = "Ask the host for their Session ID. After joining, you will hear whatever the host plays."
+MusicJoinInfo.TextColor3 = Color3.fromRGB(175, 175, 190)
+MusicJoinInfo.TextSize = 9
+MusicJoinInfo.TextWrapped = true
+MusicJoinInfo.TextXAlignment = Enum.TextXAlignment.Left
+MusicJoinInfo.Parent = MusicJoinPanel
+
+MusicSessionIdInput = Instance.new("TextBox")
+MusicSessionIdInput.Size = UDim2.new(1, -20, 0, 34)
+MusicSessionIdInput.Position = UDim2.new(0, 10, 0, 82)
+MusicSessionIdInput.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+MusicSessionIdInput.BackgroundTransparency = 0.08
+MusicSessionIdInput.BorderSizePixel = 0
+MusicSessionIdInput.Font = Enum.Font.Code
+MusicSessionIdInput.PlaceholderText = "ENTER SESSION ID"
+MusicSessionIdInput.PlaceholderColor3 = Color3.fromRGB(145, 145, 160)
+MusicSessionIdInput.Text = ""
+MusicSessionIdInput.TextColor3 = Color3.fromRGB(245, 245, 250)
+MusicSessionIdInput.TextSize = 12
+MusicSessionIdInput.ClearTextOnFocus = false
+MusicSessionIdInput.Parent = MusicJoinPanel
+MusicSessionIdCorner = Instance.new("UICorner")
+MusicSessionIdCorner.CornerRadius = UDim.new(0, 8)
+MusicSessionIdCorner.Parent = MusicSessionIdInput
+
+MusicJoinNowButton = MusicMakeButton(MusicJoinPanel, "MusicJoinNowButton", "JOIN SESSION", UDim2.new(0, 10, 0, 126), UDim2.new(0.5, -15, 0, 30))
+MusicLeaveJoinButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicLeaveJoinButton", "LEAVE SESSION", UDim2.new(0.5, 5, 0, 126), UDim2.new(0.5, -15, 0, 30))
+MusicBackJoinButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicBackJoinButton", "← BACK TO CHOICES", UDim2.new(0, 10, 0, 166), UDim2.new(1, -20, 0, 28))
+MusicJoinInviteGlobalButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicJoinInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 10, 0, 201), UDim2.new(0.5, -15, 0, 27))
+MusicJoinInviteServerButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicJoinInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 5, 0, 201), UDim2.new(0.5, -15, 0, 27))
 
 MusicSelectedCategory = nil
 function UpdateMusicSessionDisplay()
@@ -2204,24 +2319,7 @@ function RenderMusicSongList(category)
                 local id = tostring(song.id or "")
                 if id == "" then return end
                 local name = tostring(song.name or id)
-                local payload = {
-                    Playing = true,
-                    CurrentSongId = id,
-                    CurrentSongName = name,
-                    StartedAt = os.time(),
-                    UpdatedAt = os.time(),
-                    Revision = tostring(os.time()) .. "_" .. tostring(math.random(1000,9999)),
-                    HostUsername = LocalPlayer.Name,
-                    HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-                    HostUserId = LocalPlayer.UserId,
-                    HostPfpId = CurrentPfpId,
-                    SessionId = ActiveMusicSessionId,
-                }
-                HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PATCH", payload)
-                ActiveMusicSessionData = payload
-                MusicSessionLastRevision = nil
-                ApplyMusicSessionAudio(payload)
-                UpdateMusicSessionDisplay()
+                HostSetMusic(id, name)
             end)
         end
     end
@@ -2256,6 +2354,77 @@ function RenderMusicCategories()
     end
 end
 
+function UpdateMusicSessionMode()
+    local inSession = ActiveMusicSessionId ~= nil
+    MusicChoiceTitle.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
+    MusicCreateChoiceButton.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
+    MusicJoinChoiceButton.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
+    MusicChoiceHint.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
+
+    if inSession then
+        local host = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
+        MusicCreatePanel.Visible = host
+        MusicJoinPanel.Visible = not host
+        MusicChoiceTitle.Visible = false
+        MusicCreateChoiceButton.Visible = false
+        MusicJoinChoiceButton.Visible = false
+        MusicChoiceHint.Visible = false
+    end
+end
+
+MusicCreateChoiceButton.MouseButton1Click:Connect(function()
+    MusicChoiceTitle.Visible = false
+    MusicCreateChoiceButton.Visible = false
+    MusicJoinChoiceButton.Visible = false
+    MusicChoiceHint.Visible = false
+    MusicCreatePanel.Visible = true
+    MusicJoinPanel.Visible = false
+    StartOwnMusicSession()
+    UpdateMusicSessionMode()
+end)
+
+MusicJoinChoiceButton.MouseButton1Click:Connect(function()
+    MusicChoiceTitle.Visible = false
+    MusicCreateChoiceButton.Visible = false
+    MusicJoinChoiceButton.Visible = false
+    MusicChoiceHint.Visible = false
+    MusicCreatePanel.Visible = false
+    MusicJoinPanel.Visible = true
+    MusicSessionFrame.CanvasPosition = Vector2.new(0, 0)
+end)
+
+MusicBackCreateButton.MouseButton1Click:Connect(function()
+    if ActiveMusicSessionId then return end
+    MusicCreatePanel.Visible = false
+    MusicChoiceTitle.Visible = true
+    MusicCreateChoiceButton.Visible = true
+    MusicJoinChoiceButton.Visible = true
+    MusicChoiceHint.Visible = true
+end)
+
+MusicBackJoinButton.MouseButton1Click:Connect(function()
+    if ActiveMusicSessionId then return end
+    MusicJoinPanel.Visible = false
+    MusicChoiceTitle.Visible = true
+    MusicCreateChoiceButton.Visible = true
+    MusicJoinChoiceButton.Visible = true
+    MusicChoiceHint.Visible = true
+end)
+
+MusicJoinNowButton.MouseButton1Click:Connect(function()
+    JoinMusicSessionById(MusicSessionIdInput.Text)
+    UpdateMusicSessionMode()
+end)
+
+MusicLeaveJoinButton.MouseButton1Click:Connect(LeaveOrEndMusicSession)
+MusicEndCreateButton.MouseButton1Click:Connect(LeaveOrEndMusicSession)
+MusicCustomPlayButton.MouseButton1Click:Connect(function() HostSetMusic(MusicCustomIdInput.Text, nil) end)
+MusicStopButton.MouseButton1Click:Connect(HostStopMusic)
+MusicInviteGlobalButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(true) end)
+MusicInviteServerButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(false) end)
+MusicJoinInviteGlobalButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(true) end)
+MusicJoinInviteServerButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(false) end)
+
 task.spawn(function()
     while not MusicRosterLoaded do task.wait(0.5) end
     RenderMusicCategories()
@@ -2287,6 +2456,7 @@ function StartOwnMusicSession()
         ActiveMusicSessionData = payload
         MusicSessionLastRevision = nil
         UpdateMusicSessionDisplay()
+        UpdateMusicSessionMode()
         ShowLocalSystemMessage("[AI MoD] : Music Session started. Session ID: " .. id)
     else
         ShowLocalSystemMessage("[AI MoD] : Failed to create Music Session. Check Firebase access.", true)
@@ -2315,11 +2485,20 @@ function JoinMusicSessionById(id)
     })
     ApplyMusicSessionAudio(data)
     UpdateMusicSessionDisplay()
+    UpdateMusicSessionMode()
     ShowLocalSystemMessage("[AI MoD] : Joined Music Session " .. id .. " hosted by " .. tostring(data.HostDisplayName or data.HostUsername) .. " ✓")
 end
 
 function LeaveOrEndMusicSession()
-    if not ActiveMusicSessionId then return end
+    if not ActiveMusicSessionId then
+        MusicCreatePanel.Visible = false
+        MusicJoinPanel.Visible = false
+        MusicChoiceTitle.Visible = true
+        MusicCreateChoiceButton.Visible = true
+        MusicJoinChoiceButton.Visible = true
+        MusicChoiceHint.Visible = true
+        return
+    end
     local id = ActiveMusicSessionId
     local isHost = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
     if isHost then
@@ -2334,6 +2513,7 @@ function LeaveOrEndMusicSession()
     MusicSessionLastRevision = nil
     StopLocalMusicSessionAudio()
     UpdateMusicSessionDisplay()
+    UpdateMusicSessionMode()
 end
 
 function HostSetMusic(id, name)
@@ -2423,14 +2603,6 @@ function SendMusicSessionInvite(isGlobal)
     task.spawn(function() HttpRequest(endpoint, "POST", payload) end)
 end
 
-StartMusicSessionButton.MouseButton1Click:Connect(StartOwnMusicSession)
-JoinMusicSessionButton.MouseButton1Click:Connect(function() JoinMusicSessionById(MusicSessionIdInput.Text) end)
-EndMusicSessionButton.MouseButton1Click:Connect(LeaveOrEndMusicSession)
-MusicCustomPlayButton.MouseButton1Click:Connect(function() HostSetMusic(MusicCustomIdInput.Text, nil) end)
-MusicStopButton.MouseButton1Click:Connect(HostStopMusic)
-MusicInviteGlobalButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(true) end)
-MusicInviteServerButton.MouseButton1Click:Connect(function() SendMusicSessionInvite(false) end)
-
 -- ============================================================================
 -- PROFILE TAB
 -- ============================================================================
@@ -2499,14 +2671,15 @@ ProfileUsername.Position = UDim2.new(0, 84, 0, 45)
 ProfileUsername.BackgroundTransparency = 1
 ProfileUsername.Font = Enum.Font.Gotham
 ProfileUsername.Text = "@" .. LocalPlayer.Name
-ProfileUsername.TextColor3 = Color3.fromRGB(155, 155, 170)
+ProfileRoleStyle = RANK_STYLES[ProfileRole] or RANK_STYLES["VIP"]
+ProfileUsername.TextColor3 = (ProfileRoleStyle and (ProfileRoleStyle.Name or ProfileRoleStyle.Start)) or Color3.fromRGB(255, 255, 255)
 ProfileUsername.TextSize = 11
 ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
 ProfileUsername.Parent = ProfileHeaderCard
 
 -- SOCIAL BUTTONS: icon-only, no Instagram/Discord/Snapchat text underneath.
 ProfileSocialCard = Instance.new("Frame")
-ProfileSocialCard.Size = UDim2.new(1, 0, 0, 92)
+ProfileSocialCard.Size = UDim2.new(1, 0, 0, 94)
 ProfileSocialCard.Position = UDim2.new(0, 0, 0, 90)
 ProfileSocialCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfileSocialCard.BackgroundTransparency = 0.3
@@ -2519,12 +2692,13 @@ ProfileSocialCorner.Parent = ProfileSocialCard
 function ProfileSocialButton(name, imageId, pos)
     local b = Instance.new("ImageButton")
     b.Name = name
-    b.Size = UDim2.new(0, 76, 0, 64)
+    b.Size = UDim2.new(0, 86, 0, 68)
     b.Position = pos
-    b.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-    b.BackgroundTransparency = 0.08
+    b.BackgroundColor3 = Color3.fromRGB(55, 55, 72)
+    b.BackgroundTransparency = 0
     b.BorderSizePixel = 0
-    b.Image = KronosPfpImage(imageId, 150)
+    b.Image = "rbxassetid://" .. tostring(imageId)
+    b.ImageTransparency = 0
     b.ScaleType = Enum.ScaleType.Fit
     b.AutoButtonColor = true
     b.Parent = ProfileSocialCard
@@ -2541,14 +2715,14 @@ function ProfileSocialButton(name, imageId, pos)
     return b
 end
 
-InstagramButton = ProfileSocialButton("InstagramButton", "18355586412", UDim2.new(0, 8, 0, 12))
-DiscordButton = ProfileSocialButton("DiscordButton", "10367063084", UDim2.new(0, 119, 0, 12))
-SnapchatButton = ProfileSocialButton("SnapchatButton", "385616312", UDim2.new(0, 230, 0, 12))
+InstagramButton = ProfileSocialButton("InstagramButton", "18355586412", UDim2.new(0, 6, 0, 12))
+DiscordButton = ProfileSocialButton("DiscordButton", "10367063084", UDim2.new(0, 109, 0, 12))
+SnapchatButton = ProfileSocialButton("SnapchatButton", "385616312", UDim2.new(0, 212, 0, 12))
 
 ProfileShareButton = Instance.new("TextButton")
 ProfileShareButton.Name = "ProfileShareButton"
-ProfileShareButton.Size = UDim2.new(0, 76, 0, 64)
-ProfileShareButton.Position = UDim2.new(0, 341, 0, 12)
+ProfileShareButton.Size = UDim2.new(0, 86, 0, 68)
+ProfileShareButton.Position = UDim2.new(0, 315, 0, 12)
 ProfileShareButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
 ProfileShareButton.BackgroundTransparency = 0.08
 ProfileShareButton.BorderSizePixel = 0

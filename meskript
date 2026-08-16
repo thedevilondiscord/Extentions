@@ -23,6 +23,7 @@ local ScriptStartTime = os.time()
 -- Forward Declaration for Inputs & Globals
 local MessageInput = nil
 local SendChatMessage = nil
+local PendingMessageMutations = {}
 local CreateMessageCard = nil
 
 -- Anti-Spam Tracking State
@@ -4271,20 +4272,13 @@ function BuildMessageContextMenu()
                     ShowLocalSystemMessage("[AI MoD] : This message cannot be deleted.", true)
                     return
                 end
-                local data = HttpRequest(endpoint, "GET")
-                local firebaseKey = nil
-                if type(data) == "table" then
-                    for key, remote in pairs(data) do
-                        if type(remote) == "table" and tostring(remote.ClientMessageId or "") == clientId then
-                            firebaseKey = key
-                            break
-                        end
-                    end
-                end
-                if firebaseKey then
-                    HttpRequest(endpoint .. "/" .. tostring(firebaseKey) .. ".json", "PATCH", {
+                local deletedAt = os.time()
+                PendingMessageMutations[clientId] = {Deleted = true, DeletedAt = deletedAt, DeletedBy = LocalPlayer.Name}
+                local firebaseKeys = FindAllFirebaseMessageKeys(endpoint, clientId)
+                for _, firebaseKey in ipairs(firebaseKeys) do
+                    HttpRequest(endpoint .. "/" .. firebaseKey .. ".json", "PATCH", {
                         Deleted = true,
-                        DeletedAt = os.time(),
+                        DeletedAt = deletedAt,
                         DeletedBy = LocalPlayer.Name,
                     })
                 end
@@ -5035,6 +5029,18 @@ Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinute
     ShowLocalSystemMessage("[AI MoD] : 🔇 " .. targetDisplayName .. " has been muted for " .. tostring(durationMinutes) .. " minute(s).", true)
 end
 
+local function FindAllFirebaseMessageKeys(endpoint, clientMessageId)
+    local keys = {}
+    local data = HttpRequest(endpoint, "GET")
+    if type(data) ~= "table" then return keys end
+    for key, remote in pairs(data) do
+        if type(remote) == "table" and tostring(remote.ClientMessageId or "") == tostring(clientMessageId or "") then
+            table.insert(keys, tostring(key))
+        end
+    end
+    return keys
+end
+
 local function FindFirebaseMessageKey(endpoint, clientMessageId)
     local data = HttpRequest(endpoint, "GET")
     if type(data) ~= "table" then return nil end
@@ -5077,19 +5083,22 @@ local function SaveEditedMessage(message, newText, isGlobal)
     if newText:match("^%s*$") then return false end
 
     local endpoint = isGlobal and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
-    local key = FindFirebaseMessageKey(endpoint, clientId)
-    if not key then
-        ShowLocalSystemMessage("[AI MoD] : Could not find the original Firebase message.", true)
-        return false
-    end
-
     local patch = {
         Text = newText,
         Edited = true,
         EditedAt = os.time(),
         EditedBy = LocalPlayer.Name,
     }
-    HttpRequest(endpoint .. "/" .. key .. ".json", "PATCH", patch)
+    PendingMessageMutations[clientId] = patch
+    local firebaseKeys = FindAllFirebaseMessageKeys(endpoint, clientId)
+    if #firebaseKeys == 0 then
+        ShowLocalSystemMessage("[AI MoD] : Could not find the original Firebase message.", true)
+        PendingMessageMutations[clientId] = nil
+        return false
+    end
+    for _, firebaseKey in ipairs(firebaseKeys) do
+        HttpRequest(endpoint .. "/" .. firebaseKey .. ".json", "PATCH", patch)
+    end
 
     message.Text = newText
     message.Edited = true
@@ -5463,6 +5472,22 @@ function PollMessages()
                     if blockedByMute and msg.Username ~= LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
+                    local clientIdForMutation = tostring(msg.ClientMessageId or "")
+                    local pendingMutation = PendingMessageMutations[clientIdForMutation]
+                    if pendingMutation then
+                        for mutationKey, mutationValue in pairs(pendingMutation) do
+                            if mutationKey == "Deleted" then
+                                msg.Deleted = mutationValue
+                                msg.DeletedAt = pendingMutation.DeletedAt
+                                msg.DeletedBy = pendingMutation.DeletedBy
+                            else
+                                msg[mutationKey] = mutationValue
+                            end
+                        end
+                        if pendingMutation.Deleted or (pendingMutation.Edited and tostring(msg.Text or "") == tostring(pendingMutation.Text or "")) then
+                            PendingMessageMutations[clientIdForMutation] = nil
+                        end
+                    end
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
                     if msg.Deleted then
                         local targetId = tostring(msg.ClientMessageId or "")
@@ -5506,6 +5531,22 @@ function PollMessages()
                     if blockedByMute and msg.Username ~= LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
+                    local clientIdForMutation = tostring(msg.ClientMessageId or "")
+                    local pendingMutation = PendingMessageMutations[clientIdForMutation]
+                    if pendingMutation then
+                        for mutationKey, mutationValue in pairs(pendingMutation) do
+                            if mutationKey == "Deleted" then
+                                msg.Deleted = mutationValue
+                                msg.DeletedAt = pendingMutation.DeletedAt
+                                msg.DeletedBy = pendingMutation.DeletedBy
+                            else
+                                msg[mutationKey] = mutationValue
+                            end
+                        end
+                        if pendingMutation.Deleted or (pendingMutation.Edited and tostring(msg.Text or "") == tostring(pendingMutation.Text or "")) then
+                            PendingMessageMutations[clientIdForMutation] = nil
+                        end
+                    end
                     local clientKey = msg.ClientMessageId and ("local_" .. tostring(msg.ClientMessageId)) or nil
                     if msg.Deleted then
                         local targetId = tostring(msg.ClientMessageId or "")

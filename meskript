@@ -1194,9 +1194,17 @@ local function RefreshMusicSessionState()
         return
     end
     local data = HttpRequest(MusicSessionPath(ActiveMusicSessionId), "GET")
-    if type(data) ~= "table" then
+    if type(data) ~= "table" or data.Active == false then
         ActiveMusicSessionData = nil
+        ActiveMusicSessionId = nil
+        MusicSessionLastRevision = nil
         StopLocalMusicSessionAudio()
+        if MusicCreatePanel then MusicCreatePanel.Visible = false end
+        if MusicJoinPanel then MusicJoinPanel.Visible = false end
+        if MusicChoiceTitle then MusicChoiceTitle.Visible = true end
+        if MusicCreateChoiceButton then MusicCreateChoiceButton.Visible = true end
+        if MusicJoinChoiceButton then MusicJoinChoiceButton.Visible = true end
+        if MusicChoiceHint then MusicChoiceHint.Visible = true end
         return
     end
     ActiveMusicSessionData = data
@@ -2052,7 +2060,7 @@ MusicMuteButton.Position = UDim2.new(1, -99, 0, 52)
 MusicMuteButton.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
 MusicMuteButton.BackgroundTransparency = 0.08
 MusicMuteButton.Font = Enum.Font.GothamBold
-MusicMuteButton.Text = "🔊 MUTE"
+MusicMuteButton.Text = "🔊 MUTE (LOCAL)"
 MusicMuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MusicMuteButton.TextSize = 9
 MusicMuteButton.Parent = MusicTopCard
@@ -2062,7 +2070,7 @@ MusicMuteCorner.Parent = MusicMuteButton
 MusicMuteButton.MouseButton1Click:Connect(function()
     MusicSessionMuted = not MusicSessionMuted
     MusicSessionSound.Volume = MusicSessionMuted and 0 or 0.5
-    MusicMuteButton.Text = MusicSessionMuted and "🔇 UNMUTE" or "🔊 MUTE"
+    MusicMuteButton.Text = MusicSessionMuted and "🔇 UNMUTE (LOCAL)" or "🔊 MUTE (LOCAL)"
 end)
 
 function MusicMakeButton(parent, name, text, pos, size)
@@ -2156,8 +2164,8 @@ MusicCreateInfo.TextWrapped = true
 MusicCreateInfo.TextXAlignment = Enum.TextXAlignment.Left
 MusicCreateInfo.Parent = MusicCreatePanel
 
-MusicBackCreateButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicBackCreateButton", "← BACK", UDim2.new(0, 10, 0, 72), UDim2.new(0, 72, 0, 26))
-MusicEndCreateButton = MusicMakeButton(MusicCreatePanel, "MusicEndCreateButton", "END SESSION", UDim2.new(1, -112, 0, 72), UDim2.new(0, 102, 0, 26))
+MusicEndCreateButton = MusicMakeButton(MusicCreatePanel, "MusicEndCreateButton", "END SESSION / BACK TO CHOICE", UDim2.new(0, 10, 0, 72), UDim2.new(1, -20, 0, 28))
+MusicEndCreateButton.TextSize = 8
 
 MusicInviteGlobalButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 10, 0, 106), UDim2.new(0.5, -15, 0, 27))
 MusicInviteServerButton = MusicMakeSecondaryButton(MusicCreatePanel, "MusicInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 5, 0, 106), UDim2.new(0.5, -15, 0, 27))
@@ -2268,8 +2276,8 @@ MusicSessionIdCorner.CornerRadius = UDim.new(0, 8)
 MusicSessionIdCorner.Parent = MusicSessionIdInput
 
 MusicJoinNowButton = MusicMakeButton(MusicJoinPanel, "MusicJoinNowButton", "JOIN SESSION", UDim2.new(0, 10, 0, 126), UDim2.new(0.5, -15, 0, 30))
-MusicLeaveJoinButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicLeaveJoinButton", "LEAVE SESSION", UDim2.new(0.5, 5, 0, 126), UDim2.new(0.5, -15, 0, 30))
-MusicBackJoinButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicBackJoinButton", "← BACK TO CHOICES", UDim2.new(0, 10, 0, 166), UDim2.new(1, -20, 0, 28))
+MusicLeaveJoinButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicLeaveJoinButton", "LEAVE SESSION / BACK TO CHOICE", UDim2.new(0, 10, 0, 166), UDim2.new(1, -20, 0, 28))
+MusicLeaveJoinButton.TextSize = 8
 MusicJoinInviteGlobalButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicJoinInviteGlobalButton", "INVITE GLOBAL", UDim2.new(0, 10, 0, 201), UDim2.new(0.5, -15, 0, 27))
 MusicJoinInviteServerButton = MusicMakeSecondaryButton(MusicJoinPanel, "MusicJoinInviteServerButton", "INVITE SERVER", UDim2.new(0.5, 5, 0, 201), UDim2.new(0.5, -15, 0, 27))
 
@@ -2356,20 +2364,25 @@ end
 
 function UpdateMusicSessionMode()
     local inSession = ActiveMusicSessionId ~= nil
-    MusicChoiceTitle.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
-    MusicCreateChoiceButton.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
-    MusicJoinChoiceButton.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
-    MusicChoiceHint.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
 
-    if inSession then
-        local host = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
-        MusicCreatePanel.Visible = host
-        MusicJoinPanel.Visible = not host
-        MusicChoiceTitle.Visible = false
-        MusicCreateChoiceButton.Visible = false
-        MusicJoinChoiceButton.Visible = false
-        MusicChoiceHint.Visible = false
+    if not inSession then
+        -- Always return to the two-choice landing screen after leaving/ending.
+        MusicCreatePanel.Visible = false
+        MusicJoinPanel.Visible = false
+        MusicChoiceTitle.Visible = true
+        MusicCreateChoiceButton.Visible = true
+        MusicJoinChoiceButton.Visible = true
+        MusicChoiceHint.Visible = true
+        return
     end
+
+    local host = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
+    MusicCreatePanel.Visible = host
+    MusicJoinPanel.Visible = not host
+    MusicChoiceTitle.Visible = false
+    MusicCreateChoiceButton.Visible = false
+    MusicJoinChoiceButton.Visible = false
+    MusicChoiceHint.Visible = false
 end
 
 MusicCreateChoiceButton.MouseButton1Click:Connect(function()
@@ -2393,23 +2406,6 @@ MusicJoinChoiceButton.MouseButton1Click:Connect(function()
     MusicSessionFrame.CanvasPosition = Vector2.new(0, 0)
 end)
 
-MusicBackCreateButton.MouseButton1Click:Connect(function()
-    if ActiveMusicSessionId then return end
-    MusicCreatePanel.Visible = false
-    MusicChoiceTitle.Visible = true
-    MusicCreateChoiceButton.Visible = true
-    MusicJoinChoiceButton.Visible = true
-    MusicChoiceHint.Visible = true
-end)
-
-MusicBackJoinButton.MouseButton1Click:Connect(function()
-    if ActiveMusicSessionId then return end
-    MusicJoinPanel.Visible = false
-    MusicChoiceTitle.Visible = true
-    MusicCreateChoiceButton.Visible = true
-    MusicJoinChoiceButton.Visible = true
-    MusicChoiceHint.Visible = true
-end)
 
 MusicJoinNowButton.MouseButton1Click:Connect(function()
     JoinMusicSessionById(MusicSessionIdInput.Text)
@@ -2449,6 +2445,7 @@ function StartOwnMusicSession()
         UpdatedAt = os.time(),
         Revision = tostring(os.time()),
         CreatedAt = os.time(),
+        Active = true,
     }
     local result = HttpRequest(MusicSessionPath(id), "PUT", payload)
     if result ~= nil or HttpRequest(MusicSessionPath(id), "GET") then
@@ -2470,8 +2467,8 @@ function JoinMusicSessionById(id)
         return
     end
     local data = HttpRequest(MusicSessionPath(id), "GET")
-    if type(data) ~= "table" or not data.HostUsername then
-        ShowLocalSystemMessage("[AI MoD] : Music Session not found: " .. id, true)
+    if type(data) ~= "table" or not data.HostUsername or data.Active == false then
+        ShowLocalSystemMessage("[AI MoD] : Music Session not found or has already ended: " .. id, true)
         return
     end
     ActiveMusicSessionId = id
@@ -2491,23 +2488,44 @@ end
 
 function LeaveOrEndMusicSession()
     if not ActiveMusicSessionId then
-        MusicCreatePanel.Visible = false
-        MusicJoinPanel.Visible = false
-        MusicChoiceTitle.Visible = true
-        MusicCreateChoiceButton.Visible = true
-        MusicJoinChoiceButton.Visible = true
-        MusicChoiceHint.Visible = true
+        UpdateMusicSessionMode()
         return
     end
+
     local id = ActiveMusicSessionId
     local isHost = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
+
     if isHost then
-        HttpRequest(MusicSessionPath(id), "DELETE")
+        -- PATCH an explicit inactive state first. This is more reliable than
+        -- relying on DELETE alone and tells every connected client to leave.
+        local endedPayload = {
+            Active = false,
+            Playing = false,
+            CurrentSongId = ActiveMusicSessionData.CurrentSongId or "",
+            CurrentSongName = ActiveMusicSessionData.CurrentSongName or "",
+            StartedAt = 0,
+            UpdatedAt = os.time(),
+            EndedAt = os.time(),
+            Revision = tostring(os.time()) .. "_ended_" .. tostring(math.random(1000,9999)),
+            HostUsername = LocalPlayer.Name,
+            HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+            HostUserId = LocalPlayer.UserId,
+            HostPfpId = CurrentPfpId,
+            SessionId = id,
+        }
+        pcall(function() HttpRequest(MusicSessionPath(id), "PATCH", endedPayload) end)
+        task.spawn(function()
+            task.wait(0.15)
+            pcall(function() HttpRequest(MusicSessionPath(id), "DELETE") end)
+        end)
         ShowLocalSystemMessage("[AI MoD] : Music Session " .. id .. " ended.")
     else
-        HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(LocalPlayer.UserId)), "DELETE")
+        pcall(function()
+            HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(LocalPlayer.UserId)), "DELETE")
+        end)
         ShowLocalSystemMessage("[AI MoD] : Left Music Session " .. id .. ".")
     end
+
     ActiveMusicSessionId = nil
     ActiveMusicSessionData = nil
     MusicSessionLastRevision = nil
@@ -2528,6 +2546,7 @@ function HostSetMusic(id, name)
     end
     name = name or GetMusicSongName(id)
     local payload = {
+        Active = true,
         Playing = true,
         CurrentSongId = id,
         CurrentSongName = tostring(name),
@@ -2552,24 +2571,35 @@ function HostStopMusic()
         ShowLocalSystemMessage("[AI MoD] : Only the Music Session Host can stop music.", true)
         return
     end
+
+    local now = os.time()
     local payload = {
+        Active = true,
         Playing = false,
         CurrentSongId = ActiveMusicSessionData.CurrentSongId or "",
         CurrentSongName = ActiveMusicSessionData.CurrentSongName or "",
         StartedAt = 0,
-        UpdatedAt = os.time(),
-        Revision = tostring(os.time()) .. "_stop",
+        UpdatedAt = now,
+        Revision = tostring(now) .. "_stop_" .. tostring(math.random(1000,9999)),
         HostUsername = LocalPlayer.Name,
         HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         HostUserId = LocalPlayer.UserId,
         HostPfpId = CurrentPfpId,
         SessionId = ActiveMusicSessionId,
     }
-    HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PATCH", payload)
+
+    -- Stop locally immediately, then publish the stopped state.
+    StopLocalMusicSessionAudio()
     ActiveMusicSessionData = payload
     MusicSessionLastRevision = nil
-    StopLocalMusicSessionAudio()
     UpdateMusicSessionDisplay()
+
+    local ok = pcall(function()
+        HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PATCH", payload)
+    end)
+    if not ok then
+        ShowLocalSystemMessage("[AI MoD] : Music stopped locally, but Firebase update failed.", true)
+    end
 end
 
 function SendMusicSessionInvite(isGlobal)
@@ -2677,64 +2707,79 @@ ProfileUsername.TextSize = 11
 ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
 ProfileUsername.Parent = ProfileHeaderCard
 
--- SOCIAL BUTTONS: icon-only, no Instagram/Discord/Snapchat text underneath.
+-- SOCIAL BUTTONS: compact icon buttons positioned beside the PFP and to the
+-- left of the DisplayName. Use thumbnail URLs so the supplied image IDs render
+-- reliably in ImageButtons.
 ProfileSocialCard = Instance.new("Frame")
-ProfileSocialCard.Size = UDim2.new(1, 0, 0, 94)
-ProfileSocialCard.Position = UDim2.new(0, 0, 0, 90)
-ProfileSocialCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-ProfileSocialCard.BackgroundTransparency = 0.3
-ProfileSocialCard.BorderSizePixel = 0
+ProfileSocialCard.Name = "ProfileSocialCard"
+ProfileSocialCard.Size = UDim2.new(0, 1, 0, 1)
+ProfileSocialCard.Position = UDim2.new(0, 0, 0, 0)
+ProfileSocialCard.BackgroundTransparency = 1
+ProfileSocialCard.Visible = false
 ProfileSocialCard.Parent = ProfileFrame
-ProfileSocialCorner = Instance.new("UICorner")
-ProfileSocialCorner.CornerRadius = UDim.new(0, 10)
-ProfileSocialCorner.Parent = ProfileSocialCard
 
 function ProfileSocialButton(name, imageId, pos)
     local b = Instance.new("ImageButton")
     b.Name = name
-    b.Size = UDim2.new(0, 86, 0, 68)
+    b.Size = UDim2.new(0, 30, 0, 30)
     b.Position = pos
-    b.BackgroundColor3 = Color3.fromRGB(55, 55, 72)
+    b.BackgroundColor3 = Color3.fromRGB(68, 68, 88)
     b.BackgroundTransparency = 0
     b.BorderSizePixel = 0
-    b.Image = "rbxassetid://" .. tostring(imageId)
+    b.Image = KronosPfpImage(imageId, 150)
     b.ImageTransparency = 0
     b.ScaleType = Enum.ScaleType.Fit
     b.AutoButtonColor = true
-    b.Parent = ProfileSocialCard
+    b.ZIndex = 8
+    b.Parent = ProfileHeaderCard
 
     local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 10)
+    c.CornerRadius = UDim.new(0, 7)
     c.Parent = b
 
     local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1
-    stroke.Transparency = 0.55
-    stroke.Color = Color3.fromRGB(75, 75, 95)
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0.15
+    stroke.Color = Color3.fromRGB(190, 190, 210)
     stroke.Parent = b
     return b
 end
 
-InstagramButton = ProfileSocialButton("InstagramButton", "18355586412", UDim2.new(0, 6, 0, 12))
-DiscordButton = ProfileSocialButton("DiscordButton", "10367063084", UDim2.new(0, 109, 0, 12))
-SnapchatButton = ProfileSocialButton("SnapchatButton", "385616312", UDim2.new(0, 212, 0, 12))
+-- The four buttons occupy a compact strip immediately to the left of the name.
+-- Discord intentionally uses the replacement image ID requested by the user.
+InstagramButton = ProfileSocialButton("InstagramButton", "18355586412", UDim2.new(0, 82, 0, 10))
+DiscordButton = ProfileSocialButton("DiscordButton", "18505728250", UDim2.new(0, 115, 0, 10))
+SnapchatButton = ProfileSocialButton("SnapchatButton", "385616312", UDim2.new(0, 148, 0, 10))
 
 ProfileShareButton = Instance.new("TextButton")
 ProfileShareButton.Name = "ProfileShareButton"
-ProfileShareButton.Size = UDim2.new(0, 86, 0, 68)
-ProfileShareButton.Position = UDim2.new(0, 315, 0, 12)
-ProfileShareButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-ProfileShareButton.BackgroundTransparency = 0.08
+ProfileShareButton.Size = UDim2.new(0, 30, 0, 30)
+ProfileShareButton.Position = UDim2.new(0, 181, 0, 10)
+ProfileShareButton.BackgroundColor3 = Color3.fromRGB(68, 68, 88)
+ProfileShareButton.BackgroundTransparency = 0
 ProfileShareButton.BorderSizePixel = 0
 ProfileShareButton.Text = "↗"
 ProfileShareButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ProfileShareButton.Font = Enum.Font.GothamBold
-ProfileShareButton.TextSize = 30
+ProfileShareButton.TextSize = 19
 ProfileShareButton.AutoButtonColor = true
-ProfileShareButton.Parent = ProfileSocialCard
+ProfileShareButton.ZIndex = 8
+ProfileShareButton.Parent = ProfileHeaderCard
 ProfileShareCorner = Instance.new("UICorner")
-ProfileShareCorner.CornerRadius = UDim.new(0, 10)
+ProfileShareCorner.CornerRadius = UDim.new(0, 7)
 ProfileShareCorner.Parent = ProfileShareButton
+local ProfileShareStroke = Instance.new("UIStroke")
+ProfileShareStroke.Thickness = 1.5
+ProfileShareStroke.Transparency = 0.15
+ProfileShareStroke.Color = Color3.fromRGB(190, 190, 210)
+ProfileShareStroke.Parent = ProfileShareButton
+
+-- Keep the existing display-name/username positions aligned to the right of the
+-- new social strip.
+ProfileDisplayName.Position = UDim2.new(0, 218, 0, 11)
+ProfileDisplayName.Size = UDim2.new(1, -226, 0, 31)
+ProfileUsername.Position = UDim2.new(0, 218, 0, 45)
+ProfileUsername.Size = UDim2.new(1, -226, 0, 19)
 
 -- No social-status label is placed under the four buttons. The popup opened
 -- by each social button remains the place where the saved username is shown.

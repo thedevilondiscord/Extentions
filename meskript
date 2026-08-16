@@ -1222,8 +1222,15 @@ local function RefreshMusicSessionState()
     if revision ~= MusicSessionLastRevision then
         MusicSessionLastRevision = revision
         ApplyMusicSessionAudio(data)
-    elseif data.Playing and not MusicSessionSound.IsPlaying then
-        ApplyMusicSessionAudio(data)
+    elseif data.Playing then
+        if not MusicSessionSound.IsPlaying then
+            ApplyMusicSessionAudio(data)
+        end
+    else
+        -- Never leave stale audio running when the host has stopped the session.
+        if MusicSessionSound.IsPlaying or MusicSessionSound.SoundId ~= "" then
+            StopLocalMusicSessionAudio()
+        end
     end
 end
 
@@ -2381,8 +2388,17 @@ function UpdateMusicSessionMode()
     MusicChoiceHint.Visible = not inSession and not MusicCreatePanel.Visible and not MusicJoinPanel.Visible
 
     if not inSession then
+        -- Returning from an ended/left session must always restore the actual
+        -- choice screen. The previous version only hid the mute buttons,
+        -- leaving the Create/Join panel visible.
+        MusicCreatePanel.Visible = false
+        MusicJoinPanel.Visible = false
         MusicMuteButton.Visible = false
         MusicJoinMuteButton.Visible = false
+        MusicChoiceTitle.Visible = true
+        MusicCreateChoiceButton.Visible = true
+        MusicJoinChoiceButton.Visible = true
+        MusicChoiceHint.Visible = true
     end
 
     if inSession then
@@ -2536,15 +2552,20 @@ function LeaveOrEndMusicSession()
             HostPfpId = CurrentPfpId,
             SessionId = id,
         }
+        -- Use a full PUT here rather than relying on PATCH. This makes the
+        -- terminal state explicit and works with Firebase rules/executors that
+        -- do not handle PATCH consistently. Participants poll this same node.
+        local endResult = nil
         local endWriteOk = pcall(function()
-            HttpRequest(MusicSessionPath(id), "PATCH", endedPayload)
+            endResult = HttpRequest(MusicSessionPath(id), "PUT", endedPayload)
         end)
-        -- Keep Ended=true in Firebase instead of immediately deleting the node.
-        -- This gives every participant a durable terminal state to observe.
-        if not endWriteOk then
-            ShowLocalSystemMessage("[AI MoD] : Failed to end the Music Session in Firebase.", true)
+        local confirmedEnd = HttpRequest(MusicSessionPath(id), "GET")
+        local endConfirmed = type(confirmedEnd) == "table" and confirmedEnd.Ended == true and confirmedEnd.Playing == false
+        if not endWriteOk or not endConfirmed then
+            ShowLocalSystemMessage("[AI MoD] : Failed to end the Music Session in Firebase. Check Firebase write permissions.", true)
+            return
         else
-            ShowLocalSystemMessage("[AI MoD] : Music Session " .. id .. " ended.")
+            ShowLocalSystemMessage("[AI MoD] : Music Session " .. id .. " ended. Everyone will be returned to the Music Session choices.")
         end
     else
         pcall(function()
@@ -2620,18 +2641,20 @@ function HostStopMusic()
         HostPfpId = CurrentPfpId,
         SessionId = ActiveMusicSessionId,
     }
-    local ok = pcall(function()
-        HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PATCH", payload)
+    -- Full PUT makes the stopped state authoritative for every participant.
+    local ok = false
+    pcall(function()
+        local result = HttpRequest(MusicSessionPath(ActiveMusicSessionId), "PUT", payload)
+        ok = result ~= nil
     end)
     if not ok then
-        ShowLocalSystemMessage("[AI MoD] : Failed to update the music session in Firebase.", true)
+        ShowLocalSystemMessage("[AI MoD] : Failed to update the music session in Firebase. Check Firebase write permissions.", true)
         return
     end
 
-    -- Confirm the shared state. If Firebase rejected the write, do not pretend
-    -- the stop was synchronized to everyone else.
+    -- Confirm the exact shared state before reporting success.
     local confirmed = HttpRequest(MusicSessionPath(ActiveMusicSessionId), "GET")
-    if type(confirmed) ~= "table" or confirmed.Playing ~= false or tostring(confirmed.Revision or "") ~= tostring(payload.Revision) then
+    if type(confirmed) ~= "table" or confirmed.Playing ~= false or confirmed.Ended == true then
         ShowLocalSystemMessage("[AI MoD] : Firebase did not confirm the stop. Check Firebase write permissions.", true)
         return
     end

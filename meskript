@@ -3058,7 +3058,7 @@ ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 710)
 ProfilePopup = Instance.new("Frame")
 ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
 ProfilePopup.Position = UDim2.new(0.5, -150, 0.5, -59)
-ProfilePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
+ProfilePopup.BackgroundColor3 = Color3.fromRGB(20,20,30)
 ProfilePopup.BackgroundTransparency = 0.08
 ProfilePopup.BorderSizePixel = 0
 ProfilePopup.Visible = false
@@ -3080,11 +3080,13 @@ ProfilePopupTitle.Parent = ProfilePopup
 ProfilePopupInput = Instance.new("TextBox")
 ProfilePopupInput.Size = UDim2.new(1,-16,0,30)
 ProfilePopupInput.Position = UDim2.new(0,8,0,32)
-ProfilePopupInput.BackgroundColor3 = Color3.fromRGB(30,30,42)
-ProfilePopupInput.BackgroundTransparency = 0.15
+ProfilePopupInput.BackgroundColor3 = Color3.fromRGB(55,55,72)
+ProfilePopupInput.BackgroundTransparency = 0
+ProfilePopupInput.PlaceholderText = "Enter your username / handle"
+ProfilePopupInput.PlaceholderColor3 = Color3.fromRGB(185,185,200)
 ProfilePopupInput.BorderSizePixel = 0
 ProfilePopupInput.Font = Enum.Font.Gotham
-ProfilePopupInput.TextColor3 = Color3.fromRGB(240,240,245)
+ProfilePopupInput.TextColor3 = Color3.fromRGB(255,255,255)
 ProfilePopupInput.TextSize = 10
 ProfilePopupInput.ClearTextOnFocus = false
 ProfilePopupInput.Parent = ProfilePopup
@@ -3093,6 +3095,24 @@ ProfilePopupInputCorner.CornerRadius = UDim.new(0,7)
 ProfilePopupInputCorner.Parent = ProfilePopupInput
 ProfilePopupSave = MusicMakeButton(ProfilePopup, "ProfilePopupSave", "SAVE", UDim2.new(0,8,0,68), UDim2.new(0.48,-6,0,28))
 ProfilePopupCancel = MusicMakeButton(ProfilePopup, "ProfilePopupCancel", "CANCEL", UDim2.new(0.52,0,0,68), UDim2.new(0.48,-8,0,28))
+ProfilePopupSave.BackgroundColor3 = Color3.fromRGB(210,35,45)
+ProfilePopupSave.BackgroundTransparency = 0
+ProfilePopupSave.TextColor3 = Color3.fromRGB(255,255,255)
+ProfilePopupSave.TextSize = 10
+ProfilePopupCancel.BackgroundColor3 = Color3.fromRGB(70,70,90)
+ProfilePopupCancel.BackgroundTransparency = 0
+ProfilePopupCancel.TextColor3 = Color3.fromRGB(255,255,255)
+ProfilePopupCancel.TextSize = 10
+for _, popupButton in ipairs({ProfilePopupSave, ProfilePopupCancel}) do
+    local stroke = popupButton:FindFirstChildOfClass("UIStroke")
+    if not stroke then
+        stroke = Instance.new("UIStroke")
+        stroke.Parent = popupButton
+    end
+    stroke.Thickness = 1.2
+    stroke.Transparency = 0.05
+    stroke.Color = Color3.fromRGB(190,190,210)
+end
 
 ActiveSocialKey = nil
 function OpenSocialPopup(key)
@@ -3138,6 +3158,12 @@ ShareTitle.TextSize = 11
 ShareTitle.Parent = ProfileSharePopup
 ShareGlobal = MusicMakeButton(ProfileSharePopup, "ShareGlobal", "GLOBAL", UDim2.new(0,8,0,36), UDim2.new(0.48,-6,0,28))
 ShareServer = MusicMakeButton(ProfileSharePopup, "ShareServer", "SERVER", UDim2.new(0.52,0,0,36), UDim2.new(0.48,-8,0,28))
+for _, shareButton in ipairs({ShareGlobal, ShareServer}) do
+    shareButton.BackgroundColor3 = Color3.fromRGB(75,75,95)
+    shareButton.BackgroundTransparency = 0
+    shareButton.TextColor3 = Color3.fromRGB(255,255,255)
+    shareButton.TextSize = 9
+end
 ProfileShareButton.MouseButton1Click:Connect(function() ProfileSharePopup.Visible = true end)
 function SendProfileShare(isGlobal)
     local instagram = ProfileSocials.Instagram
@@ -4201,76 +4227,93 @@ CreateMessageCard = function(msgData, isGlobal)
     elseif msgData.IsProfileShare then
         local shareBox = Instance.new("Frame")
         shareBox.Name = "ProfileShareBox"
-        shareBox.Size = UDim2.new(1,-48,0,86)
+        shareBox.Size = UDim2.new(1,-48,0,118)
         shareBox.Position = UDim2.new(0,38,0,msgData.ReplyToText and 58 or 24)
-        shareBox.BackgroundColor3 = Color3.fromRGB(25,25,38)
-        shareBox.BackgroundTransparency = 0.18
+        shareBox.BackgroundColor3 = Color3.fromRGB(24,24,36)
+        shareBox.BackgroundTransparency = 0.04
         shareBox.BorderSizePixel = 0
         shareBox.ZIndex = 12
         shareBox.Parent = frame
         local sc = Instance.new("UICorner")
-        sc.CornerRadius = UDim.new(0,7)
+        sc.CornerRadius = UDim.new(0,10)
         sc.Parent = shareBox
-        local function shareLine(labelText, value, y, copy)
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1,-74,0,20)
-            label.Position = UDim2.new(0,7,0,y)
-            label.BackgroundTransparency = 1
-            label.Font = Enum.Font.Gotham
-            label.Text = labelText .. (value ~= "" and value or "Not set")
-            label.TextColor3 = Color3.fromRGB(220,220,230)
-            label.TextSize = 8
-            label.TextXAlignment = Enum.TextXAlignment.Left
-            label.ZIndex = 13
-            label.Parent = shareBox
-            if copy and value ~= "" then
-                local cb = Instance.new("TextButton")
-                cb.Size = UDim2.new(0,58,0,18)
-                cb.Position = UDim2.new(1,-64,0,y+1)
-                cb.BackgroundColor3 = Color3.fromRGB(60,60,80)
-                cb.BackgroundTransparency = 0.1
-                cb.BorderSizePixel = 0
-                cb.Font = Enum.Font.GothamBold
-                cb.Text = "COPY"
-                cb.TextColor3 = Color3.fromRGB(255,255,255)
-                cb.TextSize = 7
-                cb.ZIndex = 13
-                cb.Parent = shareBox
-                local cc=Instance.new("UICorner")
-                cc.CornerRadius=UDim.new(0,5)
-                cc.Parent=cb
-                cb.MouseButton1Click:Connect(function()
-                    if setclipboard then setclipboard(tostring(value)) end
-                    cb.Text = "COPIED"
-                    task.delay(1.2,function() if cb and cb.Parent then cb.Text="COPY" end end)
+        local ss = Instance.new("UIStroke")
+        ss.Thickness = 1.2
+        ss.Transparency = 0.15
+        ss.Color = Color3.fromRGB(120,120,145)
+        ss.Parent = shareBox
+
+        local socialsTitle = Instance.new("TextLabel")
+        socialsTitle.Size = UDim2.new(1,-16,0,22)
+        socialsTitle.Position = UDim2.new(0,8,0,5)
+        socialsTitle.BackgroundTransparency = 1
+        socialsTitle.Font = Enum.Font.GothamBold
+        socialsTitle.Text = "~ " .. tostring(msgData.DisplayName or msgData.Username or "User") .. "'s Socials"
+        socialsTitle.TextColor3 = Color3.fromRGB(255,255,255)
+        socialsTitle.TextSize = 11
+        socialsTitle.TextXAlignment = Enum.TextXAlignment.Center
+        socialsTitle.ZIndex = 13
+        socialsTitle.Parent = shareBox
+
+        local function socialRow(labelText, handle, y, url, buttonText)
+            local row = Instance.new("Frame")
+            row.Size = UDim2.new(1,-14,0,26)
+            row.Position = UDim2.new(0,7,0,y)
+            row.BackgroundColor3 = Color3.fromRGB(34,34,48)
+            row.BackgroundTransparency = 0
+            row.BorderSizePixel = 0
+            row.ZIndex = 13
+            row.Parent = shareBox
+            local rc = Instance.new("UICorner")
+            rc.CornerRadius = UDim.new(0,6)
+            rc.Parent = row
+
+            local text = Instance.new("TextLabel")
+            text.Size = UDim2.new(1,-72,1,0)
+            text.Position = UDim2.new(0,8,0,0)
+            text.BackgroundTransparency = 1
+            text.Font = Enum.Font.GothamMedium
+            text.Text = labelText .. "  @" .. (handle ~= "" and handle or "Not set")
+            text.TextColor3 = Color3.fromRGB(235,235,242)
+            text.TextSize = 8
+            text.TextXAlignment = Enum.TextXAlignment.Left
+            text.ZIndex = 14
+            text.Parent = row
+
+            if url and handle ~= "" then
+                local open = Instance.new("TextButton")
+                open.Size = UDim2.new(0,58,0,20)
+                open.Position = UDim2.new(1,-64,0,3)
+                open.BackgroundColor3 = Color3.fromRGB(205,35,45)
+                open.BackgroundTransparency = 0
+                open.BorderSizePixel = 0
+                open.Font = Enum.Font.GothamBold
+                open.Text = buttonText or "OPEN"
+                open.TextColor3 = Color3.fromRGB(255,255,255)
+                open.TextSize = 7
+                open.ZIndex = 14
+                open.Parent = row
+                local oc = Instance.new("UICorner")
+                oc.CornerRadius = UDim.new(0,5)
+                oc.Parent = open
+                open.MouseButton1Click:Connect(function()
+                    local opened = false
+                    pcall(function()
+                        if open_url then open_url(url); opened = true
+                        elseif openurl then openurl(url); opened = true
+                        elseif syn and syn.open_url then syn.open_url(url); opened = true end
+                    end)
+                    if not opened and setclipboard then setclipboard(url) end
+                    open.Text = opened and "OPENED" or "COPIED"
+                    task.delay(1.2,function() if open and open.Parent then open.Text = buttonText or "OPEN" end end)
                 end)
             end
         end
-        shareLine("Instagram: https://instagram.com/", tostring(msgData.Instagram or ""), 4, false)
-        shareLine("Discord: @", tostring(msgData.Discord or ""), 25, false)
-        shareLine("Snapchat: @", tostring(msgData.Snapchat or ""), 46, true)
-        if msgData.Snapchat and msgData.Snapchat ~= "" then
-            local cb2 = Instance.new("TextButton")
-            cb2.Size = UDim2.new(0,58,0,18)
-            cb2.Position = UDim2.new(1,-64,0,67)
-            cb2.BackgroundColor3 = Color3.fromRGB(60,60,80)
-            cb2.BackgroundTransparency = 0.1
-            cb2.BorderSizePixel = 0
-            cb2.Font = Enum.Font.GothamBold
-            cb2.Text = "LINK"
-            cb2.TextColor3 = Color3.fromRGB(255,255,255)
-            cb2.TextSize = 7
-            cb2.ZIndex = 13
-            cb2.Parent = shareBox
-            local cc2=Instance.new("UICorner")
-            cc2.CornerRadius=UDim.new(0,5)
-            cc2.Parent=cb2
-            cb2.MouseButton1Click:Connect(function()
-                if setclipboard then setclipboard("https://www.snapchat.com/add/" .. tostring(msgData.Snapchat)) end
-                cb2.Text="COPIED"
-                task.delay(1.2,function() if cb2 and cb2.Parent then cb2.Text="LINK" end end)
-            end)
-        end
+
+        socialRow("Instagram Handle", tostring(msgData.Instagram or ""), 31, "https://www.instagram.com/" .. tostring(msgData.Instagram or ""), "OPEN")
+        socialRow("Snapchat Handle", tostring(msgData.Snapchat or ""), 59, "https://www.snapchat.com/add/" .. tostring(msgData.Snapchat or ""), "OPEN")
+        socialRow("Discord Username", tostring(msgData.Discord or ""), 87, nil, nil)
+
         local pad=Instance.new("UIPadding")
         pad.PaddingBottom=UDim.new(0,8)
         pad.Parent=frame

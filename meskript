@@ -1175,14 +1175,16 @@ local function ApplyMusicSessionAudio(session)
     local startedAt = tonumber(session.StartedAt or session.UpdatedAt or os.time()) or os.time()
     local elapsed = math.max(0, os.time() - startedAt)
 
+    -- Mute is strictly local. Always re-apply the local volume when Firebase
+    -- refreshes the shared song state so a muted client stays muted.
+    MusicSessionSound.Volume = MusicSessionMuted and 0 or 0.5
+
     if MusicSessionSound.SoundId ~= desiredSoundId then
         MusicSessionSound.SoundId = desiredSoundId
         MusicSessionSound.TimePosition = elapsed
-        MusicSessionSound.Volume = MusicSessionMuted and 0 or 0.5
         pcall(function() MusicSessionSound:Play() end)
     elseif not MusicSessionSound.IsPlaying then
         MusicSessionSound.TimePosition = elapsed
-        MusicSessionSound.Volume = MusicSessionMuted and 0 or 0.5
         pcall(function() MusicSessionSound:Play() end)
     end
 end
@@ -1195,8 +1197,14 @@ local function RefreshMusicSessionState()
     end
     local data = HttpRequest(MusicSessionPath(ActiveMusicSessionId), "GET")
     if type(data) ~= "table" then
+        -- Firebase no longer has a usable session. Treat that as an ended
+        -- session and return this client to the Create / Join choice screen.
         ActiveMusicSessionData = nil
+        ActiveMusicSessionId = nil
+        MusicSessionLastRevision = nil
         StopLocalMusicSessionAudio()
+        pcall(UpdateMusicSessionMode)
+        pcall(UpdateMusicSessionDisplay)
         return
     end
     if data.Ended == true then
@@ -1204,6 +1212,9 @@ local function RefreshMusicSessionState()
         ActiveMusicSessionId = nil
         MusicSessionLastRevision = nil
         StopLocalMusicSessionAudio()
+        -- Ending a session must also reset the Music tab UI for every member.
+        pcall(UpdateMusicSessionMode)
+        pcall(UpdateMusicSessionDisplay)
         return
     end
     ActiveMusicSessionData = data
@@ -2525,9 +2536,16 @@ function LeaveOrEndMusicSession()
             HostPfpId = CurrentPfpId,
             SessionId = id,
         }
-        pcall(function() HttpRequest(MusicSessionPath(id), "PATCH", endedPayload) end)
-        pcall(function() HttpRequest(MusicSessionPath(id), "DELETE") end)
-        ShowLocalSystemMessage("[AI MoD] : Music Session " .. id .. " ended.")
+        local endWriteOk = pcall(function()
+            HttpRequest(MusicSessionPath(id), "PATCH", endedPayload)
+        end)
+        -- Keep Ended=true in Firebase instead of immediately deleting the node.
+        -- This gives every participant a durable terminal state to observe.
+        if not endWriteOk then
+            ShowLocalSystemMessage("[AI MoD] : Failed to end the Music Session in Firebase.", true)
+        else
+            ShowLocalSystemMessage("[AI MoD] : Music Session " .. id .. " ended.")
+        end
     else
         pcall(function()
             HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(LocalPlayer.UserId)), "DELETE")
@@ -2548,6 +2566,7 @@ function LeaveOrEndMusicSession()
     MusicChoiceHint.Visible = true
     MusicSessionIdInput.Text = ""
     UpdateMusicSessionDisplay()
+    UpdateMusicSessionMode()
 end
 
 function HostSetMusic(id, name)
@@ -2608,11 +2627,20 @@ function HostStopMusic()
         ShowLocalSystemMessage("[AI MoD] : Failed to update the music session in Firebase.", true)
         return
     end
-    ActiveMusicSessionData = payload
-    MusicSessionLastRevision = payload.Revision
+
+    -- Confirm the shared state. If Firebase rejected the write, do not pretend
+    -- the stop was synchronized to everyone else.
+    local confirmed = HttpRequest(MusicSessionPath(ActiveMusicSessionId), "GET")
+    if type(confirmed) ~= "table" or confirmed.Playing ~= false or tostring(confirmed.Revision or "") ~= tostring(payload.Revision) then
+        ShowLocalSystemMessage("[AI MoD] : Firebase did not confirm the stop. Check Firebase write permissions.", true)
+        return
+    end
+
+    ActiveMusicSessionData = confirmed
+    MusicSessionLastRevision = tostring(confirmed.Revision)
     StopLocalMusicSessionAudio()
     UpdateMusicSessionDisplay()
-    ShowLocalSystemMessage("[AI MoD] : Music stopped.")
+    ShowLocalSystemMessage("[AI MoD] : Music stopped for everyone in the session.")
 end
 
 function SendMusicSessionInvite(isGlobal)

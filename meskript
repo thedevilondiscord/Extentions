@@ -4252,17 +4252,7 @@ function BuildMessageContextMenu()
         and not CurrentContextMessage.IsSticker
         and not CurrentContextMessage.Deleted then
 
-        AddContextMenuButton("Edit Message", 4, function()
-            if not CurrentContextMessage then return end
-            EditingContextMessage = CurrentContextMessage
-            EditingContextIsGlobal = (ActiveTab == "GLOBAL")
-            MessageInput.Text = tostring(CurrentContextMessage.Text or "")
-            MessageInput.CursorPosition = #MessageInput.Text + 1
-            MessageInput:CaptureFocus()
-            ShowLocalSystemMessage("[AI MoD] : Editing message — press Send to save the change.")
-        end)
-
-        AddContextMenuButton("Delete Message", 5, function()
+        AddContextMenuButton("Delete Message", 4, function()
             if not CurrentContextMessage then return end
             local target = CurrentContextMessage
             local endpoint = (ActiveTab == "GLOBAL") and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
@@ -4399,6 +4389,7 @@ ServerPlayerProfilePopup.BorderSizePixel = 0
 ServerPlayerProfilePopup.Visible = false
 ServerPlayerProfilePopup.ZIndex = 90
 ServerPlayerProfilePopup.Parent = ScreenGui
+ServerPlayerProfilePopup.ZIndex = 90
 local sppc = Instance.new("UICorner")
 sppc.CornerRadius = UDim.new(0,12)
 sppc.Parent = ServerPlayerProfilePopup
@@ -4553,9 +4544,11 @@ CreateMessageCard = function(msgData, isGlobal)
         msgPfpButton.BackgroundTransparency = 1
         msgPfpButton.ImageTransparency = 1
         msgPfpButton.AutoButtonColor = false
-        msgPfpButton.ZIndex = 15
+        msgPfpButton.Active = true
+        msgPfpButton.Selectable = false
+        msgPfpButton.ZIndex = 100
         msgPfpButton.Parent = frame
-        msgPfpButton.MouseButton1Click:Connect(function()
+        msgPfpButton.Activated:Connect(function()
             OpenServerPlayerProfile(msgData)
         end)
     end
@@ -4654,7 +4647,10 @@ CreateMessageCard = function(msgData, isGlobal)
         replyLabel.Position = UDim2.new(0, 5, 0, 2)
         replyLabel.BackgroundTransparency = 1
         replyLabel.Font = Enum.Font.Gotham
-        replyLabel.Text = "↩ " .. tostring(msgData.ReplyToDisplayName or "Reply") .. ": " .. TruncateText(tostring(msgData.ReplyToText), 80)
+        local replyTargetText = tostring(msgData.ReplyToText or "")
+        local replyIsSticker = string.sub(replyTargetText, 1, 11) == "rbxthumb://" or string.sub(replyTargetText, 1, 13) == "rbxassetid://"
+        local replyDisplayText = replyIsSticker and "Sticker⬜" or TruncateText(replyTargetText, 80)
+        replyLabel.Text = "↩ " .. tostring(msgData.ReplyToDisplayName or "Reply") .. ": " .. replyDisplayText
         replyLabel.TextColor3 = Color3.fromRGB(210, 210, 220)
         replyLabel.TextSize = 9
         replyLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -4898,7 +4894,7 @@ CreateMessageCard = function(msgData, isGlobal)
     interactionButton.BorderSizePixel = 0
     interactionButton.Text = ""
     interactionButton.AutoButtonColor = false
-    interactionButton.ZIndex = 10
+    interactionButton.ZIndex = 5
     interactionButton.Parent = frame
 
     local pressToken = 0

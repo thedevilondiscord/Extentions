@@ -2366,7 +2366,7 @@ function BuildStickerButton(imageUrl, order, isAddButton)
         end)
     else
         button.Activated:Connect(function()
-            OpenStickerViewer(imageUrl)
+            SendStickerFromUrl(imageUrl)
         end)
     end
     return button
@@ -4882,7 +4882,40 @@ CreateMessageCard = function(msgData, isGlobal)
     end
 
     -- Transparent interaction layer: long-pressing any part of the message opens the options menu.
-    local interactionButton = Instance.new("TextButton")
+    
+-- Sticker-message viewer: only attached to stickers that have already been
+-- rendered in chat. Palette stickers are intentionally not wired to this.
+local function AttachStickerChatViewer(frame, msgData, messageText)
+    local raw = tostring(messageText or "")
+    local stickerUrl = nil
+
+    if string.sub(raw, 1, 11) == "rbxthumb://" or string.sub(raw, 1, 13) == "rbxassetid://" then
+        stickerUrl = raw
+    end
+
+    if not stickerUrl then
+        return
+    end
+
+    local StickerChatViewButton = Instance.new("ImageButton")
+    StickerChatViewButton.Name = "StickerChatViewButton"
+    StickerChatViewButton.BackgroundTransparency = 1
+    StickerChatViewButton.BorderSizePixel = 0
+    StickerChatViewButton.Image = stickerUrl
+    StickerChatViewButton.ScaleType = Enum.ScaleType.Fit
+    StickerChatViewButton.Size = UDim2.new(0, 90, 0, 90)
+    StickerChatViewButton.Position = UDim2.new(0, 8, 0, 8)
+    StickerChatViewButton.AutoButtonColor = false
+    StickerChatViewButton.Active = true
+    StickerChatViewButton.ZIndex = 30
+    StickerChatViewButton.Parent = frame
+
+    StickerChatViewButton.Activated:Connect(function()
+        OpenStickerViewer(stickerUrl)
+    end)
+end
+
+local interactionButton = Instance.new("TextButton")
     interactionButton.Name = "MessageInteraction"
     interactionButton.Size = UDim2.new(1, 0, 1, 0)
     interactionButton.Position = UDim2.new(0, 0, 0, 0)
@@ -4892,6 +4925,7 @@ CreateMessageCard = function(msgData, isGlobal)
     interactionButton.AutoButtonColor = false
     interactionButton.ZIndex = 5
     interactionButton.Parent = frame
+    AttachStickerChatViewer(frame, msgData, tostring(msgData.Text or msgData.Message or ""))
 
     local pressToken = 0
     interactionButton.InputBegan:Connect(function(input)

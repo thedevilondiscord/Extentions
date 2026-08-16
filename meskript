@@ -1160,9 +1160,15 @@ local function GetMusicSongName(songId)
 end
 
 local function StopLocalMusicSessionAudio()
-    pcall(function() MusicSessionSound:Stop() end)
-    MusicSessionSound.SoundId = ""
-    MusicSessionSound.TimePosition = 0
+    -- Hard local stop: clear the Sound completely so an old/pending asset
+    -- cannot continue after Leave Session or End Session.
+    pcall(function()
+        MusicSessionSound:Stop()
+        MusicSessionSound.Playing = false
+        MusicSessionSound.SoundId = ""
+        MusicSessionSound.TimePosition = 0
+        MusicSessionSound.Volume = 0
+    end)
 end
 
 local function ApplyMusicSessionAudio(session)
@@ -1191,30 +1197,41 @@ local function ApplyMusicSessionAudio(session)
 end
 
 local function ResetMusicSessionToChoiceMenu()
-    -- This is deliberately local and does not depend on Firebase succeeding.
-    -- Leaving/ending a session must ALWAYS return this client to the first
-    -- Create / Join screen and stop any locally playing audio.
+    -- Single unconditional local exit path for Leave Session and End Session.
+    -- Never wait for Firebase before stopping audio or restoring the menu.
+    StopLocalMusicSessionAudio()
+
     ActiveMusicSessionId = nil
     ActiveMusicSessionData = nil
     MusicSessionLastRevision = nil
     MusicSessionStopPendingId = nil
-    StopLocalMusicSessionAudio()
+    MusicSessionMuted = false
+
+    pcall(function() MusicSessionSound.Volume = 0.5 end)
 
     pcall(function()
+        MusicSessionFrame.Visible = true
         MusicSessionFrame.CanvasPosition = Vector2.new(0, 0)
+
         MusicCreatePanel.Visible = false
         MusicJoinPanel.Visible = false
         MusicMuteButton.Visible = false
         MusicJoinMuteButton.Visible = false
+
         MusicChoiceTitle.Visible = true
         MusicCreateChoiceButton.Visible = true
         MusicJoinChoiceButton.Visible = true
         MusicChoiceHint.Visible = true
+
         MusicSessionIdInput.Text = ""
-        UpdateMusicSessionDisplay()
-        UpdateMusicSessionMode()
+        MusicNowPlayingLabel.Text = "Not in a music session"
+        MusicHostLabel.Text = "Host: —"
+        MusicSessionIdLabel.Text = "Session ID: —"
+        MusicJoinMuteButton.Text = "🔊 MUTE MY AUDIO"
+        MusicMuteButton.Text = "🔊 MUTE"
     end)
 end
+
 
 local function RefreshMusicSessionState()
     if not ActiveMusicSessionId then
@@ -1245,6 +1262,8 @@ local function RefreshMusicSessionState()
     -- Prevent the polling loop from immediately restarting old music while the
     -- host's stop write is still travelling to Firebase.
     if MusicSessionStopPendingId == sessionIdAtRequest then
+        -- Host pressed STOP. Until Firebase confirms Playing=false, this
+        -- client is forbidden from restarting the previous song.
         if data.Playing == false then
             MusicSessionStopPendingId = nil
         else
@@ -2571,6 +2590,7 @@ function LeaveOrEndMusicSession()
     end
 
     local isHost = sessionData and sessionData.HostUsername == LocalPlayer.Name
+    local sessionIdForRemoteWrite = id
 
     if isHost then
         local endedPayload = {
@@ -2586,35 +2606,33 @@ function LeaveOrEndMusicSession()
             HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
             HostUserId = LocalPlayer.UserId,
             HostPfpId = CurrentPfpId,
-            SessionId = id,
+            SessionId = sessionIdForRemoteWrite,
         }
 
-        -- Reset this client FIRST. The host should never remain in the session
-        -- just because a Firebase write is slow or denied.
+        -- CRITICAL: local audio + local UI are reset BEFORE Firebase.
+        -- Therefore End Session ALWAYS stops this client and returns to choices.
         ResetMusicSessionToChoiceMenu()
 
-        -- Publish the terminal state asynchronously. Participants poll this
-        -- same session node and will independently reset when Ended=true.
-        task.spawn(function()
-            local ok = pcall(function()
-                HttpRequest(MusicSessionPath(id), "PUT", endedPayload)
-            end)
-            if not ok then
-                -- Local reset has already happened; don't re-enter the session.
-            end
-        end)
-    else
-        -- A participant leaves locally immediately, then removes only their
-        -- membership record in Firebase. This cannot be blocked by network
-        -- latency or Firebase response handling.
-        ResetMusicSessionToChoiceMenu()
         task.spawn(function()
             pcall(function()
-                HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(LocalPlayer.UserId)), "DELETE")
+                HttpRequest(MusicSessionPath(sessionIdForRemoteWrite), "PUT", endedPayload)
+            end)
+        end)
+    else
+        -- CRITICAL: participant also exits locally BEFORE Firebase.
+        ResetMusicSessionToChoiceMenu()
+
+        task.spawn(function()
+            pcall(function()
+                HttpRequest(
+                    MusicSessionUrl(sessionIdForRemoteWrite, "/members/" .. tostring(LocalPlayer.UserId)),
+                    "DELETE"
+                )
             end)
         end)
     end
 end
+
 
 function HostSetMusic(id, name)
     if not ActiveMusicSessionId or not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
@@ -2677,6 +2695,7 @@ function HostStopMusic()
     MusicSessionLastRevision = payload.Revision
     MusicSessionStopPendingId = id
     StopLocalMusicSessionAudio()
+    MusicSessionSound.Volume = 0.5
     UpdateMusicSessionDisplay()
 
     -- Publish the authoritative stopped state for every participant.

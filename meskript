@@ -1117,7 +1117,6 @@ local function SaveLocalText(key, value)
     end
 end
 for key in pairs(ProfileSocials) do ProfileSocials[key] = LoadLocalText(key) end
-ProfileBio = LoadLocalText("Bio")
 
 -- Server-only profile directory. Profiles are intentionally scoped to the
 -- current Roblox JobId so the profile popup only exposes people in this server.
@@ -2064,6 +2063,131 @@ StickerGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     StickerScroller.CanvasSize = UDim2.new(0, 0, 0, StickerGrid.AbsoluteContentSize.Y + 12)
 end)
 
+
+-- Sticker viewer: clicking a sticker opens a larger preview.
+StickerViewPopup = Instance.new("Frame")
+StickerViewPopup.Size = UDim2.new(0, 270, 0, 290)
+StickerViewPopup.Position = UDim2.new(0.5, -135, 0.5, -145)
+StickerViewPopup.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+StickerViewPopup.BorderSizePixel = 0
+StickerViewPopup.Visible = false
+StickerViewPopup.ZIndex = 70
+StickerViewPopup.Parent = ScreenGui
+local svCorner = Instance.new("UICorner"); svCorner.CornerRadius = UDim.new(0,12); svCorner.Parent = StickerViewPopup
+local svStroke = Instance.new("UIStroke"); svStroke.Thickness = 1.5; svStroke.Color = Color3.fromRGB(220,35,45); svStroke.Parent = StickerViewPopup
+
+StickerViewTitle = Instance.new("TextLabel")
+StickerViewTitle.Size = UDim2.new(1,-52,0,28)
+StickerViewTitle.Position = UDim2.new(0,12,0,7)
+StickerViewTitle.BackgroundTransparency = 1
+StickerViewTitle.Text = "STICKER PREVIEW"
+StickerViewTitle.TextColor3 = Color3.fromRGB(255,255,255)
+StickerViewTitle.Font = Enum.Font.GothamBold
+StickerViewTitle.TextSize = 12
+StickerViewTitle.TextXAlignment = Enum.TextXAlignment.Left
+StickerViewTitle.ZIndex = 71
+StickerViewTitle.Parent = StickerViewPopup
+
+StickerViewClose = Instance.new("TextButton")
+StickerViewClose.Size = UDim2.new(0,30,0,30)
+StickerViewClose.Position = UDim2.new(1,-38,0,6)
+StickerViewClose.BackgroundColor3 = Color3.fromRGB(155,25,35)
+StickerViewClose.BorderSizePixel = 0
+StickerViewClose.Text = "×"
+StickerViewClose.TextColor3 = Color3.fromRGB(255,255,255)
+StickerViewClose.Font = Enum.Font.GothamBold
+StickerViewClose.TextSize = 20
+StickerViewClose.ZIndex = 72
+StickerViewClose.Parent = StickerViewPopup
+local svc = Instance.new("UICorner"); svc.CornerRadius = UDim.new(0,8); svc.Parent = StickerViewClose
+
+StickerViewImage = Instance.new("ImageLabel")
+StickerViewImage.Size = UDim2.new(0,220,0,190)
+StickerViewImage.Position = UDim2.new(0.5,-110,0,43)
+StickerViewImage.BackgroundColor3 = Color3.fromRGB(8,8,15)
+StickerViewImage.BorderSizePixel = 0
+StickerViewImage.ScaleType = Enum.ScaleType.Fit
+StickerViewImage.ZIndex = 71
+StickerViewImage.Parent = StickerViewPopup
+local svic = Instance.new("UICorner"); svic.CornerRadius = UDim.new(0,10); svic.Parent = StickerViewImage
+
+StickerViewUse = Instance.new("TextButton")
+StickerViewUse.Size = UDim2.new(0,90,0,34)
+StickerViewUse.Position = UDim2.new(0.5,-98,1,-45)
+StickerViewUse.BackgroundColor3 = Color3.fromRGB(72,72,90)
+StickerViewUse.BorderSizePixel = 0
+StickerViewUse.Text = "USE"
+StickerViewUse.TextColor3 = Color3.fromRGB(255,255,255)
+StickerViewUse.Font = Enum.Font.GothamBold
+StickerViewUse.TextSize = 11
+StickerViewUse.ZIndex = 72
+StickerViewUse.Parent = StickerViewPopup
+local svuc = Instance.new("UICorner"); svuc.CornerRadius = UDim.new(0,8); svuc.Parent = StickerViewUse
+
+StickerViewSave = Instance.new("TextButton")
+StickerViewSave.Size = UDim2.new(0,105,0,34)
+StickerViewSave.Position = UDim2.new(0.5,2,1,-45)
+StickerViewSave.BackgroundColor3 = Color3.fromRGB(205,25,35)
+StickerViewSave.BorderSizePixel = 0
+StickerViewSave.Text = "SAVE"
+StickerViewSave.TextColor3 = Color3.fromRGB(255,255,255)
+StickerViewSave.Font = Enum.Font.GothamBold
+StickerViewSave.TextSize = 11
+StickerViewSave.ZIndex = 72
+StickerViewSave.Parent = StickerViewPopup
+local svsc = Instance.new("UICorner"); svsc.CornerRadius = UDim.new(0,8); svsc.Parent = StickerViewSave
+
+local CurrentStickerViewUrl = ""
+local CurrentStickerViewId = ""
+
+local function ExtractStickerIdFromUrl(url)
+    return tostring(url or ""):match("id=(%d+)")
+end
+
+local function StickerViewerAlreadySaved(id)
+    if not id or id == "" then return false end
+    for _, saved in ipairs(PersistentCustomStickers) do
+        if tostring(saved) == tostring(id) then return true end
+    end
+    local target = GetStickerUrlFromId(id)
+    for _, hardcoded in ipairs(baseStickers) do
+        if tostring(hardcoded) == target then return true end
+    end
+    return false
+end
+
+local function OpenStickerViewer(url)
+    CurrentStickerViewUrl = tostring(url or "")
+    CurrentStickerViewId = ExtractStickerIdFromUrl(CurrentStickerViewUrl) or ""
+    StickerViewImage.Image = CurrentStickerViewUrl
+    StickerViewSave.Visible = not StickerViewerAlreadySaved(CurrentStickerViewId)
+    StickerViewPopup.Visible = true
+end
+
+StickerViewClose.Activated:Connect(function()
+    StickerViewPopup.Visible = false
+end)
+
+StickerViewUse.Activated:Connect(function()
+    if CurrentStickerViewUrl ~= "" then
+        SendStickerFromUrl(CurrentStickerViewUrl)
+        StickerViewPopup.Visible = false
+    end
+end)
+
+StickerViewSave.Activated:Connect(function()
+    if CurrentStickerViewId == "" then return end
+    for i = #PersistentCustomStickers, 1, -1 do
+        if tostring(PersistentCustomStickers[i]) == CurrentStickerViewId then
+            table.remove(PersistentCustomStickers, i)
+        end
+    end
+    table.insert(PersistentCustomStickers, 1, CurrentStickerViewId)
+    SavePersistentCustomStickers()
+    StickerViewSave.Visible = false
+    ShowLocalSystemMessage("[AI MoD] : Sticker saved locally ✓")
+end)
+
 -- Add-sticker popup. It is kept inside the sticker panel so it remains usable
 -- on the compact Kronos layout.
 StickerAddPopup = Instance.new("Frame")
@@ -2199,7 +2323,7 @@ function BuildStickerButton(imageUrl, order, isAddButton)
         end)
     else
         button.Activated:Connect(function()
-            SendStickerFromUrl(imageUrl)
+            OpenStickerViewer(imageUrl)
         end)
     end
     return button
@@ -2968,40 +3092,6 @@ function SendMusicSessionInvite(isGlobal)
     task.spawn(function() HttpRequest(endpoint, "POST", payload) end)
 end
 
--- ============================================================================
--- SERVER PLAYER PROFILE DIRECTORY
--- ============================================================================
-local function ServerProfileUrl(userId)
-    return SERVER_PROFILE_ROOT .. "/" .. tostring(userId) .. ".json"
-end
-
-local function PublishOwnServerProfile()
-    local payload = {
-        UserId = LocalPlayer.UserId,
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-        PfpId = CurrentPfpId,
-        Instagram = ProfileSocials.Instagram or "",
-        Discord = ProfileSocials.Discord or "",
-        Snapchat = ProfileSocials.Snapchat or "",
-        Bio = tostring(ProfileBio or ""):sub(1, 160),
-        UpdatedAt = os.time(),
-    }
-    task.spawn(function()
-        pcall(function() HttpRequest(ServerProfileUrl(LocalPlayer.UserId), "PUT", payload) end)
-    end)
-end
-
-local function ResolveServerProfilePlayer(msgData)
-    local player = nil
-    if msgData and msgData.UserId then
-        player = Players:GetPlayerByUserId(tonumber(msgData.UserId) or 0)
-    end
-    if not player and msgData and msgData.Username then
-        player = Players:FindFirstChild(tostring(msgData.Username))
-    end
-    return player
-end
 
 -- ============================================================================
 -- PROFILE TAB
@@ -3015,7 +3105,7 @@ ProfileFrame.BorderSizePixel = 0
 ProfileFrame.ScrollBarThickness = 3
 ProfileFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
 ProfileFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 860)
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 700)
 ProfileFrame.Visible = false
 ProfileFrame.Parent = MainFrame
 
@@ -3154,7 +3244,7 @@ ProfileShareStroke.Parent = ProfileShareButton
 -- Girl and boy lists are deliberately separated into independent sections.
 -- ============================================================================
 ProfilePfpCard = Instance.new("Frame")
-ProfilePfpCard.Size = UDim2.new(1, 0, 0, 624)
+ProfilePfpCard.Size = UDim2.new(1, 0, 0, 590)
 ProfilePfpCard.Position = UDim2.new(0, 0, 0, 104)
 ProfilePfpCard.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ProfilePfpCard.BackgroundTransparency = 0.3
@@ -3194,44 +3284,6 @@ PfpCustomCorner.Parent = PfpCustomInput
 PfpCustomSetButton = MusicMakeButton(ProfilePfpCard, "PfpCustomSetButton", "SET CUSTOM", UDim2.new(0, 218, 0, 32), UDim2.new(0, 105, 0, 29))
 PfpRandomButton = MusicMakeButton(ProfilePfpCard, "PfpRandomButton", "RANDOM", UDim2.new(0, 331, 0, 32), UDim2.new(0, 105, 0, 29))
 
-ProfileBioLabel = Instance.new("TextLabel")
-ProfileBioLabel.Size = UDim2.new(0, 40, 0, 24)
-ProfileBioLabel.Position = UDim2.new(0, 8, 0, 68)
-ProfileBioLabel.BackgroundTransparency = 1
-ProfileBioLabel.Font = Enum.Font.GothamBold
-ProfileBioLabel.Text = "BIO"
-ProfileBioLabel.TextColor3 = Color3.fromRGB(245,245,250)
-ProfileBioLabel.TextSize = 9
-ProfileBioLabel.TextXAlignment = Enum.TextXAlignment.Left
-ProfileBioLabel.Parent = ProfilePfpCard
-
-ProfileBioInput = Instance.new("TextBox")
-ProfileBioInput.Size = UDim2.new(1, -116, 0, 26)
-ProfileBioInput.Position = UDim2.new(0, 48, 0, 66)
-ProfileBioInput.BackgroundColor3 = Color3.fromRGB(55,55,72)
-ProfileBioInput.BackgroundTransparency = 0
-ProfileBioInput.BorderSizePixel = 0
-ProfileBioInput.Font = Enum.Font.Gotham
-ProfileBioInput.PlaceholderText = "Write a short bio..."
-ProfileBioInput.PlaceholderColor3 = Color3.fromRGB(175,175,190)
-ProfileBioInput.Text = ProfileBio or ""
-ProfileBioInput.TextColor3 = Color3.fromRGB(255,255,255)
-ProfileBioInput.TextSize = 9
-ProfileBioInput.ClearTextOnFocus = false
-ProfileBioInput.TextXAlignment = Enum.TextXAlignment.Left
-ProfileBioInput.Parent = ProfilePfpCard
-local bioCorner = Instance.new("UICorner")
-bioCorner.CornerRadius = UDim.new(0,7)
-bioCorner.Parent = ProfileBioInput
-
-ProfileBioSaveButton = MusicMakeButton(ProfilePfpCard, "ProfileBioSaveButton", "SAVE BIO", UDim2.new(1, -60, 0, 66), UDim2.new(0, 52, 0, 26))
-ProfileBioSaveButton.MouseButton1Click:Connect(function()
-    ProfileBio = tostring(ProfileBioInput.Text or ""):gsub("[%c]", " "):sub(1, 160)
-    ProfileBioInput.Text = ProfileBio
-    SaveLocalText("Bio", ProfileBio)
-    PublishOwnServerProfile()
-    ShowLocalSystemMessage("[AI MoD] : Bio saved for this server ✓")
-end)
 
 function BuildPfpSection(parent, title, emoji, ids, topY, sectionName)
     local section = Instance.new("Frame")
@@ -3342,7 +3394,7 @@ PfpRandomButton.MouseButton1Click:Connect(function()
     end
 end)
 
-ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 744)
+ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 700)
 
 ProfilePopup = Instance.new("Frame")
 ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
@@ -4377,8 +4429,7 @@ end
 MakeDraggable(MainFrame, HeaderBar)
 MakeDraggable(ToggleButton, ToggleButton)
 
--- ============================================================================
--- SERVER PLAYER PROFILE POPUP
+
 -- ============================================================================
 ServerPlayerProfilePopup = Instance.new("Frame")
 ServerPlayerProfilePopup.Size = UDim2.new(0, 300, 0, 205)
@@ -4430,7 +4481,7 @@ end
 sppcopy.MouseButton1Click:Connect(CopyServerProfileId)
 ServerPlayerProfileClose.MouseButton1Click:Connect(function() ServerPlayerProfilePopup.Visible=false end)
 
-local function OpenServerPlayerProfile(msgData)
+local function 
     local player = ResolveServerProfilePlayer(msgData)
     if not player then return end
     local userId = player.UserId
@@ -4535,23 +4586,6 @@ CreateMessageCard = function(msgData, isGlobal)
     local msgPfpCorner = Instance.new("UICorner")
     msgPfpCorner.CornerRadius = UDim.new(1, 0)
     msgPfpCorner.Parent = msgPfpImg
-
-    if not isGlobal then
-        local msgPfpButton = Instance.new("ImageButton")
-        msgPfpButton.Name = "ServerProfilePfpButton"
-        msgPfpButton.Size = UDim2.new(0, 26, 0, 26)
-        msgPfpButton.Position = UDim2.new(0, 6, 0, 6)
-        msgPfpButton.BackgroundTransparency = 1
-        msgPfpButton.ImageTransparency = 1
-        msgPfpButton.AutoButtonColor = false
-        msgPfpButton.Active = true
-        msgPfpButton.Selectable = false
-        msgPfpButton.ZIndex = 100
-        msgPfpButton.Parent = frame
-        msgPfpButton.Activated:Connect(function()
-            OpenServerPlayerProfile(msgData)
-        end)
-    end
 
     local roleName = msgData.Role or GetAssignedOrCalculatedRole(msgData.Username)
     local style = RANK_STYLES[roleName] or RANK_STYLES["VIP"]

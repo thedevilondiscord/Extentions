@@ -2240,7 +2240,7 @@ StickerViewSave.Text = "SAVE"
 StickerViewSave.TextColor3 = Color3.fromRGB(255, 255, 255)
 StickerViewSave.Font = Enum.Font.GothamBold
 StickerViewSave.TextSize = 11
-StickerViewSave.ZIndex = 72
+StickerViewSave.ZIndex = 153
 StickerViewSave.Parent = StickerViewPopup
 local svsc_final = Instance.new("UICorner")
 svsc_final.CornerRadius = UDim.new(0, 8)
@@ -2251,7 +2251,7 @@ local CurrentStickerViewId = ""
 
 local function ExtractStickerIdFromUrl(url)
     local s = tostring(url or "")
-    return s:match("id=(%d+)")
+    return s:match("id=(%d+)") or s:match("^rbxassetid://(%d+)$")
 end
 
 local function StickerViewerAlreadySaved(id)

@@ -3457,54 +3457,74 @@ end)
 
 ProfileFrame.CanvasSize = UDim2.new(0, 0, 0, 744)
 
+-- Social username editor popup. Everything inside the popup gets an explicit
+-- high ZIndex so it cannot be dimmed/covered by the ProfileFrame underneath.
 ProfilePopup = Instance.new("Frame")
-ProfilePopup.Size = UDim2.new(0, 300, 0, 118)
-ProfilePopup.Position = UDim2.new(0.5, -150, 0.5, -59)
-ProfilePopup.BackgroundColor3 = Color3.fromRGB(20,20,30)
-ProfilePopup.BackgroundTransparency = 0.08
+ProfilePopup.Size = UDim2.new(0, 320, 0, 132)
+ProfilePopup.Position = UDim2.new(0.5, -160, 0.5, -66)
+ProfilePopup.BackgroundColor3 = Color3.fromRGB(14, 14, 24)
+ProfilePopup.BackgroundTransparency = 0
 ProfilePopup.BorderSizePixel = 0
 ProfilePopup.Visible = false
-ProfilePopup.ZIndex = 80
+ProfilePopup.Active = true
+ProfilePopup.ZIndex = 200
 ProfilePopup.Parent = ScreenGui
 ProfilePopupCorner = Instance.new("UICorner")
-ProfilePopupCorner.CornerRadius = UDim.new(0,10)
+ProfilePopupCorner.CornerRadius = UDim.new(0, 12)
 ProfilePopupCorner.Parent = ProfilePopup
+ProfilePopupStroke = Instance.new("UIStroke")
+ProfilePopupStroke.Thickness = 1.5
+ProfilePopupStroke.Color = Color3.fromRGB(220, 35, 45)
+ProfilePopupStroke.Transparency = 0.08
+ProfilePopupStroke.Parent = ProfilePopup
+
 ProfilePopupTitle = Instance.new("TextLabel")
-ProfilePopupTitle.Size = UDim2.new(1,-16,0,22)
-ProfilePopupTitle.Position = UDim2.new(0,8,0,6)
+ProfilePopupTitle.Size = UDim2.new(1, -52, 0, 24)
+ProfilePopupTitle.Position = UDim2.new(0, 12, 0, 8)
 ProfilePopupTitle.BackgroundTransparency = 1
 ProfilePopupTitle.Font = Enum.Font.GothamBold
 ProfilePopupTitle.Text = "SOCIAL USERNAME"
-ProfilePopupTitle.TextColor3 = Color3.fromRGB(255,255,255)
-ProfilePopupTitle.TextSize = 11
+ProfilePopupTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ProfilePopupTitle.TextSize = 13
 ProfilePopupTitle.TextXAlignment = Enum.TextXAlignment.Left
+ProfilePopupTitle.ZIndex = 202
 ProfilePopupTitle.Parent = ProfilePopup
+
 ProfilePopupInput = Instance.new("TextBox")
-ProfilePopupInput.Size = UDim2.new(1,-16,0,30)
-ProfilePopupInput.Position = UDim2.new(0,8,0,32)
-ProfilePopupInput.BackgroundColor3 = Color3.fromRGB(55,55,72)
+ProfilePopupInput.Size = UDim2.new(1, -24, 0, 34)
+ProfilePopupInput.Position = UDim2.new(0, 12, 0, 38)
+ProfilePopupInput.BackgroundColor3 = Color3.fromRGB(32, 32, 46)
 ProfilePopupInput.BackgroundTransparency = 0
 ProfilePopupInput.PlaceholderText = "Enter your username / handle"
-ProfilePopupInput.PlaceholderColor3 = Color3.fromRGB(185,185,200)
+ProfilePopupInput.PlaceholderColor3 = Color3.fromRGB(175, 175, 195)
 ProfilePopupInput.BorderSizePixel = 0
 ProfilePopupInput.Font = Enum.Font.Gotham
-ProfilePopupInput.TextColor3 = Color3.fromRGB(255,255,255)
-ProfilePopupInput.TextSize = 10
+ProfilePopupInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+ProfilePopupInput.TextSize = 11
 ProfilePopupInput.ClearTextOnFocus = false
+ProfilePopupInput.ZIndex = 202
 ProfilePopupInput.Parent = ProfilePopup
 ProfilePopupInputCorner = Instance.new("UICorner")
-ProfilePopupInputCorner.CornerRadius = UDim.new(0,7)
+ProfilePopupInputCorner.CornerRadius = UDim.new(0, 8)
 ProfilePopupInputCorner.Parent = ProfilePopupInput
-ProfilePopupSave = MusicMakeButton(ProfilePopup, "ProfilePopupSave", "SAVE", UDim2.new(0,8,0,68), UDim2.new(0.48,-6,0,28))
-ProfilePopupCancel = MusicMakeButton(ProfilePopup, "ProfilePopupCancel", "CANCEL", UDim2.new(0.52,0,0,68), UDim2.new(0.48,-8,0,28))
-ProfilePopupSave.BackgroundColor3 = Color3.fromRGB(210,35,45)
+ProfilePopupInputStroke = Instance.new("UIStroke")
+ProfilePopupInputStroke.Thickness = 1
+ProfilePopupInputStroke.Color = Color3.fromRGB(95, 95, 120)
+ProfilePopupInputStroke.Transparency = 0.15
+ProfilePopupInputStroke.Parent = ProfilePopupInput
+
+ProfilePopupSave = MusicMakeButton(ProfilePopup, "ProfilePopupSave", "SAVE", UDim2.new(0, 12, 0, 82), UDim2.new(0.5, -18, 0, 34))
+ProfilePopupCancel = MusicMakeButton(ProfilePopup, "ProfilePopupCancel", "CANCEL", UDim2.new(0.5, 6, 0, 82), UDim2.new(0.5, -18, 0, 34))
+ProfilePopupSave.BackgroundColor3 = Color3.fromRGB(210, 35, 45)
 ProfilePopupSave.BackgroundTransparency = 0
-ProfilePopupSave.TextColor3 = Color3.fromRGB(255,255,255)
-ProfilePopupSave.TextSize = 10
-ProfilePopupCancel.BackgroundColor3 = Color3.fromRGB(70,70,90)
+ProfilePopupSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+ProfilePopupSave.TextSize = 11
+ProfilePopupSave.ZIndex = 203
+ProfilePopupCancel.BackgroundColor3 = Color3.fromRGB(62, 62, 82)
 ProfilePopupCancel.BackgroundTransparency = 0
-ProfilePopupCancel.TextColor3 = Color3.fromRGB(255,255,255)
-ProfilePopupCancel.TextSize = 10
+ProfilePopupCancel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ProfilePopupCancel.TextSize = 11
+ProfilePopupCancel.ZIndex = 203
 for _, popupButton in ipairs({ProfilePopupSave, ProfilePopupCancel}) do
     local stroke = popupButton:FindFirstChildOfClass("UIStroke")
     if not stroke then
@@ -3512,13 +3532,14 @@ for _, popupButton in ipairs({ProfilePopupSave, ProfilePopupCancel}) do
         stroke.Parent = popupButton
     end
     stroke.Thickness = 1.2
-    stroke.Transparency = 0.05
-    stroke.Color = Color3.fromRGB(190,190,210)
+    stroke.Transparency = 0.03
+    stroke.Color = Color3.fromRGB(190, 190, 210)
 end
 
 ActiveSocialKey = nil
 function OpenSocialPopup(key)
     ActiveSocialKey = key
+    ProfileSharePopup.Visible = false
     ProfilePopupTitle.Text = string.upper(key) .. " USERNAME"
     ProfilePopupInput.Text = ProfileSocials[key] or ""
     ProfilePopup.Visible = true
@@ -3537,36 +3558,65 @@ ProfilePopupSave.MouseButton1Click:Connect(function()
     ProfilePopup.Visible = false
 end)
 
+-- Share destination popup. Global/server are kept as the two choices, with an
+-- explicit CANCEL action so opening the popup never forces a share.
 ProfileSharePopup = Instance.new("Frame")
-ProfileSharePopup.Size = UDim2.new(0, 260, 0, 90)
-ProfileSharePopup.Position = UDim2.new(0.5,-130,0.5,-45)
-ProfileSharePopup.BackgroundColor3 = Color3.fromRGB(12,12,18)
-ProfileSharePopup.BackgroundTransparency = 0.08
+ProfileSharePopup.Size = UDim2.new(0, 300, 0, 132)
+ProfileSharePopup.Position = UDim2.new(0.5, -150, 0.5, -66)
+ProfileSharePopup.BackgroundColor3 = Color3.fromRGB(14, 14, 24)
+ProfileSharePopup.BackgroundTransparency = 0
 ProfileSharePopup.BorderSizePixel = 0
 ProfileSharePopup.Visible = false
-ProfileSharePopup.ZIndex = 80
+ProfileSharePopup.Active = true
+ProfileSharePopup.ZIndex = 200
 ProfileSharePopup.Parent = ScreenGui
 ShareCorner = Instance.new("UICorner")
-ShareCorner.CornerRadius = UDim.new(0,10)
+ShareCorner.CornerRadius = UDim.new(0, 12)
 ShareCorner.Parent = ProfileSharePopup
+ShareStroke = Instance.new("UIStroke")
+ShareStroke.Thickness = 1.5
+ShareStroke.Color = Color3.fromRGB(220, 35, 45)
+ShareStroke.Transparency = 0.08
+ShareStroke.Parent = ProfileSharePopup
+
 ShareTitle = Instance.new("TextLabel")
-ShareTitle.Size = UDim2.new(1,-16,0,22)
-ShareTitle.Position = UDim2.new(0,8,0,6)
+ShareTitle.Size = UDim2.new(1, -24, 0, 24)
+ShareTitle.Position = UDim2.new(0, 12, 0, 9)
 ShareTitle.BackgroundTransparency = 1
 ShareTitle.Font = Enum.Font.GothamBold
 ShareTitle.Text = "SHARE PROFILE TO"
-ShareTitle.TextColor3 = Color3.fromRGB(255,255,255)
-ShareTitle.TextSize = 11
+ShareTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ShareTitle.TextSize = 13
+ShareTitle.TextXAlignment = Enum.TextXAlignment.Left
+ShareTitle.ZIndex = 202
 ShareTitle.Parent = ProfileSharePopup
-ShareGlobal = MusicMakeButton(ProfileSharePopup, "ShareGlobal", "GLOBAL", UDim2.new(0,8,0,36), UDim2.new(0.48,-6,0,28))
-ShareServer = MusicMakeButton(ProfileSharePopup, "ShareServer", "SERVER", UDim2.new(0.52,0,0,36), UDim2.new(0.48,-8,0,28))
-for _, shareButton in ipairs({ShareGlobal, ShareServer}) do
-    shareButton.BackgroundColor3 = Color3.fromRGB(75,75,95)
-    shareButton.BackgroundTransparency = 0
-    shareButton.TextColor3 = Color3.fromRGB(255,255,255)
-    shareButton.TextSize = 9
+
+ShareGlobal = MusicMakeButton(ProfileSharePopup, "ShareGlobal", "GLOBAL", UDim2.new(0, 12, 0, 43), UDim2.new(0.5, -18, 0, 34))
+ShareServer = MusicMakeButton(ProfileSharePopup, "ShareServer", "SERVER", UDim2.new(0.5, 6, 0, 43), UDim2.new(0.5, -18, 0, 34))
+ShareCancel = MusicMakeButton(ProfileSharePopup, "ShareCancel", "CANCEL", UDim2.new(0, 12, 0, 85), UDim2.new(1, -24, 0, 34))
+ShareGlobal.BackgroundColor3 = Color3.fromRGB(210, 35, 45)
+ShareGlobal.BackgroundTransparency = 0
+ShareServer.BackgroundColor3 = Color3.fromRGB(55, 75, 105)
+ShareServer.BackgroundTransparency = 0
+ShareCancel.BackgroundColor3 = Color3.fromRGB(62, 62, 82)
+ShareCancel.BackgroundTransparency = 0
+for _, shareButton in ipairs({ShareGlobal, ShareServer, ShareCancel}) do
+    shareButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    shareButton.TextSize = 11
+    shareButton.ZIndex = 203
+    local stroke = shareButton:FindFirstChildOfClass("UIStroke")
+    if not stroke then
+        stroke = Instance.new("UIStroke")
+        stroke.Parent = shareButton
+    end
+    stroke.Thickness = 1.2
+    stroke.Transparency = 0.03
+    stroke.Color = Color3.fromRGB(190, 190, 210)
 end
-ProfileShareButton.MouseButton1Click:Connect(function() ProfileSharePopup.Visible = true end)
+ProfileShareButton.MouseButton1Click:Connect(function()
+    ProfilePopup.Visible = false
+    ProfileSharePopup.Visible = true
+end)
 function SendProfileShare(isGlobal)
     local instagram = ProfileSocials.Instagram
     local discord = ProfileSocials.Discord
@@ -3602,6 +3652,9 @@ function SendProfileShare(isGlobal)
 end
 ShareGlobal.MouseButton1Click:Connect(function() SendProfileShare(true) end)
 ShareServer.MouseButton1Click:Connect(function() SendProfileShare(false) end)
+ShareCancel.MouseButton1Click:Connect(function()
+    ProfileSharePopup.Visible = false
+end)
 
 -- About Section Configuration
 TagScrollFrame = Instance.new("ScrollingFrame")

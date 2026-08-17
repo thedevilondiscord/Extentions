@@ -934,6 +934,10 @@ local ClearPersistentPrivatePrefix = function() end
 
 local AssignedPlayerRoles = {}
 local AvailableUserRoles = {}
+-- Per-role switch authorization loaded from GITHUB_ROLE_LIST_URL.
+-- A Tier 1/2 role requires BOTH the username and UserId to be listed for that role.
+local RoleSwitchAuthorization = {}
+local RoleRosterLoaded = false
 local DisabledTags = {}        
 local PersistentPvtPrefix = ""
 
@@ -1452,6 +1456,39 @@ local function GetAssignedOrCalculatedRole(username)
     return GetHighestRole(username)
 end
 
+local function CanSwitchToRole(roleName)
+    local canonical = FindCanonicalRole(roleName)
+    local style = canonical and RANK_STYLES[canonical] or nil
+    if not canonical or type(style) ~= "table" then
+        return false
+    end
+
+    -- Tier 3 remains freely selectable, exactly as before.
+    if tonumber(style.Tier) == 3 then
+        return true
+    end
+
+    -- Tier 1/2 roles are restricted to users whose username AND UserId are
+    -- both present in that specific role's GitHub roster entry.
+    if tonumber(style.Tier) and tonumber(style.Tier) > 3 then
+        return false
+    end
+
+    if not RoleRosterLoaded then
+        return false
+    end
+
+    local authorization = RoleSwitchAuthorization[canonical]
+    if not authorization then
+        return false
+    end
+
+    local usernameKey = string.lower(tostring(LocalPlayer.Name or ""))
+    local userIdKey = tostring(LocalPlayer.UserId)
+    return authorization.Usernames[usernameKey] == true
+        and authorization.UserIds[userIdKey] == true
+end
+
 -- ============================================================================
 -- ============================================================================
 -- COMMAND AUTHORIZATION — TRY 1
@@ -1660,12 +1697,36 @@ end
 
 local function FetchRemoteRoles()
     local jsonRoster = HttpRequest(GITHUB_ROLE_LIST_URL, "GET")
-    if not jsonRoster or type(jsonRoster) ~= "table" then return end
+    if not jsonRoster or type(jsonRoster) ~= "table" then
+        RoleRosterLoaded = false
+        RoleSwitchAuthorization = {}
+        return
+    end
 
     local fresh = {}
+    local freshRoleSwitchAuthorization = {}
     for rankName, playerList in pairs(jsonRoster) do
         local canonicalRole = FindCanonicalRole(rankName)
         if canonicalRole and type(playerList) == "table" then
+            local roleAuthorization = { Usernames = {}, UserIds = {} }
+            if type(playerList.Usernames) == "table" then
+                for _, username in ipairs(playerList.Usernames) do
+                    local normalizedUsername = tostring(username or ""):match("^%s*(.-)%s*$")
+                    if normalizedUsername ~= "" then
+                        roleAuthorization.Usernames[string.lower(normalizedUsername)] = true
+                    end
+                end
+            end
+            if type(playerList.UserIds) == "table" then
+                for _, userId in ipairs(playerList.UserIds) do
+                    local normalizedUserId = tostring(userId or ""):match("^%s*(.-)%s*$")
+                    if normalizedUserId ~= "" then
+                        roleAuthorization.UserIds[normalizedUserId] = true
+                    end
+                end
+            end
+            freshRoleSwitchAuthorization[canonicalRole] = roleAuthorization
+
             local entries = playerList
             -- Also accept the convenient {Usernames = {...}, UserIds = {...}} format.
             if playerList.Usernames or playerList.UserIds then
@@ -1712,6 +1773,8 @@ local function FetchRemoteRoles()
     end
 
     AvailableUserRoles = fresh
+    RoleSwitchAuthorization = freshRoleSwitchAuthorization
+    RoleRosterLoaded = true
     for _, player in ipairs(Players:GetPlayers()) do
         local highest = GetHighestRole(player.Name)
         if not AssignedPlayerRoles[player.Name] or not PlayerHasRole(player.Name, AssignedPlayerRoles[player.Name]) then
@@ -4399,9 +4462,12 @@ local function ShowCommandAutocomplete()
         table.insert(suggestions, "!announce ")
     elseif command == "!tag " then
         for roleName, style in pairs(RANK_STYLES) do
-            if type(style) == "table" and style.Tier == 3 and not seen[roleName] then
-                table.insert(suggestions, roleName)
-                seen[roleName] = true
+            if type(style) == "table" and not seen[roleName] then
+                local tier = tonumber(style.Tier)
+                if tier == 3 or CanSwitchToRole(roleName) then
+                    table.insert(suggestions, roleName)
+                    seen[roleName] = true
+                end
             end
         end
     else
@@ -5679,8 +5745,14 @@ SendChatMessage = function()
         local canonical = FindCanonicalRole(requestedRole)
         local style = canonical and RANK_STYLES[canonical] or nil
 
-        if not canonical or type(style) ~= "table" or style.Tier ~= 3 then
-            ShowLocalSystemMessage("[AI MoD] : Only Tier 3 tags can be freely selected by everyone.", true)
+        if not canonical or type(style) ~= "table" then
+            ShowLocalSystemMessage("[AI MoD] : Unknown tag. Please use a valid role.", true)
+        elseif not CanSwitchToRole(canonical) then
+            if tonumber(style.Tier) == 3 then
+                ShowLocalSystemMessage("[AI MoD] : Tag could not be selected. Please try again after the role roster loads.", true)
+            else
+                ShowLocalSystemMessage("[AI MoD] : You are not authorized to switch to " .. canonical .. ". Your username and UserId must both be listed for that role in the GitHub roster.", true)
+            end
         else
             AssignedPlayerRoles[LocalPlayer.Name] = canonical
             DisabledTags[LocalPlayer.Name] = nil

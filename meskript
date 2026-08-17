@@ -940,6 +940,53 @@ local PersistentPvtPrefix = ""
 local GlobalCachedMessages, GlobalUIElements = {}, {}
 local ServerCachedMessages, ServerUIElements = {}, {}
 
+-- Temporary per-session message blocks. These are intentionally memory-only:
+-- they are cleared automatically when this script/session ends or the player rejoins.
+local BlockedMessageUsers = {}
+
+local function IsMessageUserBlocked(username)
+    username = tostring(username or "")
+    return username ~= "" and BlockedMessageUsers[string.lower(username)] == true
+end
+
+local function RemoveBlockedUserFromLocalChat(username)
+    username = tostring(username or "")
+    if username == "" then return end
+    local wanted = string.lower(username)
+
+    for _, cache in ipairs({GlobalCachedMessages, ServerCachedMessages}) do
+        for key, msg in pairs(cache) do
+            if type(msg) == "table" and string.lower(tostring(msg.Username or "")) == wanted then
+                cache[key] = nil
+            end
+        end
+    end
+
+    for _, list in ipairs({GlobalUIElements, ServerUIElements}) do
+        for i = #list, 1, -1 do
+            local card = list[i]
+            if card and string.lower(tostring(card:GetAttribute("MessageUsername") or "")) == wanted then
+                if card.Parent then
+                    card:Destroy()
+                end
+                table.remove(list, i)
+            elseif card and not card.Parent then
+                table.remove(list, i)
+            end
+        end
+    end
+end
+
+local function BlockMessageUser(username)
+    username = tostring(username or "")
+    if username == "" or string.lower(username) == string.lower(tostring(LocalPlayer.Name or "")) then
+        return false
+    end
+    BlockedMessageUsers[string.lower(username)] = true
+    RemoveBlockedUserFromLocalChat(username)
+    return true
+end
+
 -- Moderation state. Mutes are scoped to GLOBAL or SERVER chat and expire automatically.
 local Moderation = { ActiveMutes = {} }
 
@@ -4243,7 +4290,7 @@ end)
 
 ContextMenu = Instance.new("Frame")
 ContextMenu.Name = "ContextMenu"
-ContextMenu.Size = UDim2.new(0, 160, 0, 125)
+ContextMenu.Size = UDim2.new(0, 170, 0, 200)
 ContextMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 ContextMenu.BackgroundTransparency = 0.2
 ContextMenu.BorderSizePixel = 0
@@ -4406,6 +4453,23 @@ function BuildMessageContextMenu()
         SetPersistentPrivatePrefix(displayName, msg.Username)
     end)
 
+    -- Block is intentionally temporary and client-side only. It is never
+    -- written to Firebase or local storage, so rejoining clears the block.
+    if CurrentContextMessage
+        and tostring(CurrentContextMessage.Username or "") ~= ""
+        and tostring(CurrentContextMessage.Username or "") ~= tostring(LocalPlayer.Name or "")
+        and not CurrentContextMessage.SystemMessage then
+
+        AddContextMenuButton("Block", 4, function()
+            if not CurrentContextMessage then return end
+            local targetUsername = tostring(CurrentContextMessage.Username or "")
+            local targetDisplayName = tostring(CurrentContextMessage.DisplayName or targetUsername)
+            if BlockMessageUser(targetUsername) then
+                ShowLocalSystemMessage("[KRONOS] : Blocked " .. targetDisplayName .. ". Their messages are hidden for this session.")
+            end
+        end)
+    end
+
     -- Edit/Delete are deliberately available only for the local player's
     -- own normal messages. Bot/system/sticker/invite messages cannot be edited.
     if CurrentContextMessage
@@ -4417,7 +4481,7 @@ function BuildMessageContextMenu()
         and not CurrentContextMessage.IsSticker
         and not CurrentContextMessage.Deleted then
 
-        AddContextMenuButton("Delete Message", 4, function()
+        AddContextMenuButton("Delete Message", 5, function()
             if not CurrentContextMessage then return end
             local target = CurrentContextMessage
             local endpoint = (ActiveTab == "GLOBAL") and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT
@@ -5600,8 +5664,13 @@ function PollMessages()
                         Moderation.ActiveMutes[Moderation.GetMuteKey("GLOBAL", msg.TargetUsername)] = msg
                     end
                 elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
+                    local blockedByUser = IsMessageUserBlocked(msg.Username)
                     local blockedByMute = Moderation.GetActiveMute("GLOBAL", msg.Username) ~= nil
-                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    if blockedByUser and msg.Username ~= LocalPlayer.Name then
+                        -- Temporarily blocked users are ignored before they can enter
+                        -- the cache/UI. No Firebase message data from that user is
+                        -- processed by this client while the block is active.
+                    elseif blockedByMute and msg.Username ~= LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientIdForMutation = tostring(msg.ClientMessageId or "")
@@ -5668,8 +5737,13 @@ function PollMessages()
                         Moderation.ActiveMutes[Moderation.GetMuteKey("SERVER", msg.TargetUsername)] = msg
                     end
                 elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
+                    local blockedByUser = IsMessageUserBlocked(msg.Username)
                     local blockedByMute = Moderation.GetActiveMute("SERVER", msg.Username) ~= nil
-                    if blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    if blockedByUser and msg.Username ~= LocalPlayer.Name then
+                        -- Temporarily blocked users are ignored before they can enter
+                        -- the cache/UI. No Firebase message data from that user is
+                        -- processed by this client while the block is active.
+                    elseif blockedByMute and msg.Username ~= LocalPlayer.Name then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientIdForMutation = tostring(msg.ClientMessageId or "")

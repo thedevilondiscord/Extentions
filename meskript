@@ -4278,7 +4278,7 @@ ReactionPopup.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
 ReactionPopup.BackgroundTransparency = 0.02
 ReactionPopup.BorderSizePixel = 0
 ReactionPopup.Visible = false
-ReactionPopup.ZIndex = 100
+ReactionPopup.ZIndex = 600
 ReactionPopup.Parent = ScreenGui
 
 local reactionPopupCorner = Instance.new("UICorner")
@@ -4300,7 +4300,7 @@ reactionPopupTitle.Text = "ADD REACTION"
 reactionPopupTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 reactionPopupTitle.TextSize = 12
 reactionPopupTitle.TextXAlignment = Enum.TextXAlignment.Left
-reactionPopupTitle.ZIndex = 101
+reactionPopupTitle.ZIndex = 601
 reactionPopupTitle.Parent = ReactionPopup
 
 local reactionPopupHint = Instance.new("TextLabel")
@@ -4312,7 +4312,7 @@ reactionPopupHint.Text = "Type or paste any emoji from your keyboard"
 reactionPopupHint.TextColor3 = Color3.fromRGB(170, 170, 185)
 reactionPopupHint.TextSize = 9
 reactionPopupHint.TextXAlignment = Enum.TextXAlignment.Left
-reactionPopupHint.ZIndex = 101
+reactionPopupHint.ZIndex = 601
 reactionPopupHint.Parent = ReactionPopup
 
 ReactionPopupInput = Instance.new("TextBox")
@@ -4330,7 +4330,7 @@ ReactionPopupInput.Text = ""
 ReactionPopupInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 ReactionPopupInput.TextSize = 18
 ReactionPopupInput.TextXAlignment = Enum.TextXAlignment.Center
-ReactionPopupInput.ZIndex = 101
+ReactionPopupInput.ZIndex = 601
 ReactionPopupInput.Parent = ReactionPopup
 
 local reactionInputCorner = Instance.new("UICorner")
@@ -4349,7 +4349,7 @@ for index, emoji in ipairs(reactionQuickEmojis) do
     quick.Font = Enum.Font.Gotham
     quick.Text = emoji
     quick.TextSize = 15
-    quick.ZIndex = 101
+    quick.ZIndex = 601
     quick.Parent = ReactionPopup
     local qc = Instance.new("UICorner")
     qc.CornerRadius = UDim.new(0, 6)
@@ -4370,7 +4370,7 @@ ReactionPopupAdd.Font = Enum.Font.GothamBold
 ReactionPopupAdd.Text = "ADD"
 ReactionPopupAdd.TextColor3 = Color3.fromRGB(255, 255, 255)
 ReactionPopupAdd.TextSize = 9
-ReactionPopupAdd.ZIndex = 101
+ReactionPopupAdd.ZIndex = 601
 ReactionPopupAdd.Parent = ReactionPopup
 local reactionAddCorner = Instance.new("UICorner")
 reactionAddCorner.CornerRadius = UDim.new(0, 6)
@@ -4386,7 +4386,7 @@ ReactionPopupCancel.Font = Enum.Font.GothamBold
 ReactionPopupCancel.Text = "CANCEL"
 ReactionPopupCancel.TextColor3 = Color3.fromRGB(255, 255, 255)
 ReactionPopupCancel.TextSize = 9
-ReactionPopupCancel.ZIndex = 101
+ReactionPopupCancel.ZIndex = 601
 ReactionPopupCancel.Parent = ReactionPopup
 local reactionCancelCorner = Instance.new("UICorner")
 reactionCancelCorner.CornerRadius = UDim.new(0, 6)
@@ -4394,6 +4394,74 @@ reactionCancelCorner.Parent = ReactionPopupCancel
 
 local ReactionPopupTargetMessage = nil
 local ReactionPopupTargetGlobal = false
+
+-- Standalone reaction shortcut. This intentionally does NOT live inside the
+-- long-press ContextMenu, so it cannot be hidden by the context-menu layout,
+-- AutomaticSize, or another menu option. It appears beside the message menu
+-- whenever a message is long-pressed.
+local ReactionShortcut = Instance.new("TextButton")
+ReactionShortcut.Name = "StandaloneReactionShortcut"
+ReactionShortcut.Size = UDim2.new(0, 118, 0, 34)
+ReactionShortcut.BackgroundColor3 = Color3.fromRGB(210, 35, 45)
+ReactionShortcut.BackgroundTransparency = 0
+ReactionShortcut.BorderSizePixel = 0
+ReactionShortcut.Text = "➕  REACT"
+ReactionShortcut.TextColor3 = Color3.fromRGB(255, 255, 255)
+ReactionShortcut.Font = Enum.Font.GothamBold
+ReactionShortcut.TextSize = 11
+ReactionShortcut.AutoButtonColor = true
+ReactionShortcut.Visible = false
+ReactionShortcut.Active = true
+ReactionShortcut.Selectable = true
+ReactionShortcut.ZIndex = 500
+ReactionShortcut.Parent = ScreenGui
+
+local reactionShortcutCorner = Instance.new("UICorner")
+reactionShortcutCorner.CornerRadius = UDim.new(0, 9)
+reactionShortcutCorner.Parent = ReactionShortcut
+
+local reactionShortcutStroke = Instance.new("UIStroke")
+reactionShortcutStroke.Thickness = 1.5
+reactionShortcutStroke.Color = Color3.fromRGB(255, 90, 90)
+reactionShortcutStroke.Transparency = 0.05
+reactionShortcutStroke.Parent = ReactionShortcut
+
+local ReactionShortcutMessage = nil
+local ReactionShortcutIsGlobal = false
+
+local function HideReactionShortcut()
+    ReactionShortcut.Visible = false
+    ReactionShortcutMessage = nil
+end
+
+local function ShowReactionShortcut(message, isGlobal, position)
+    if not message then
+        HideReactionShortcut()
+        return
+    end
+
+    ReactionShortcutMessage = message
+    ReactionShortcutIsGlobal = isGlobal == true
+    ReactionShortcut.Visible = true
+
+    local camera = workspace.CurrentCamera
+    local viewport = camera and camera.ViewportSize or Vector2.new(800, 600)
+    local buttonSize = ReactionShortcut.AbsoluteSize
+    local x = math.clamp(position.X, 4, math.max(4, viewport.X - buttonSize.X - 4))
+    local yAbove = position.Y - buttonSize.Y - 8
+    local yBelow = position.Y + 8
+    local y = yAbove >= 4 and yAbove or math.min(yBelow, viewport.Y - buttonSize.Y - 4)
+    ReactionShortcut.Position = UDim2.fromOffset(x, math.max(4, y))
+end
+
+ReactionShortcut.MouseButton1Click:Connect(function()
+    local target = ReactionShortcutMessage
+    local isGlobal = ReactionShortcutIsGlobal
+    if not target then return end
+    HideReactionShortcut()
+    OpenReactionPopup(target, isGlobal)
+    HideMessageContextMenu()
+end)
 
 local function ReactionKey(emoji)
     local encoded = HttpService:UrlEncode(tostring(emoji or ""))
@@ -4546,6 +4614,7 @@ end
 
 local function OpenReactionPopup(message, isGlobal)
     if not message then return end
+    HideReactionShortcut()
     ReactionPopupTargetMessage = message
     ReactionPopupTargetGlobal = isGlobal == true
     ReactionPopupInput.Text = ""
@@ -4578,6 +4647,7 @@ end)
 function HideMessageContextMenu()
     ContextMenu.Visible = false
     CurrentContextMessage = nil
+    HideReactionShortcut()
 end
 
 function ResolvePrivateRecipient(prefix)
@@ -4654,6 +4724,7 @@ end
 
 function ShowMessageContextMenu(msgData, position)
     CurrentContextMessage = msgData
+    ShowReactionShortcut(msgData, ActiveTab == "GLOBAL", position)
     -- Rebuild on every long-press so self-message-only actions are decided
     -- from the message currently being viewed.
     pcall(BuildMessageContextMenu)
@@ -4702,28 +4773,23 @@ function BuildMessageContextMenu()
         if child:IsA("TextButton") then child:Destroy() end
     end
 
-    AddContextMenuButton("➕ Add Reaction", 1, function()
-        local target = CurrentContextMessage
-        local isGlobal = (ActiveTab == "GLOBAL")
-        if target then
-            OpenReactionPopup(target, isGlobal)
-        end
-    end)
-
-    AddContextMenuButton("Copy Message", 2, function()
+    -- Reactions use the standalone shortcut beside the menu instead of being
+    -- another row inside ContextMenu. This keeps the reaction control visible
+    -- even when the menu is rebuilt or its height changes.
+    AddContextMenuButton("Copy Message", 1, function()
         if CurrentContextMessage and setclipboard then
             setclipboard(tostring(CurrentContextMessage.Text or ""))
         end
     end)
 
-    AddContextMenuButton("Reply", 3, function()
+    AddContextMenuButton("Reply", 2, function()
         if not CurrentContextMessage then return end
         ReplyContextMessage = CurrentContextMessage
         RefreshReplyUI()
         MessageInput:CaptureFocus()
     end)
 
-    AddContextMenuButton("Pvt Message", 4, function()
+    AddContextMenuButton("Pvt Message", 3, function()
         if not CurrentContextMessage then return end
         local msg = CurrentContextMessage
         local displayName = msg.DisplayName or msg.Username or "Unknown"
@@ -4741,7 +4807,7 @@ function BuildMessageContextMenu()
         and not CurrentContextMessage.IsSticker
         and not CurrentContextMessage.Deleted then
 
-        AddContextMenuButton("Delete Message", 5, function()
+        AddContextMenuButton("Delete Message", 4, function()
             if not CurrentContextMessage then return end
             local target = CurrentContextMessage
             local endpoint = (ActiveTab == "GLOBAL") and GLOBAL_MESSAGES_ENDPOINT or SERVER_MESSAGES_ENDPOINT

@@ -4433,6 +4433,11 @@ function BuildMessageContextMenu()
         if child:IsA("TextButton") then child:Destroy() end
     end
 
+    -- The menu must only be as tall as the options that actually exist.
+    -- Delete/Block are conditionally added below, so a fixed 200px height
+    -- creates an empty area whenever one or both options are unavailable.
+    ContextMenu.Size = UDim2.new(0, 170, 0, 0)
+
     AddContextMenuButton("Copy Message", 1, function()
         if CurrentContextMessage and setclipboard then
             setclipboard(tostring(CurrentContextMessage.Text or ""))
@@ -4550,6 +4555,17 @@ function BuildMessageContextMenu()
             ShowLocalSystemMessage("[AI MoD] : Message deleted.")
         end)
     end
+
+    -- Remove all unused vertical space when conditional options are absent.
+    -- Every context-menu button is 40px tall, so the menu height follows the
+    -- exact number of valid options instead of reserving space for invalid ones.
+    local optionCount = 0
+    for _, child in ipairs(ContextMenu:GetChildren()) do
+        if child:IsA("TextButton") then
+            optionCount = optionCount + 1
+        end
+    end
+    ContextMenu.Size = UDim2.new(0, 170, 0, optionCount * 40)
 end
 
 BuildMessageContextMenu()

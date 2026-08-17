@@ -1434,6 +1434,142 @@ local function GetAssignedOrCalculatedRole(username)
     return GetHighestRole(username)
 end
 
+-- ============================================================================
+-- COMMAND AUTHORIZATION
+-- Commands are authorized ONLY by the client's UserId being present in the
+-- remote command roster. Roles/tags are deliberately not consulted here.
+-- ============================================================================
+
+local COMMAND_ROSTER_URL = "https://raw.githubusercontent.com/thedevilondiscord/Extentions/refs/heads/main/MusicIDlist"
+
+local CommandRoster = {}
+local CommandRosterLoaded = false
+local CommandRosterLastFetch = 0
+local COMMAND_ROSTER_REFRESH_SECONDS = 30
+
+local COMMAND_ROSTER_SLOTS = {
+    Spoof = "Join Sound",
+    Announce = "Notification sound",
+    Mute = "Join sound 2",
+    PlayMusic = "INTRO sound",
+    Kick = "Ambient sound",
+    Ban = "Server sound",
+}
+
+local function NormalizeRosterId(value)
+    local numeric = tonumber(value)
+    if numeric and numeric >= 1 then
+        return tostring(math.floor(numeric))
+    end
+    return nil
+end
+
+local function AddRosterIds(target, value)
+    if type(value) == "table" then
+        for _, item in pairs(value) do
+            AddRosterIds(target, item)
+        end
+        return
+    end
+
+    local id = NormalizeRosterId(value)
+    if id then
+        target[id] = true
+    end
+end
+
+local function BuildCommandRoster(raw)
+    if type(raw) ~= "table" then
+        return nil
+    end
+
+    local result = {}
+
+    for permission, slotName in pairs(COMMAND_ROSTER_SLOTS) do
+        local ids = {}
+        local slot = raw[slotName]
+
+        -- Also accept a nested UserIds array without allowing usernames/roles.
+        if type(slot) == "table" then
+            if slot.UserIds ~= nil then
+                AddRosterIds(ids, slot.UserIds)
+            else
+                AddRosterIds(ids, slot)
+            end
+        else
+            AddRosterIds(ids, slot)
+        end
+
+        result[permission] = ids
+    end
+
+    return result
+end
+
+local function FetchCommandRoster(force)
+    local now = os.clock()
+    if not force and CommandRosterLoaded and (now - CommandRosterLastFetch) < COMMAND_ROSTER_REFRESH_SECONDS then
+        return CommandRosterLoaded
+    end
+
+    local ok, raw = pcall(function()
+        return HttpRequest(COMMAND_ROSTER_URL, "GET")
+    end)
+
+    -- Fail closed. Never retain an old authorization roster after a failed
+    -- refresh, because that could leave a previously-authorized client enabled.
+    if not ok or type(raw) ~= "table" then
+        CommandRoster = {}
+        CommandRosterLoaded = false
+        CommandRosterLastFetch = now
+        return false
+    end
+
+    local parsed = BuildCommandRoster(raw)
+    if type(parsed) ~= "table" then
+        CommandRoster = {}
+        CommandRosterLoaded = false
+        CommandRosterLastFetch = now
+        return false
+    end
+
+    CommandRoster = parsed
+    CommandRosterLoaded = true
+    CommandRosterLastFetch = now
+    return true
+end
+
+local function IsCommandUserAuthorized(permission)
+    if not permission then return false end
+
+    -- Refresh before every actual command authorization decision. This makes
+    -- changes to the GitHub roster take effect without relying on role state
+    -- or a stale cached permission.
+    if not FetchCommandRoster(false) then
+        return false
+    end
+
+    local localUserId = NormalizeRosterId(LocalPlayer.UserId)
+    if not localUserId then
+        return false
+    end
+
+    local allowedIds = CommandRoster[permission]
+    return type(allowedIds) == "table" and allowedIds[localUserId] == true
+end
+
+-- These wrappers intentionally accept the old argument so existing call sites
+-- do not need to be rewritten. The argument is ignored: LocalPlayer.UserId is
+-- the sole authorization identity.
+local function CanUseSpoof(_) return IsCommandUserAuthorized("Spoof") end
+local function CanUseAnnouncement(_) return IsCommandUserAuthorized("Announce") end
+local function CanUseModerationCommands(_) return IsCommandUserAuthorized("Mute") end
+local function CanUseKick(_) return IsCommandUserAuthorized("Kick") end
+local function CanUseBan(_) return IsCommandUserAuthorized("Ban") end
+local function CanUsePlayMusic(_) return IsCommandUserAuthorized("PlayMusic") end
+
+-- Role permissions remain available for role/tag presentation elsewhere, but
+-- they are NOT an authorization source for privileged commands.
 local function HasRolePermission(username, permission)
     local role = GetAssignedOrCalculatedRole(username)
     local perms = ROLE_PERMISSIONS[role]
@@ -1443,13 +1579,6 @@ end
 local function HasAdminPermission(username)
     return HasRolePermission(username, "Kick") or HasRolePermission(username, "Ban") or HasRolePermission(username, "Mute")
 end
-
-local function CanUseSpoof(username) return HasRolePermission(username, "Spoof") end
-local function CanUseAnnouncement(username) return HasRolePermission(username, "Announce") end
-local function CanUseModerationCommands(username) return HasRolePermission(username, "Announce") or HasRolePermission(username, "Mute") end
-local function CanUseKick(username) return HasRolePermission(username, "Kick") end
-local function CanUseBan(username) return HasRolePermission(username, "Ban") end
-local function CanUsePlayMusic(username) return HasRolePermission(username, "PlayMusic") end
 
 local function FetchRemoteRankStyles()
     -- Role colours are defined locally and are intentionally not remotely overridden.
@@ -5365,23 +5494,35 @@ SendChatMessage = function()
     end
 
     if not isPrivate and typedText == "!testnotif" then
-        TestNotification()
-        ShowLocalSystemMessage("[AI MoD] : Notification test triggered successfully ✓")
+        if IsCommandUserAuthorized("Announce") then
+            TestNotification()
+            ShowLocalSystemMessage("[AI MoD] : Notification test triggered successfully ✓")
+        else
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+        end
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!notify" then
-        TestNotification()
-        ShowLocalSystemMessage("[AI MoD] : Notification test triggered successfully ✓")
+        if IsCommandUserAuthorized("Announce") then
+            TestNotification()
+            ShowLocalSystemMessage("[AI MoD] : Notification test triggered successfully ✓")
+        else
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+        end
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!joined" then
-        ShowLocalJoinMessage()
-        ShowLocalSystemMessage("[AI MoD] : Join-message test triggered successfully ✓")
+        if IsCommandUserAuthorized("Announce") then
+            ShowLocalJoinMessage()
+            ShowLocalSystemMessage("[AI MoD] : Join-message test triggered successfully ✓")
+        else
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+        end
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 9) == "!announce" then
         if not CanUseAnnouncement(LocalPlayer.Name) then
-            ShowLocalSystemMessage("[AI MoD] : Command failed. Only Architect, Overseer and Moderator can use !announce.", true)
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
             MessageInput.Text = ""
             return
         end
@@ -5401,7 +5542,7 @@ SendChatMessage = function()
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!mute " then
         if not CanUseModerationCommands(LocalPlayer.Name) then
-            ShowLocalSystemMessage("[AI MoD] : Command failed. Only Architect, Overseer and Moderator can use !mute.", true)
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
             MessageInput.Text = ""
             return
         end
@@ -5423,6 +5564,11 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 5) == "!tag " then
+        if not IsCommandUserAuthorized("Spoof") then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+            MessageInput.Text = ""
+            return
+        end
         local requestedRole = string.sub(typedText, 6):gsub("^%s+", ""):gsub("%s+$", "")
         local canonical = FindCanonicalRole(requestedRole)
         if not canonical or not PlayerHasRole(LocalPlayer.Name, canonical) then
@@ -5435,11 +5581,21 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!tag" then
+        if not IsCommandUserAuthorized("Spoof") then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+            MessageInput.Text = ""
+            return
+        end
         DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
         ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!role " then
+        if not IsCommandUserAuthorized("Spoof") then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+            MessageInput.Text = ""
+            return
+        end
         local targetQuery = string.sub(typedText, 7):gsub("^%s+", ""):gsub("%s+$", "")
         local targetUsername, targetDisplayName = Moderation.ResolveModerationTarget(targetQuery)
         if not targetUsername then
@@ -5453,6 +5609,11 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!role" then
+        if not IsCommandUserAuthorized("Spoof") then
+            ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+            MessageInput.Text = ""
+            return
+        end
         local roles = GetPlayerRoles(LocalPlayer.Name)
         local highest = GetHighestRole(LocalPlayer.Name)
         ShowLocalSystemMessage("[AI MoD] : Your highest role is " .. highest .. ". Available roles: " .. (#roles > 0 and table.concat(roles, ", ") or "none") .. ".")

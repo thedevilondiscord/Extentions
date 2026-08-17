@@ -14,6 +14,111 @@ local LocalPlayer = Players.LocalPlayer
 local lplr = LocalPlayer
 local SERVER_JOB_ID = game.JobId ~= "" and game.JobId or "Studio_Local_Server"
 
+-- ============================================================================
+-- CLIENT IDENTITY ANCHOR
+-- ============================================================================
+-- Capture Roblox's read-only Player identity once, before any mutable script
+-- state is created. All identity/authorization decisions below use these
+-- closure-held values instead of repeatedly trusting mutable LocalPlayer
+-- property reads.
+local GetLocalIdentity = (function(player)
+    local capturedUserId = player.UserId
+    local capturedUsername = player.Name
+    local capturedDisplayName = player.DisplayName
+
+    return function()
+        return capturedUserId, capturedUsername, capturedDisplayName
+    end
+end)(LocalPlayer)
+
+local function GetLocalUserId()
+    local userId = GetLocalIdentity()
+    return userId
+end
+
+local function GetLocalUsername()
+    local _, username = GetLocalIdentity()
+    return username
+end
+
+local function GetLocalDisplayName()
+    local _, _, displayName = GetLocalIdentity()
+    return displayName
+end
+
+-- This is deliberately NOT the spoofable presentation name. It is the
+-- identity name captured from the Roblox Player object at script startup.
+local LOCAL_IDENTITY_API_URL = "https://users.roblox.com/v1/users/"
+
+local HttpRequest
+
+local LocalIdentityVerification = {
+    Checked = false,
+    Valid = false,
+    Id = nil,
+    Username = nil,
+    DisplayName = nil,
+}
+
+local function VerifyLocalIdentity()
+    if LocalIdentityVerification.Checked then
+        return LocalIdentityVerification.Valid
+    end
+
+    local capturedId, capturedUsername, capturedDisplayName = GetLocalIdentity()
+    local numericId = tonumber(capturedId)
+    if not numericId or numericId <= 0 or capturedUsername == "" then
+        LocalIdentityVerification.Checked = true
+        LocalIdentityVerification.Valid = false
+        return false
+    end
+
+    -- The public Roblox user endpoint is used only as an independent
+    -- consistency check. It does not trust a username supplied by the client.
+    local response = HttpRequest(
+        LOCAL_IDENTITY_API_URL .. tostring(numericId),
+        "GET"
+    )
+
+    if type(response) ~= "table" then
+        LocalIdentityVerification.Checked = true
+        LocalIdentityVerification.Valid = false
+        return false
+    end
+
+    local apiId = tonumber(response.id)
+    local apiUsername = tostring(response.name or "")
+    local apiDisplayName = tostring(response.displayName or "")
+
+    local valid = (
+        apiId == numericId
+        and string.lower(apiUsername) == string.lower(tostring(capturedUsername))
+        and string.lower(apiDisplayName) == string.lower(tostring(capturedDisplayName))
+    )
+
+    if valid then
+        LocalIdentityVerification.Id = apiId
+        LocalIdentityVerification.Username = apiUsername
+        LocalIdentityVerification.DisplayName = apiDisplayName
+    end
+
+    LocalIdentityVerification.Checked = true
+    LocalIdentityVerification.Valid = valid
+    return valid
+end
+
+local function GetVerifiedLocalIdentity()
+    if not VerifyLocalIdentity() then
+        return nil
+    end
+
+    return {
+        UserId = LocalIdentityVerification.Id,
+        Username = LocalIdentityVerification.Username,
+        DisplayName = LocalIdentityVerification.DisplayName,
+    }
+end
+
 -- Custom Spoofed Name State
 local SpoofedDisplayName = nil
 
@@ -178,7 +283,7 @@ WelcomeLabel.Name = "WelcomeLabel"
 WelcomeLabel.Size = UDim2.new(1, 0, 0, 20)
 WelcomeLabel.Position = UDim2.new(0, 0, 0, 48)
 WelcomeLabel.BackgroundTransparency = 1
-WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(LocalPlayer.DisplayName, true)
+WelcomeLabel.Text = "Welcome, " .. GetFormattedDisplayName(GetLocalDisplayName(), true)
 WelcomeLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
 WelcomeLabel.Font = Enum.Font.Gotham
 WelcomeLabel.TextSize = 12
@@ -470,7 +575,7 @@ local GITHUB_RANK_STYLES_URL = nil -- Role colours are local; only the GitHub ro
 
 local JOIN_SOUND_ID = "rbxassetid://7460825623"
 local NOTIFICATION_SOUND_ID = "rbxassetid://107978604605265"
-local JoinEventId = LocalPlayer.UserId .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
+local JoinEventId = GetLocalUserId() .. "_" .. tostring(os.time()) .. "_" .. tostring(math.random(100000, 999999))
 
 local ActiveTab = "GLOBAL"
 
@@ -983,7 +1088,7 @@ end
 
 local function BlockMessageUser(username)
     username = tostring(username or "")
-    if username == "" or string.lower(username) == string.lower(tostring(LocalPlayer.Name or "")) then
+    if username == "" or string.lower(username) == string.lower(tostring(GetLocalUsername() or "")) then
         return false
     end
     BlockedMessageUsers[string.lower(username)] = true
@@ -1107,7 +1212,7 @@ end
 -- ============================================================================
 local http_req = (syn and syn.request) or (http and http.request) or http_request or request or (Fluxus and fluxus.request)
 
-local function HttpRequest(url, method, data)
+HttpRequest = function(url, method, data)
     if not http_req then return nil end
     local success, response = pcall(function()
         return http_req({
@@ -1487,6 +1592,13 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
+    -- Restricted roles require an independent Roblox API consistency check.
+    -- If the API cannot confirm the captured read-only identity, deny access.
+    local verifiedIdentity = GetVerifiedLocalIdentity()
+    if not verifiedIdentity then
+        return false
+    end
+
     if not RoleRosterLoaded then
         return false
     end
@@ -1496,8 +1608,8 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    local usernameKey = string.lower(tostring(LocalPlayer.Name or ""))
-    local userIdKey = tostring(LocalPlayer.UserId)
+    local usernameKey = string.lower(tostring(verifiedIdentity.Username or ""))
+    local userIdKey = tostring(verifiedIdentity.UserId or "")
     return authorization.Usernames[usernameKey] == true
         and authorization.UserIds[userIdKey] == true
 end
@@ -1508,7 +1620,7 @@ end
 -- ============================================================================
 -- IMPORTANT:
 --   Roles/tags are NEVER consulted for command authorization.
---   The sole identity is LocalPlayer.UserId.
+--   The sole identity is GetLocalUserId().
 --
 -- The roster file is intentionally treated as DATA only. No remote code is
 -- executed. The parser accepts:
@@ -1680,7 +1792,12 @@ local function IsCommandUserAuthorized(permission)
         return false
     end
 
-    local myUserId = NormalizeRosterId(LocalPlayer.UserId)
+    local verifiedIdentity = GetVerifiedLocalIdentity()
+    if not verifiedIdentity then
+        return false
+    end
+
+    local myUserId = NormalizeRosterId(verifiedIdentity.UserId)
     if not myUserId then
         return false
     end
@@ -2175,15 +2292,15 @@ end
 
 local function DisplayNewMessageNotif(msgData, messageId)
     if not msgData then return end
-    if msgData.IsPrivate and msgData.Username ~= LocalPlayer.Name and msgData.TargetUsername ~= LocalPlayer.Name then return end
-    if msgData.Username == LocalPlayer.Name and not msgData.IsJoinMessage then return end
+    if msgData.IsPrivate and msgData.Username ~= GetLocalUsername() and msgData.TargetUsername ~= GetLocalUsername() then return end
+    if msgData.Username == GetLocalUsername() and not msgData.IsJoinMessage then return end
 
     messageId = tostring(messageId or ((msgData.JoinEventId or "") .. "_" .. (msgData.Timestamp or "") .. "_" .. (msgData.Username or "")))
     if ShownNotificationIds[messageId] then return end
     ShownNotificationIds[messageId] = true
 
     local rawName = msgData.DisplayName or msgData.Username or "Unknown"
-    local isClient = (msgData.Username == LocalPlayer.Name)
+    local isClient = (msgData.Username == GetLocalUsername())
     local formattedName = GetFormattedDisplayName(rawName, isClient)
     local rawText = msgData.Text or ""
     if msgData.IsJoinMessage then
@@ -3135,7 +3252,7 @@ function RenderMusicSongList(category)
             c.CornerRadius = UDim.new(0, 6)
             c.Parent = b
             b.MouseButton1Click:Connect(function()
-                if not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
+                if not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= GetLocalUsername() then
                     ShowLocalSystemMessage("[AI MoD] : Only the Music Session Host can play music.", true)
                     return
                 end
@@ -3199,7 +3316,7 @@ function UpdateMusicSessionMode()
     end
 
     if inSession then
-        local host = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == LocalPlayer.Name
+        local host = ActiveMusicSessionData and ActiveMusicSessionData.HostUsername == GetLocalUsername()
         MusicCreatePanel.Visible = host
         MusicJoinPanel.Visible = not host
         MusicMuteButton.Visible = true
@@ -3281,9 +3398,9 @@ function StartOwnMusicSession()
     local id = MusicSessionRandomId()
     local payload = {
         SessionId = id,
-        HostUsername = LocalPlayer.Name,
-        HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-        HostUserId = LocalPlayer.UserId,
+        HostUsername = GetLocalUsername(),
+        HostDisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
+        HostUserId = GetLocalUserId(),
         HostPfpId = CurrentPfpId,
         Playing = false,
         Ended = false,
@@ -3321,9 +3438,9 @@ function JoinMusicSessionById(id)
     ActiveMusicSessionId = id
     ActiveMusicSessionData = data
     MusicSessionLastRevision = nil
-    HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(LocalPlayer.UserId)), "PUT", {
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+    HttpRequest(MusicSessionUrl(id, "/members/" .. tostring(GetLocalUserId())), "PUT", {
+        Username = GetLocalUsername(),
+        DisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
         JoinedAt = os.time(),
         PfpId = CurrentPfpId,
     })
@@ -3342,7 +3459,7 @@ function LeaveOrEndMusicSession()
         return
     end
 
-    local isHost = sessionData and sessionData.HostUsername == LocalPlayer.Name
+    local isHost = sessionData and sessionData.HostUsername == GetLocalUsername()
     local sessionIdForRemoteWrite = id
 
     if isHost then
@@ -3355,9 +3472,9 @@ function LeaveOrEndMusicSession()
             UpdatedAt = os.time(),
             EndedAt = os.time(),
             Revision = tostring(os.time()) .. "_ended_" .. tostring(math.random(100000,999999)),
-            HostUsername = LocalPlayer.Name,
-            HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-            HostUserId = LocalPlayer.UserId,
+            HostUsername = GetLocalUsername(),
+            HostDisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
+            HostUserId = GetLocalUserId(),
             HostPfpId = CurrentPfpId,
             SessionId = sessionIdForRemoteWrite,
         }
@@ -3378,7 +3495,7 @@ function LeaveOrEndMusicSession()
         task.spawn(function()
             pcall(function()
                 HttpRequest(
-                    MusicSessionUrl(sessionIdForRemoteWrite, "/members/" .. tostring(LocalPlayer.UserId)),
+                    MusicSessionUrl(sessionIdForRemoteWrite, "/members/" .. tostring(GetLocalUserId())),
                     "DELETE"
                 )
             end)
@@ -3388,7 +3505,7 @@ end
 
 
 function HostSetMusic(id, name)
-    if not ActiveMusicSessionId or not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= LocalPlayer.Name then
+    if not ActiveMusicSessionId or not ActiveMusicSessionData or ActiveMusicSessionData.HostUsername ~= GetLocalUsername() then
         ShowLocalSystemMessage("[AI MoD] : Start/host a Music Session first.", true)
         return
     end
@@ -3406,9 +3523,9 @@ function HostSetMusic(id, name)
         StartedAt = os.time(),
         UpdatedAt = os.time(),
         Revision = tostring(os.time()) .. "_" .. tostring(math.random(1000,9999)),
-        HostUsername = LocalPlayer.Name,
-        HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-        HostUserId = LocalPlayer.UserId,
+        HostUsername = GetLocalUsername(),
+        HostDisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
+        HostUserId = GetLocalUserId(),
         HostPfpId = CurrentPfpId,
         SessionId = ActiveMusicSessionId,
     }
@@ -3423,7 +3540,7 @@ end
 function HostStopMusic()
     local id = ActiveMusicSessionId
     local sessionData = ActiveMusicSessionData
-    if not id or not sessionData or sessionData.HostUsername ~= LocalPlayer.Name then
+    if not id or not sessionData or sessionData.HostUsername ~= GetLocalUsername() then
         ShowLocalSystemMessage("[AI MoD] : Only the Music Session Host can stop music.", true)
         return
     end
@@ -3436,9 +3553,9 @@ function HostStopMusic()
         StartedAt = 0,
         UpdatedAt = os.time(),
         Revision = tostring(os.time()) .. "_stop_" .. tostring(math.random(100000,999999)),
-        HostUsername = LocalPlayer.Name,
-        HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-        HostUserId = LocalPlayer.UserId,
+        HostUsername = GetLocalUsername(),
+        HostDisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
+        HostUserId = GetLocalUserId(),
         HostPfpId = CurrentPfpId,
         SessionId = id,
     }
@@ -3465,10 +3582,10 @@ function SendMusicSessionInvite(isGlobal)
         return
     end
     local payload = {
-        ClientMessageId = LocalPlayer.UserId .. "_musicinvite_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000,999999)),
+        ClientMessageId = GetLocalUserId() .. "_musicinvite_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000,999999)),
         Username = KRONO_JOCKIE_USERNAME,
         DisplayName = KRONO_JOCKIE_NAME,
-        Text = GetFormattedDisplayName(LocalPlayer.DisplayName, true) .. " invited you to join their Music Session",
+        Text = GetFormattedDisplayName(GetLocalDisplayName(), true) .. " invited you to join their Music Session",
         Timestamp = os.time(),
         Role = "BOT",
         PfpId = KRONO_JOCKIE_PFP,
@@ -3559,7 +3676,7 @@ ProfileDisplayName.Size = UDim2.new(0, 190, 0, 32)
 ProfileDisplayName.Position = UDim2.new(0, 88, 0, 17)
 ProfileDisplayName.BackgroundTransparency = 1
 ProfileDisplayName.Font = Enum.Font.GothamBold
-ProfileDisplayName.Text = GetFormattedDisplayName(LocalPlayer.DisplayName, true)
+ProfileDisplayName.Text = GetFormattedDisplayName(GetLocalDisplayName(), true)
 ProfileDisplayName.TextColor3 = Color3.fromRGB(255, 255, 255)
 ProfileDisplayName.TextSize = 20
 ProfileDisplayName.TextXAlignment = Enum.TextXAlignment.Left
@@ -3572,7 +3689,7 @@ ProfileUsername.Size = UDim2.new(0, 190, 0, 20)
 ProfileUsername.Position = UDim2.new(0, 88, 0, 51)
 ProfileUsername.BackgroundTransparency = 1
 ProfileUsername.Font = Enum.Font.Gotham
-ProfileUsername.Text = "@" .. LocalPlayer.Name
+ProfileUsername.Text = "@" .. GetLocalUsername()
 ProfileUsername.TextColor3 = Color3.fromRGB(255, 255, 255)
 ProfileUsername.TextSize = 11
 ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
@@ -3960,12 +4077,12 @@ function SendProfileShare(isGlobal)
         return
     end
     local payload = {
-        ClientMessageId = LocalPlayer.UserId .. "_profile_share_" .. tostring(math.floor(os.clock()*1000000)) .. "_" .. tostring(math.random(100000,999999)),
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        ClientMessageId = GetLocalUserId() .. "_profile_share_" .. tostring(math.floor(os.clock()*1000000)) .. "_" .. tostring(math.random(100000,999999)),
+        Username = GetLocalUsername(),
+        DisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
         Text = "",
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
+        Role = GetAssignedOrCalculatedRole(GetLocalUsername()),
         PfpId = CurrentPfpId,
         IsPrivate = false,
         IsProfileShare = true,
@@ -4185,9 +4302,9 @@ SubmitRequestBtn.MouseButton1Click:Connect(function()
     SubmitRequestBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 
     local payload = {
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-        UserId = LocalPlayer.UserId,
+        Username = GetLocalUsername(),
+        DisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
+        UserId = GetLocalUserId(),
         RequestText = text,
         Timestamp = os.time()
     }
@@ -4292,17 +4409,17 @@ ServerInviteCorner.Parent = ServerInviteButton
 local function SendServerInvite()
     if ActiveTab ~= "GLOBAL" then return end
 
-    local clientMessageId = LocalPlayer.UserId .. "_invite_" ..
+    local clientMessageId = GetLocalUserId() .. "_invite_" ..
         tostring(math.floor(os.clock() * 1000000)) .. "_" ..
         tostring(math.random(100000, 999999))
 
     local payload = {
         ClientMessageId = clientMessageId,
-        Username = LocalPlayer.Name,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        Username = GetLocalUsername(),
+        DisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
         Text = "invited you to join their current server",
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
+        Role = GetAssignedOrCalculatedRole(GetLocalUsername()),
         PfpId = CurrentPfpId,
         IsPrivate = false,
         IsServerInvite = true,
@@ -4477,7 +4594,7 @@ local function ShowCommandAutocomplete()
 
     if command == "!announce " then
         -- Show !announce in autocomplete only to roles that can actually use it.
-        if not CanUseAnnouncement(LocalPlayer.Name) then
+        if not CanUseAnnouncement(GetLocalUsername()) then
             return
         end
         table.insert(suggestions, "!announce ")
@@ -4744,7 +4861,7 @@ function BuildMessageContextMenu()
     -- written to Firebase or local storage, so rejoining clears the block.
     if CurrentContextMessage
         and tostring(CurrentContextMessage.Username or "") ~= ""
-        and tostring(CurrentContextMessage.Username or "") ~= tostring(LocalPlayer.Name or "")
+        and tostring(CurrentContextMessage.Username or "") ~= tostring(GetLocalUsername() or "")
         and not CurrentContextMessage.SystemMessage then
 
         AddContextMenuButton("Block", 4, function()
@@ -4760,7 +4877,7 @@ function BuildMessageContextMenu()
     -- Edit/Delete are deliberately available only for the local player's
     -- own normal messages. Bot/system/sticker/invite messages cannot be edited.
     if CurrentContextMessage
-        and tostring(CurrentContextMessage.Username or "") == tostring(LocalPlayer.Name)
+        and tostring(CurrentContextMessage.Username or "") == tostring(GetLocalUsername())
         and not CurrentContextMessage.SystemMessage
         and not CurrentContextMessage.IsMusicSessionInvite
         and not CurrentContextMessage.IsServerInvite
@@ -4785,7 +4902,7 @@ function BuildMessageContextMenu()
             PendingMessageMutations[clientId] = {
                 Deleted = true,
                 DeletedAt = deletedAt,
-                DeletedBy = LocalPlayer.Name,
+                DeletedBy = GetLocalUsername(),
                 MutationType = "DELETE",
             }
 
@@ -5024,7 +5141,7 @@ CreateMessageCard = function(msgData, isGlobal)
 
     AnimateRoleFont(tagLabel, roleName, style)
 
-    local isClient = (msgData.Username == LocalPlayer.Name)
+    local isClient = (msgData.Username == GetLocalUsername())
     local formattedName = GetFormattedDisplayName(msgData.DisplayName or msgData.Username, isClient)
 
     local nameLabel = Instance.new("TextLabel")
@@ -5454,7 +5571,7 @@ Moderation.SendAnnouncement = function(body)
 
     local isGlobal = ActiveTab == "GLOBAL"
     local text = "🚨 Okey Listen Up 📢 : " .. tostring(body)
-    local clientMessageId = LocalPlayer.UserId .. "_announcement_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = GetLocalUserId() .. "_announcement_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
     local payload = {
         ClientMessageId = clientMessageId,
         Username = ANNOUNCER_NAME,
@@ -5466,7 +5583,7 @@ Moderation.SendAnnouncement = function(body)
         IsPrivate = false,
         SystemMessage = true,
         Announcement = true,
-        AnnouncementBy = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        AnnouncementBy = GetFormattedDisplayName(GetLocalDisplayName(), true),
     }
     Moderation.RenderLocalMessage(payload, isGlobal)
     Moderation.PostModerationPayload(payload, isGlobal)
@@ -5480,7 +5597,7 @@ Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinute
 
     local isGlobal = ActiveTab == "GLOBAL"
     local expiresAt = os.time() + (durationMinutes * 60)
-    local clientMessageId = LocalPlayer.UserId .. "_mute_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = GetLocalUserId() .. "_mute_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
     local payload = {
         ClientMessageId = clientMessageId,
         Username = "AI_MoD",
@@ -5496,8 +5613,8 @@ Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinute
         TargetDisplayName = targetDisplayName,
         DurationMinutes = durationMinutes,
         ExpiresAt = expiresAt,
-        ImposedByUsername = LocalPlayer.Name,
-        ImposedByDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        ImposedByUsername = GetLocalUsername(),
+        ImposedByDisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
         Scope = isGlobal and "GLOBAL" or "SERVER",
     }
     Moderation.ActiveMutes[Moderation.GetMuteKey(payload.Scope, targetUsername)] = payload
@@ -5543,7 +5660,7 @@ local function UpdateLocalMessageCard(clientMessageId, newText, edited)
 end
 
 local function EnterEditMode(message)
-    if not message or tostring(message.Username or "") ~= tostring(LocalPlayer.Name) then return end
+    if not message or tostring(message.Username or "") ~= tostring(GetLocalUsername()) then return end
     EditingContextMessage = message
     EditingContextIsGlobal = (ActiveTab == "GLOBAL")
     MessageInput.Text = tostring(message.Text or "")
@@ -5552,7 +5669,7 @@ local function EnterEditMode(message)
 end
 
 local function SaveEditedMessage(message, newText, isGlobal)
-    if not message or tostring(message.Username or "") ~= tostring(LocalPlayer.Name) then return false end
+    if not message or tostring(message.Username or "") ~= tostring(GetLocalUsername()) then return false end
     local clientId = tostring(message.ClientMessageId or "")
     if clientId == "" then return false end
     newText = tostring(newText or "")
@@ -5563,7 +5680,7 @@ local function SaveEditedMessage(message, newText, isGlobal)
         Text = newText,
         Edited = true,
         EditedAt = os.time(),
-        EditedBy = LocalPlayer.Name,
+        EditedBy = GetLocalUsername(),
     }
 
     -- Keep the new value authoritative locally until Firebase itself confirms
@@ -5681,7 +5798,7 @@ SendChatMessage = function()
 
     if not isPrivate then
         local currentScope = (ActiveTab == "GLOBAL") and "GLOBAL" or "SERVER"
-        local ownMute = Moderation.GetActiveMute(currentScope, LocalPlayer.Name)
+        local ownMute = Moderation.GetActiveMute(currentScope, GetLocalUsername())
         if ownMute then
             local remaining = Moderation.FormatMuteRemaining((tonumber(ownMute.ExpiresAt) or os.time()) - os.time())
             local imposedBy = tostring(ownMute.ImposedByDisplayName or "Moderator")
@@ -5719,7 +5836,7 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 9) == "!announce" then
-        if not CanUseAnnouncement(LocalPlayer.Name) then
+        if not CanUseAnnouncement(GetLocalUsername()) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
             MessageInput.Text = ""
             return
@@ -5739,7 +5856,7 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!mute " then
-        if not CanUseModerationCommands(LocalPlayer.Name) then
+        if not CanUseModerationCommands(GetLocalUsername()) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
             MessageInput.Text = ""
             return
@@ -5775,15 +5892,15 @@ SendChatMessage = function()
                 ShowLocalSystemMessage("[AI MoD] : You are not authorized to switch to " .. canonical .. ". Your username and UserId must both be listed for that role in the GitHub roster.", true)
             end
         else
-            AssignedPlayerRoles[LocalPlayer.Name] = canonical
-            DisabledTags[LocalPlayer.Name] = nil
+            AssignedPlayerRoles[GetLocalUsername()] = canonical
+            DisabledTags[GetLocalUsername()] = nil
             ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
         end
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!tag" then
-        DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
-        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
+        DisabledTags[GetLocalUsername()] = not DisabledTags[GetLocalUsername()]
+        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[GetLocalUsername()] and "disabled" or "enabled") .. " ✓")
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!role " then
@@ -5810,8 +5927,8 @@ SendChatMessage = function()
             MessageInput.Text = ""
             return
         end
-        local roles = GetPlayerRoles(LocalPlayer.Name)
-        local highest = GetHighestRole(LocalPlayer.Name)
+        local roles = GetPlayerRoles(GetLocalUsername())
+        local highest = GetHighestRole(GetLocalUsername())
         ShowLocalSystemMessage("[AI MoD] : Your highest role is " .. highest .. ". Available roles: " .. (#roles > 0 and table.concat(roles, ", ") or "none") .. ".")
         MessageInput.Text = ""
         return
@@ -5820,7 +5937,7 @@ SendChatMessage = function()
         local lowered = string.lower(requested)
         if lowered == "architect" or lowered == "overseer" or lowered == "com-god" then
             ShowLocalSystemMessage("[AI MoD] : Command failed. Architect, Overseer and Com-God cannot be spoofed.", true)
-        elseif CanUseSpoof(LocalPlayer.Name) then
+        elseif CanUseSpoof(GetLocalUsername()) then
             SpoofedDisplayName = requested
             ShowLocalSystemMessage("[AI MoD] : Display name changed successfully ✓")
         else
@@ -5833,7 +5950,7 @@ SendChatMessage = function()
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 9) == "!gplymsc " then
-        if not CanUsePlayMusic(LocalPlayer.Name) then
+        if not CanUsePlayMusic(GetLocalUsername()) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to play music.", true)
             MessageInput.Text = ""
             return
@@ -5848,14 +5965,14 @@ SendChatMessage = function()
         local payload = {
             Playing = true, CurrentSongId = id, CurrentSongName = GetMusicSongName(id),
             StartedAt = os.time(), UpdatedAt = os.time(), Revision = tostring(os.time()) .. "_g",
-            HostUsername = LocalPlayer.Name, HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-            HostUserId = LocalPlayer.UserId, HostPfpId = CurrentPfpId, SessionId = "GLOBAL"
+            HostUsername = GetLocalUsername(), HostDisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
+            HostUserId = GetLocalUserId(), HostPfpId = CurrentPfpId, SessionId = "GLOBAL"
         }
         HttpRequest(MUSIC_SESSION_ROOT .. "/GLOBAL.json", "PATCH", payload)
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 9) == "!splymsc " then
-        if not CanUsePlayMusic(LocalPlayer.Name) then
+        if not CanUsePlayMusic(GetLocalUsername()) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to play music.", true)
             MessageInput.Text = ""
             return
@@ -5869,14 +5986,14 @@ SendChatMessage = function()
         local payload = {
             Playing = true, CurrentSongId = id, CurrentSongName = GetMusicSongName(id),
             StartedAt = os.time(), UpdatedAt = os.time(), Revision = tostring(os.time()) .. "_s",
-            HostUsername = LocalPlayer.Name, HostDisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
-            HostUserId = LocalPlayer.UserId, HostPfpId = CurrentPfpId, SessionId = "SERVER_" .. SERVER_JOB_ID
+            HostUsername = GetLocalUsername(), HostDisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
+            HostUserId = GetLocalUserId(), HostPfpId = CurrentPfpId, SessionId = "SERVER_" .. SERVER_JOB_ID
         }
         HttpRequest(MUSIC_SESSION_ROOT .. "/SERVER_" .. SERVER_JOB_ID .. ".json", "PATCH", payload)
         MessageInput.Text = ""
         return
     elseif not isPrivate and typedText == "!stpmsc" then
-        if not CanUsePlayMusic(LocalPlayer.Name) then
+        if not CanUsePlayMusic(GetLocalUsername()) then
             ShowLocalSystemMessage("[AI MoD] : Command failed. You do not have permission to stop music.", true)
             MessageInput.Text = ""
             return
@@ -5910,16 +6027,16 @@ SendChatMessage = function()
     LastMessageSendTime = now
 
     local reply = ReplyContextMessage
-    local clientMessageId = LocalPlayer.UserId .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
+    local clientMessageId = GetLocalUserId() .. "_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
 
     local payload = {
         ClientMessageId = clientMessageId,
-        Username = LocalPlayer.Name,
-        UserId = LocalPlayer.UserId,
-        DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
+        Username = GetLocalUsername(),
+        UserId = GetLocalUserId(),
+        DisplayName = GetFormattedDisplayName(GetLocalDisplayName(), true),
         Text = privateBody,
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
+        Role = GetAssignedOrCalculatedRole(GetLocalUsername()),
         PfpId = CurrentPfpId,
         IsPrivate = isPrivate,
         TargetUsername = privateTargetUsername,
@@ -5993,8 +6110,8 @@ function BuildJoinMessagePayload()
     return {
         Username = "AI_MoD",
         DisplayName = "AI MoD",
-        JoinedDisplayName = LocalPlayer.DisplayName,
-        Text = LocalPlayer.DisplayName .. " has Joined the Server Chat",
+        JoinedDisplayName = GetLocalDisplayName(),
+        Text = GetLocalDisplayName() .. " has Joined the Server Chat",
         Timestamp = os.time(),
         Role = "BOT",
         PfpId = 78588114275746,
@@ -6036,14 +6153,14 @@ function PollMessages()
                     if tonumber(msg.ExpiresAt or 0) > os.time() and msg.TargetUsername and msg.Scope == "GLOBAL" then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("GLOBAL", msg.TargetUsername)] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == GetLocalUsername() or msg.TargetUsername == GetLocalUsername()) then
                     local blockedByUser = IsMessageUserBlocked(msg.Username)
                     local blockedByMute = Moderation.GetActiveMute("GLOBAL", msg.Username) ~= nil
-                    if blockedByUser and msg.Username ~= LocalPlayer.Name then
+                    if blockedByUser and msg.Username ~= GetLocalUsername() then
                         -- Temporarily blocked users are ignored before they can enter
                         -- the cache/UI. No Firebase message data from that user is
                         -- processed by this client while the block is active.
-                    elseif blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    elseif blockedByMute and msg.Username ~= GetLocalUsername() then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientIdForMutation = tostring(msg.ClientMessageId or "")
@@ -6109,14 +6226,14 @@ function PollMessages()
                     if tonumber(msg.ExpiresAt or 0) > os.time() and msg.TargetUsername and msg.Scope == "SERVER" then
                         Moderation.ActiveMutes[Moderation.GetMuteKey("SERVER", msg.TargetUsername)] = msg
                     end
-                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == LocalPlayer.Name or msg.TargetUsername == LocalPlayer.Name) then
+                elseif type(msg) == "table" and msg.Timestamp and msg.Timestamp >= ScriptStartTime and (not msg.IsPrivate or msg.Username == GetLocalUsername() or msg.TargetUsername == GetLocalUsername()) then
                     local blockedByUser = IsMessageUserBlocked(msg.Username)
                     local blockedByMute = Moderation.GetActiveMute("SERVER", msg.Username) ~= nil
-                    if blockedByUser and msg.Username ~= LocalPlayer.Name then
+                    if blockedByUser and msg.Username ~= GetLocalUsername() then
                         -- Temporarily blocked users are ignored before they can enter
                         -- the cache/UI. No Firebase message data from that user is
                         -- processed by this client while the block is active.
-                    elseif blockedByMute and msg.Username ~= LocalPlayer.Name then
+                    elseif blockedByMute and msg.Username ~= GetLocalUsername() then
                         -- Muted users' messages are not rendered by clients while the mute is active.
                     else
                     local clientIdForMutation = tostring(msg.ClientMessageId or "")

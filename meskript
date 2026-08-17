@@ -1123,6 +1123,24 @@ local function HttpRequest(url, method, data)
     return nil
 end
 
+local function HttpRequestRaw(url)
+    if not http_req then return nil end
+
+    local success, response = pcall(function()
+        return http_req({
+            Url = url,
+            Method = "GET",
+            Headers = { ["Cache-Control"] = "no-cache" }
+        })
+    end)
+
+    if success and response and response.Body then
+        return tostring(response.Body)
+    end
+
+    return nil
+end
+
 -- ============================================================================
 -- ============================================================================
 -- MUSIC SESSION + PROFILE SERVICES
@@ -1435,17 +1453,29 @@ local function GetAssignedOrCalculatedRole(username)
 end
 
 -- ============================================================================
--- COMMAND AUTHORIZATION
--- Commands are authorized ONLY by the client's UserId being present in the
--- remote command roster. Roles/tags are deliberately not consulted here.
+-- ============================================================================
+-- COMMAND AUTHORIZATION — TRY 1
+-- ============================================================================
+-- IMPORTANT:
+--   Roles/tags are NEVER consulted for command authorization.
+--   The sole identity is LocalPlayer.UserId.
+--
+-- The roster file is intentionally treated as DATA only. No remote code is
+-- executed. The parser accepts:
+--   1) JSON:
+--        {"Join Sound":[1694685931], ...}
+--   2) JSON nested UserIds:
+--        {"Join Sound":{"UserIds":[1694685931]}}
+--   3) Lua/table-like text:
+--        ["Join Sound"] = {1694685931, 123456789}
+--
+-- If the file cannot be fetched or parsed, authorization is DENIED.
 -- ============================================================================
 
 local COMMAND_ROSTER_URL = "https://raw.githubusercontent.com/thedevilondiscord/Extentions/refs/heads/main/MusicIDlist"
 
 local CommandRoster = {}
 local CommandRosterLoaded = false
-local CommandRosterLastFetch = 0
-local COMMAND_ROSTER_REFRESH_SECONDS = 30
 
 local COMMAND_ROSTER_SLOTS = {
     Spoof = "Join Sound",
@@ -1457,11 +1487,22 @@ local COMMAND_ROSTER_SLOTS = {
 }
 
 local function NormalizeRosterId(value)
-    local numeric = tonumber(value)
-    if numeric and numeric >= 1 then
-        return tostring(math.floor(numeric))
+    local s = tostring(value or ""):match("^%s*(%d+)%s*$")
+    if not s then return nil end
+
+    -- Roblox UserIds are integers. Keep the string form for exact comparison.
+    s = s:gsub("^0+", "")
+    if s == "" then s = "0" end
+    if s == "0" then return nil end
+
+    return s
+end
+
+local function AddRosterId(target, value)
+    local id = NormalizeRosterId(value)
+    if id then
+        target[id] = true
     end
-    return nil
 end
 
 local function AddRosterIds(target, value)
@@ -1469,98 +1510,135 @@ local function AddRosterIds(target, value)
         for _, item in pairs(value) do
             AddRosterIds(target, item)
         end
-        return
-    end
-
-    local id = NormalizeRosterId(value)
-    if id then
-        target[id] = true
+    else
+        AddRosterId(target, value)
     end
 end
 
-local function BuildCommandRoster(raw)
-    if type(raw) ~= "table" then
+local function ExtractIdsFromRosterText(rawText, slotName, allSlotNames)
+    local ids = {}
+
+    local escaped = slotName:gsub("([^%w])", "%%%1")
+    local startAt = rawText:find(escaped)
+    if not startAt then
+        return ids
+    end
+
+    local sectionStart = rawText:find("[{[]", startAt + #slotName)
+    if not sectionStart then
+        return ids
+    end
+
+    local sectionEnd = #rawText + 1
+
+    for _, otherName in ipairs(allSlotNames) do
+        if otherName ~= slotName then
+            local otherEscaped = otherName:gsub("([^%w])", "%%%1")
+            local p = rawText:find(otherEscaped, sectionStart + 1)
+            if p and p < sectionEnd then
+                sectionEnd = p
+            end
+        end
+    end
+
+    local section = rawText:sub(sectionStart, sectionEnd - 1)
+
+    -- Only accept integer-looking values. Do not execute/evaluate the text.
+    for numberText in section:gmatch("%d+") do
+        AddRosterId(ids, numberText)
+    end
+
+    return ids
+end
+
+local function BuildCommandRoster(rawJson, rawText)
+    local result = {}
+
+    for permission in pairs(COMMAND_ROSTER_SLOTS) do
+        result[permission] = {}
+    end
+
+    -- Preferred format: valid JSON.
+    if type(rawJson) == "table" then
+        for permission, slotName in pairs(COMMAND_ROSTER_SLOTS) do
+            local slot = rawJson[slotName]
+
+            if type(slot) == "table" then
+                if type(slot.UserIds) == "table" then
+                    AddRosterIds(result[permission], slot.UserIds)
+                else
+                    AddRosterIds(result[permission], slot)
+                end
+            else
+                AddRosterId(result[permission], slot)
+            end
+        end
+
+        return result
+    end
+
+    -- Fallback: parse the raw GitHub text without executing it.
+    if type(rawText) ~= "string" or rawText == "" then
         return nil
     end
 
-    local result = {}
+    local slotNames = {}
+    for _, slotName in pairs(COMMAND_ROSTER_SLOTS) do
+        table.insert(slotNames, slotName)
+    end
 
     for permission, slotName in pairs(COMMAND_ROSTER_SLOTS) do
-        local ids = {}
-        local slot = raw[slotName]
-
-        -- Also accept a nested UserIds array without allowing usernames/roles.
-        if type(slot) == "table" then
-            if slot.UserIds ~= nil then
-                AddRosterIds(ids, slot.UserIds)
-            else
-                AddRosterIds(ids, slot)
-            end
-        else
-            AddRosterIds(ids, slot)
-        end
-
-        result[permission] = ids
+        result[permission] = ExtractIdsFromRosterText(rawText, slotName, slotNames)
     end
 
     return result
 end
 
-local function FetchCommandRoster(force)
-    local now = os.clock()
-    if not force and CommandRosterLoaded and (now - CommandRosterLastFetch) < COMMAND_ROSTER_REFRESH_SECONDS then
-        return CommandRosterLoaded
-    end
-
-    local ok, raw = pcall(function()
-        return HttpRequest(COMMAND_ROSTER_URL, "GET")
-    end)
-
-    -- Fail closed. Never retain an old authorization roster after a failed
-    -- refresh, because that could leave a previously-authorized client enabled.
-    if not ok or type(raw) ~= "table" then
+local function FetchCommandRoster()
+    -- NO cached authorization is trusted. Every command gets a fresh roster.
+    local rawText = HttpRequestRaw(COMMAND_ROSTER_URL)
+    if not rawText or rawText == "" then
         CommandRoster = {}
         CommandRosterLoaded = false
-        CommandRosterLastFetch = now
         return false
     end
 
-    local parsed = BuildCommandRoster(raw)
+    local rawJson = nil
+    pcall(function()
+        rawJson = HttpService:JSONDecode(rawText)
+    end)
+
+    local parsed = BuildCommandRoster(rawJson, rawText)
     if type(parsed) ~= "table" then
         CommandRoster = {}
         CommandRosterLoaded = false
-        CommandRosterLastFetch = now
         return false
     end
 
     CommandRoster = parsed
     CommandRosterLoaded = true
-    CommandRosterLastFetch = now
     return true
 end
 
 local function IsCommandUserAuthorized(permission)
-    if not permission then return false end
-
-    -- Refresh before every actual command authorization decision. This makes
-    -- changes to the GitHub roster take effect without relying on role state
-    -- or a stale cached permission.
-    if not FetchCommandRoster(false) then
+    if not permission then
         return false
     end
 
-    local localUserId = NormalizeRosterId(LocalPlayer.UserId)
-    if not localUserId then
+    -- Fresh fetch every time. If GitHub is unavailable, deny.
+    if not FetchCommandRoster() then
         return false
     end
 
-    local allowedIds = CommandRoster[permission]
-    return type(allowedIds) == "table" and allowedIds[localUserId] == true
+    local myUserId = NormalizeRosterId(LocalPlayer.UserId)
+    if not myUserId then
+        return false
+    end
+
+    local allowed = CommandRoster[permission]
+    return type(allowed) == "table" and allowed[myUserId] == true
 end
 
--- These wrappers intentionally accept the old argument so existing call sites
--- do not need to be rewritten. The argument is ignored: LocalPlayer.UserId is
--- the sole authorization identity.
 local function CanUseSpoof(_) return IsCommandUserAuthorized("Spoof") end
 local function CanUseAnnouncement(_) return IsCommandUserAuthorized("Announce") end
 local function CanUseModerationCommands(_) return IsCommandUserAuthorized("Mute") end
@@ -1568,16 +1646,12 @@ local function CanUseKick(_) return IsCommandUserAuthorized("Kick") end
 local function CanUseBan(_) return IsCommandUserAuthorized("Ban") end
 local function CanUsePlayMusic(_) return IsCommandUserAuthorized("PlayMusic") end
 
--- Role permissions remain available for role/tag presentation elsewhere, but
--- they are NOT an authorization source for privileged commands.
-local function HasRolePermission(username, permission)
-    local role = GetAssignedOrCalculatedRole(username)
-    local perms = ROLE_PERMISSIONS[role]
-    return perms and perms[permission] == true or false
-end
-
-local function HasAdminPermission(username)
-    return HasRolePermission(username, "Kick") or HasRolePermission(username, "Ban") or HasRolePermission(username, "Mute")
+-- Any legacy caller that still asks for "admin permission" is also forced
+-- through the UserId roster. It can never fall back to a role.
+local function HasAdminPermission(_)
+    return IsCommandUserAuthorized("Kick")
+        or IsCommandUserAuthorized("Ban")
+        or IsCommandUserAuthorized("Mute")
 end
 
 local function FetchRemoteRankStyles()
@@ -5294,6 +5368,11 @@ Moderation.RenderLocalMessage = function(payload, isGlobal)
 end
 
 Moderation.SendAnnouncement = function(body)
+    if not IsCommandUserAuthorized("Announce") then
+        ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+        return false
+    end
+
     local isGlobal = ActiveTab == "GLOBAL"
     local text = "🚨 Okey Listen Up 📢 : " .. tostring(body)
     local clientMessageId = LocalPlayer.UserId .. "_announcement_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
@@ -5315,6 +5394,11 @@ Moderation.SendAnnouncement = function(body)
 end
 
 Moderation.SendMute = function(targetUsername, targetDisplayName, durationMinutes)
+    if not IsCommandUserAuthorized("Mute") then
+        ShowLocalSystemMessage("[AI MoD] : Command failed. Your UserId is not authorized for this command.", true)
+        return false
+    end
+
     local isGlobal = ActiveTab == "GLOBAL"
     local expiresAt = os.time() + (durationMinutes * 60)
     local clientMessageId = LocalPlayer.UserId .. "_mute_" .. tostring(math.floor(os.clock() * 1000000)) .. "_" .. tostring(math.random(100000, 999999))
@@ -5472,6 +5556,42 @@ SendChatMessage = function()
     local privateTargetUsername = PrivateModeTargetUsername
     local privateTargetDisplayName = PrivateModeTargetDisplayName
     local privateBody = typedText
+
+    -- ========================================================================
+    -- ABSOLUTE COMMAND PREFLIGHT
+    -- ========================================================================
+    -- This runs before ANY command-specific branch. Therefore a role/tag can
+    -- never accidentally bypass a later permission check.
+    if not isPrivate then
+        local commandToken = typedText:match("^%s*(![%w_]+)")
+        if commandToken then
+            local commandPermission = {
+                ["!testnotif"] = "Announce",
+                ["!notify"] = "Announce",
+                ["!joined"] = "Announce",
+                ["!announce"] = "Announce",
+                ["!mute"] = "Mute",
+                ["!tag"] = "Spoof",
+                ["!role"] = "Spoof",
+                ["!spoof"] = "Spoof",
+                ["!gplymsc"] = "PlayMusic",
+                ["!splymsc"] = "PlayMusic",
+                ["!stpmsc"] = "PlayMusic",
+            }
+
+            local permission = commandPermission[commandToken]
+            if permission then
+                if not IsCommandUserAuthorized(permission) then
+                    ShowLocalSystemMessage(
+                        "[AI MoD] : Command failed. Your UserId is not authorized for this command.",
+                        true
+                    )
+                    MessageInput.Text = ""
+                    return
+                end
+            end
+        end
+    end
 
     -- PVT is determined only by the stored recipient state.
     -- There is no special prefix in the TextBox to delete or accidentally edit.

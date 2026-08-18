@@ -4389,6 +4389,9 @@ SendButton.Font = Enum.Font.GothamBold
 SendButton.Text = ">"
 SendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 SendButton.TextSize = 14
+SendButton.ZIndex = 100
+SendButton.Active = true
+SendButton.Selectable = true
 SendButton.Parent = InputBarFrame
 
 SendCorner = Instance.new("UICorner")
@@ -4397,7 +4400,7 @@ SendCorner.Parent = SendButton
 
 AutoCompleteFrame = Instance.new("ScrollingFrame")
 AutoCompleteFrame.Name = "AutoCompleteFrame"
-AutoCompleteFrame.Size = UDim2.new(0, 235, 0, 132)
+AutoCompleteFrame.Size = UDim2.new(1, -62, 0, 132)
 AutoCompleteFrame.Position = UDim2.new(0, 8, 1, -182)
 AutoCompleteFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 AutoCompleteFrame.BackgroundTransparency = 0.2
@@ -5970,9 +5973,42 @@ MessageInput.FocusLost:Connect(function()
     end)
 end)
 
-SendButton.MouseButton1Click:Connect(SendChatMessage)
+-- Single submission gate for both the Send button and keyboard/touch Enter.
+-- The debounce prevents Roblox from invoking the command path twice when a
+-- button click also causes the TextBox to lose focus.
+local SendSubmissionBusy = false
+local function SubmitCurrentInput()
+    if SendSubmissionBusy then return end
+    SendSubmissionBusy = true
+
+    local ok, err = pcall(SendChatMessage)
+    if not ok then
+        warn("[KRONOS] SendChatMessage error: " .. tostring(err))
+    end
+
+    task.defer(function()
+        SendSubmissionBusy = false
+    end)
+end
+
+-- Activated works for mouse, touch and gamepad, unlike MouseButton1Click.
+SendButton.Activated:Connect(SubmitCurrentInput)
+
 MessageInput.FocusLost:Connect(function(enterPressed)
-    if enterPressed then SendChatMessage() end
+    if enterPressed then
+        SubmitCurrentInput()
+    end
+end)
+
+-- Some executor/mobile TextBox implementations do not reliably propagate
+-- Enter as FocusLost. Listen for Return directly as a fallback.
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.KeypadEnter then
+        if MessageInput and MessageInput:IsFocused() then
+            SubmitCurrentInput()
+        end
+    end
 end)
 
 function BuildJoinMessagePayload()

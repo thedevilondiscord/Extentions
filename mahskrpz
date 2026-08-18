@@ -756,46 +756,63 @@ baseStickers = uniqueStickers
 -- HARDCODED RANKS & DEFAULT STYLES
 -- ============================================================================
 local RANK_STYLES = {
+    -- TIER 1: Super High Ranks
+    -- Full neon spectrum -> pure white, moving left-to-right.
+    ["Architect"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Overseer"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Developer"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["One of the OGs👑"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+
     -- TIER 2: High / Elite Ranks
-    ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["AUQAt · Ke · BAHR"] = { Tier = 2, Start = Color3.fromRGB(150, 80, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(210, 175, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["MOMMy♥️"] = { Tier = 2, Start = Color3.fromRGB(255, 70, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 205), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["DaDDy🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(190, 0, 35), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 90, 110), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    -- Primary color -> requested secondary color, moving left-to-right.
+    ["COM-GOD⛓️"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["Disbander"] = { Tier = 2, Start = Color3.fromRGB(180, 0, 25), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 80, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["Moderator"] = { Tier = 2, Start = Color3.fromRGB(255, 95, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 190, 120), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["Hacker"] = { Tier = 2, Start = Color3.fromRGB(0, 255, 55), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 255, 170), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
+    ["Regent of Clan🔥"] = { Tier = 2, Start = Color3.fromRGB(255, 35, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 100, 70), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["Psychopath💀"] = { Tier = 2, Start = Color3.fromRGB(255, 55, 15), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(255, 120, 80), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
+    ["BATMAN🦇"] = { Tier = 2, Start = Color3.fromRGB(20, 85, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MALKIN🌸"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["ToUR · NaL · SH4Da"] = { Tier = 2, Start = Color3.fromRGB(0, 200, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(125, 225, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["DISB4ND3R⛓️‍💥"] = { Tier = 2, Start = Color3.fromRGB(180, 0, 25), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 80, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(125, 0, 20), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(220, 45, 55), Speed = 0.85, Mode = "PRIMARY_SECONDARY", FontSize = 10 },
-    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY", FontSize = 10 },
-    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(175, 0, 255), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(215, 100, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", FontSize = 10 },
-    ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(165, 170, 180), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(225, 225, 230), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["PsYchopath"] = { Tier = 2, Start = Color3.fromRGB(255, 55, 15), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(255, 120, 80), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
-    ["ᴅᴀʀᴋ🦇ᴋɴɪɢʜᴛ"] = { Tier = 2, Start = Color3.fromRGB(20, 85, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", FontSize = 10 },
-    ["HoN0R3D · OnE"] = { Tier = 2, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(90, 255, 240), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["D1SGR4CeD · OnE"] = { Tier = 2, Start = Color3.fromRGB(190, 0, 35), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 90, 110), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["CoM · GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["HᴀᴄᴋᴇR"] = { Tier = 2, Start = Color3.fromRGB(0, 255, 55), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 255, 170), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
-    ["COM · IkKA"] = { Tier = 2, Start = Color3.fromRGB(255, 95, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 190, 120), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["DADDY🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["SPANKER☠️"] = { Tier = 2, Start = Color3.fromRGB(225, 225, 225), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(245, 245, 245), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["गबरू"] = { Tier = 2, Start = Color3.fromRGB(255, 210, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 235, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["जाट"] = { Tier = 2, Start = Color3.fromRGB(190, 0, 35), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 90, 110), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["दानव"] = { Tier = 2, Start = Color3.fromRGB(125, 0, 20), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(220, 45, 55), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["देवता"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["खलनायक"] = { Tier = 2, Start = Color3.fromRGB(175, 0, 255), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(215, 100, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
 
-    -- TIER 3: Free / Selectable Ranks
-    ["His🌸"] = { Tier = 3, Start = Color3.fromRGB(255, 145, 195), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 195, 225), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Her🎀"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 210), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 205, 225), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["B4DNAM"] = { Tier = 3, Start = Color3.fromRGB(205, 35, 70), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(245, 90, 120), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["SMoK3R🚭"] = { Tier = 3, Start = Color3.fromRGB(120, 220, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(175, 245, 245), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["BR💔KEN"] = { Tier = 3, Start = Color3.fromRGB(225, 50, 80), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 120, 140), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Contributor"] = { Tier = 3, Start = Color3.fromRGB(80, 180, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(145, 220, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["MoD.Staff"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Majdoor⛑️"] = { Tier = 3, Start = Color3.fromRGB(225, 105, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 160, 90), Speed = 1.0, Mode = "FONT_LOOP" },
+    -- TIER 3: All Remaining Ranks
+    -- Entire font color loops from signature color -> pitch black -> signature color.
+    ["Carnage🩸"] = { Tier = 3, Start = Color3.fromRGB(220, 0, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 60, 70), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Manipulator😈"] = { Tier = 3, Start = Color3.fromRGB(125, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(190, 100, 255), Speed = 1.0, Mode = "FONT_LOOP" },
     ["Narcissist"] = { Tier = 3, Start = Color3.fromRGB(225, 20, 120), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 90, 175), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["~OG~"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Elite"] = { Tier = 3, Start = Color3.fromRGB(185, 115, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(220, 170, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Vip"] = { Tier = 3, Start = Color3.fromRGB(225, 190, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["CONQUEROR"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 90), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HEROIC"] = { Tier = 3, Start = Color3.fromRGB(255, 95, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 155, 80), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["PIRATE·KING🏴‍☠️"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HOMELANDER🇺🇸"] = { Tier = 3, Start = Color3.fromRGB(25, 70, 180), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 140, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["SUPER·SAYAN"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["POOKIE🎀"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 210), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 205, 225), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HAWTIE🥵"] = { Tier = 3, Start = Color3.fromRGB(255, 105, 80), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 155, 130), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["GOAT🐐"] = { Tier = 3, Start = Color3.fromRGB(205, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(240, 220, 100), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["SCHOOL-CRUSH😍"] = { Tier = 3, Start = Color3.fromRGB(215, 80, 175), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(245, 150, 220), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Princess🩹"] = { Tier = 3, Start = Color3.fromRGB(255, 185, 210), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 230), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["CODM🎮"] = { Tier = 3, Start = Color3.fromRGB(80, 180, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(145, 220, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["BGMI·CONQUEROR🏅"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 90), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["FF·HEROIC🔫"] = { Tier = 3, Start = Color3.fromRGB(255, 95, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 155, 80), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["BADMASH🚬"] = { Tier = 3, Start = Color3.fromRGB(165, 170, 180), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(225, 225, 230), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["BADNAM🥀"] = { Tier = 3, Start = Color3.fromRGB(205, 35, 70), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(245, 90, 120), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["LifeLess🥶"] = { Tier = 3, Start = Color3.fromRGB(175, 225, 245), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 240, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Majdoor⛑️"] = { Tier = 3, Start = Color3.fromRGB(225, 105, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 160, 90), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["SIGMA🐺"] = { Tier = 3, Start = Color3.fromRGB(125, 140, 155), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 215, 225), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["ELITE"] = { Tier = 3, Start = Color3.fromRGB(185, 115, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(220, 170, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["VIP"] = { Tier = 3, Start = Color3.fromRGB(225, 190, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 100), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["BOT"] = { Tier = 3, Start = Color3.fromRGB(255, 185, 190), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 220), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HASIRA"] = { Tier = 3, Start = Color3.fromRGB(90, 220, 200), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(135, 240, 225), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["DEVIL"] = { Tier = 3, Start = Color3.fromRGB(150, 55, 30), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 80, 50), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["MONARCH"] = { Tier = 3, Start = Color3.fromRGB(55, 90, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(110, 145, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["SAGE OF SIX PATHS"] = { Tier = 3, Start = Color3.fromRGB(145, 80, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(195, 135, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["DEMON"] = { Tier = 3, Start = Color3.fromRGB(155, 20, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(215, 50, 75), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Hokage"] = { Tier = 3, Start = Color3.fromRGB(50, 150, 235), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(110, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Soul Reaper"] = { Tier = 3, Start = Color3.fromRGB(0, 215, 245), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(100, 235, 255), Speed = 1.0, Mode = "FONT_LOOP" },
 }
-
 -- ============================================================================
 -- ROLE/TAG FONT ANIMATION
 -- The entire role-name font smoothly transitions between its assigned colours.
@@ -4020,7 +4037,7 @@ local function PopulateTagBar()
         tagBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
         tagBtn.BackgroundTransparency = 0.2
         tagBtn.Font = Enum.Font.GothamBold
-        tagBtn.Text = "  " .. roleName .. "  "
+        tagBtn.Text = "  " .. string.upper(roleName) .. "  "
         tagBtn.TextColor3 = style.Start
         tagBtn.TextSize = 10
         tagBtn.Parent = TagScrollFrame
@@ -4995,9 +5012,9 @@ CreateMessageCard = function(msgData, isGlobal)
     tagLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     tagLabel.BackgroundTransparency = 0.3
     tagLabel.Font = Enum.Font.GothamBold
-    tagLabel.Text = "  " .. roleName .. "  "
+    tagLabel.Text = "  " .. string.upper(roleName) .. "  "
     tagLabel.TextColor3 = style.Start
-    tagLabel.TextSize = style.FontSize or 9
+    tagLabel.TextSize = 9
     tagLabel.Visible = not DisabledTags[msgData.Username]
     tagLabel.Parent = frame
 

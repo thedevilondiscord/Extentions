@@ -5618,6 +5618,35 @@ SendChatMessage = function()
     local privateTargetDisplayName = PrivateModeTargetDisplayName
     local privateBody = typedText
 
+    -- !tag is handled before the generic command preflight/normal-message path.
+    -- This keeps tag switching independent of the restricted command-permission
+    -- table and guarantees that free Tier 1 tags can always be selected.
+    if not isPrivate and (typedText == "!tag" or typedText:sub(1, 5) == "!tag ") then
+        local requestedRole = typedText:sub(6):gsub("^%s+", ""):gsub("%s+$", "")
+
+        if requestedRole == "" then
+            DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
+            ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
+        else
+            local canonical = FindCanonicalRole(requestedRole)
+            local style = canonical and RANK_STYLES[canonical] or nil
+
+            if not canonical or type(style) ~= "table" then
+                ShowLocalSystemMessage("[AI MoD] : Unknown tag. Please use a valid role.", true)
+            elseif not CanSwitchToRole(canonical) then
+                ShowLocalSystemMessage("[AI MoD] : You are not authorized to switch to " .. canonical .. ". Your username and UserId must both be listed for that role in the GitHub roster.", true)
+            else
+                AssignedPlayerRoles[LocalPlayer.Name] = canonical
+                DisabledTags[LocalPlayer.Name] = nil
+                ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
+            end
+        end
+
+        MessageInput.Text = ""
+        HideCommandAutocomplete()
+        return
+    end
+
     -- ========================================================================
     -- ABSOLUTE COMMAND PREFLIGHT
     -- ========================================================================
@@ -5741,31 +5770,6 @@ SendChatMessage = function()
             return
         end
         Moderation.SendMute(targetUsername, targetDisplayName, duration)
-        MessageInput.Text = ""
-        return
-    elseif not isPrivate and string.sub(typedText, 1, 5) == "!tag " then
-        local requestedRole = string.sub(typedText, 6):gsub("^%s+", ""):gsub("%s+$", "")
-        local canonical = FindCanonicalRole(requestedRole)
-        local style = canonical and RANK_STYLES[canonical] or nil
-
-        if not canonical or type(style) ~= "table" then
-            ShowLocalSystemMessage("[AI MoD] : Unknown tag. Please use a valid role.", true)
-        elseif not CanSwitchToRole(canonical) then
-            if tonumber(style.Tier) == 2 or tonumber(style.Tier) == 3 then
-                ShowLocalSystemMessage("[AI MoD] : Tag could not be selected. Your username and UserId must both be listed for that role in the GitHub roster.", true)
-            else
-                ShowLocalSystemMessage("[AI MoD] : You are not authorized to switch to " .. canonical .. ". Your username and UserId must both be listed for that role in the GitHub roster.", true)
-            end
-        else
-            AssignedPlayerRoles[LocalPlayer.Name] = canonical
-            DisabledTags[LocalPlayer.Name] = nil
-            ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
-        end
-        MessageInput.Text = ""
-        return
-    elseif not isPrivate and typedText == "!tag" then
-        DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
-        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
         MessageInput.Text = ""
         return
     elseif not isPrivate and string.sub(typedText, 1, 6) == "!role " then

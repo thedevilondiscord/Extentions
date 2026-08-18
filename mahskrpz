@@ -756,62 +756,50 @@ baseStickers = uniqueStickers
 -- HARDCODED RANKS & DEFAULT STYLES
 -- ============================================================================
 local RANK_STYLES = {
-    -- TIER 1: Super High Ranks
-    -- Full neon spectrum -> pure white, moving left-to-right.
-    ["Architect"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Overseer"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Developer"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["One of the OGs👑"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    -- TIER 1: FREE TAGS
+    -- These tags are freely selectable by everyone. The existing font-loop
+    -- animation style is preserved for the cosmetic/free tier.
+    ["His🌸"] = { Tier = 1, Start = Color3.fromRGB(255, 175, 210), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 205, 225), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Her🎀"] = { Tier = 1, Start = Color3.fromRGB(255, 185, 215), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 230), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["B4DNAM"] = { Tier = 1, Start = Color3.fromRGB(205, 35, 70), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(245, 90, 120), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["SMoK3R🚭"] = { Tier = 1, Start = Color3.fromRGB(125, 140, 155), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 215, 225), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["BR💔KEN"] = { Tier = 1, Start = Color3.fromRGB(180, 25, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 90, 110), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Majdoor⛑️"] = { Tier = 1, Start = Color3.fromRGB(225, 105, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 160, 90), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Narcissist"] = { Tier = 1, Start = Color3.fromRGB(225, 20, 120), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 90, 175), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Elite"] = { Tier = 1, Start = Color3.fromRGB(185, 115, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(220, 170, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Vip"] = { Tier = 1, Start = Color3.fromRGB(225, 190, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 100), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["CONQUEROR"] = { Tier = 1, Start = Color3.fromRGB(255, 205, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 90), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HEROIC"] = { Tier = 1, Start = Color3.fromRGB(255, 95, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 155, 80), Speed = 1.0, Mode = "FONT_LOOP" },
 
-    -- TIER 2: High / Elite Ranks
-    -- Primary color -> requested secondary color, moving left-to-right.
-    ["COM-GOD⛓️"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["Disbander"] = { Tier = 2, Start = Color3.fromRGB(180, 0, 25), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 80, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["Moderator"] = { Tier = 2, Start = Color3.fromRGB(255, 95, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 190, 120), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["Hacker"] = { Tier = 2, Start = Color3.fromRGB(0, 255, 55), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 255, 170), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
-    ["Regent of Clan🔥"] = { Tier = 2, Start = Color3.fromRGB(255, 35, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 100, 70), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["Psychopath💀"] = { Tier = 2, Start = Color3.fromRGB(255, 55, 15), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(255, 120, 80), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
-    ["BATMAN🦇"] = { Tier = 2, Start = Color3.fromRGB(20, 85, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    -- TIER 2: ROSTER-RESTRICTED TAGS
+    -- The existing primary -> secondary sweep animation is preserved.
+    ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["AUQAt · Ke · BAHR"] = { Tier = 2, Start = Color3.fromRGB(175, 0, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(215, 100, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["MOMMy♥️"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["DaDDy🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(180, 0, 25), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 80, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MALKIN🌸"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["DADDY🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["SPANKER☠️"] = { Tier = 2, Start = Color3.fromRGB(225, 225, 225), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(245, 245, 245), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["गबरू"] = { Tier = 2, Start = Color3.fromRGB(255, 210, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 235, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["जाट"] = { Tier = 2, Start = Color3.fromRGB(190, 0, 35), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 90, 110), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["दानव"] = { Tier = 2, Start = Color3.fromRGB(125, 0, 20), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(220, 45, 55), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["देवता"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["खलनायक"] = { Tier = 2, Start = Color3.fromRGB(175, 0, 255), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(215, 100, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["ToUR · NaL · SH4Da"] = { Tier = 2, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(90, 255, 240), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["DISB4ND3R⛓️‍💥"] = { Tier = 2, Start = Color3.fromRGB(180, 0, 25), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 80, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(125, 0, 20), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(220, 45, 55), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 11 },
+    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 11 },
+    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(175, 0, 255), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(215, 100, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 11 },
+    ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(165, 170, 180), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(225, 225, 230), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["PsYchopath"] = { Tier = 2, Start = Color3.fromRGB(255, 55, 15), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(255, 120, 80), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
+    ["ᴅᴀʀᴋ🦇ᴋɴɪɢʜᴛ"] = { Tier = 2, Start = Color3.fromRGB(20, 85, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 11 },
+    ["HoN0R3D · OnE"] = { Tier = 2, Start = Color3.fromRGB(255, 210, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 235, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["D1SGR4CeD · OnE"] = { Tier = 2, Start = Color3.fromRGB(190, 0, 35), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 90, 110), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["CoM · GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["HᴀᴄᴋᴇR"] = { Tier = 2, Start = Color3.fromRGB(0, 255, 55), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 255, 170), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
+    ["COM · IkKA"] = { Tier = 2, Start = Color3.fromRGB(255, 95, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 190, 120), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
 
-    -- TIER 3: All Remaining Ranks
-    -- Entire font color loops from signature color -> pitch black -> signature color.
-    ["Carnage🩸"] = { Tier = 3, Start = Color3.fromRGB(220, 0, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 60, 70), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Manipulator😈"] = { Tier = 3, Start = Color3.fromRGB(125, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(190, 100, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Narcissist"] = { Tier = 3, Start = Color3.fromRGB(225, 20, 120), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 90, 175), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["PIRATE·KING🏴‍☠️"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HOMELANDER🇺🇸"] = { Tier = 3, Start = Color3.fromRGB(25, 70, 180), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 140, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["SUPER·SAYAN"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["POOKIE🎀"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 210), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 205, 225), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HAWTIE🥵"] = { Tier = 3, Start = Color3.fromRGB(255, 105, 80), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 155, 130), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["GOAT🐐"] = { Tier = 3, Start = Color3.fromRGB(205, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(240, 220, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["SCHOOL-CRUSH😍"] = { Tier = 3, Start = Color3.fromRGB(215, 80, 175), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(245, 150, 220), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Princess🩹"] = { Tier = 3, Start = Color3.fromRGB(255, 185, 210), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 230), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["CODM🎮"] = { Tier = 3, Start = Color3.fromRGB(80, 180, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(145, 220, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["BGMI·CONQUEROR🏅"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 90), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["FF·HEROIC🔫"] = { Tier = 3, Start = Color3.fromRGB(255, 95, 25), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 155, 80), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["BADMASH🚬"] = { Tier = 3, Start = Color3.fromRGB(165, 170, 180), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(225, 225, 230), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["BADNAM🥀"] = { Tier = 3, Start = Color3.fromRGB(205, 35, 70), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(245, 90, 120), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["LifeLess🥶"] = { Tier = 3, Start = Color3.fromRGB(175, 225, 245), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 240, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Majdoor⛑️"] = { Tier = 3, Start = Color3.fromRGB(225, 105, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 160, 90), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["SIGMA🐺"] = { Tier = 3, Start = Color3.fromRGB(125, 140, 155), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 215, 225), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["ELITE"] = { Tier = 3, Start = Color3.fromRGB(185, 115, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(220, 170, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["VIP"] = { Tier = 3, Start = Color3.fromRGB(225, 190, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 225, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["BOT"] = { Tier = 3, Start = Color3.fromRGB(255, 185, 190), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 220), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HASIRA"] = { Tier = 3, Start = Color3.fromRGB(90, 220, 200), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(135, 240, 225), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["DEVIL"] = { Tier = 3, Start = Color3.fromRGB(150, 55, 30), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 80, 50), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["MONARCH"] = { Tier = 3, Start = Color3.fromRGB(55, 90, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(110, 145, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["SAGE OF SIX PATHS"] = { Tier = 3, Start = Color3.fromRGB(145, 80, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(195, 135, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["DEMON"] = { Tier = 3, Start = Color3.fromRGB(155, 20, 45), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(215, 50, 75), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Hokage"] = { Tier = 3, Start = Color3.fromRGB(50, 150, 235), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(110, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Soul Reaper"] = { Tier = 3, Start = Color3.fromRGB(0, 215, 245), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(100, 235, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    -- TIER 3: ROSTER-RESTRICTED HIGH TAGS
+    -- The existing rainbow -> white animation is preserved.
+    ["Contributor"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["MoD.Staff"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["\"~OG~\""] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
 }
 -- ============================================================================
 -- ROLE/TAG FONT ANIMATION
@@ -1381,21 +1369,18 @@ end)
 -- a player appears in more than one role. Earlier entries have higher priority.
 -- ============================================================================
 local ROLE_PRIORITY = {
-    -- Tier 1
-    "Architect", "Overseer", "Developer", "One of the OGs👑",
+    -- Tier 3: Highest restricted roles
+    "Architect", "Overseer", "Contributor", "MoD.Staff", "\"~OG~\"",
 
-    -- Tier 2
-    "COM-GOD⛓️", "Disbander", "Moderator", "Hacker", "Regent of Clan🔥",
-    "Psychopath💀", "BATMAN🦇", "MALKIN🌸", "DADDY🎅", "SPANKER☠️",
-    "गबरू", "जाट", "दानव", "देवता", "खलनायक",
+    -- Tier 2: Restricted roles
+    "G0DF4THER", "AUQAt · Ke · BAHR", "MOMMy♥️", "DaDDy🎅", "Abusive🪓",
+    "MALKIN🌸", "ToUR · NaL · SH4Da", "DISB4ND3R⛓️‍💥", "__दानव__", "__देवता__",
+    "__खलनायक__", "BADMASH🚬", "PsYchopath", "ᴅᴀʀᴋ🦇ᴋɴɪɢʜᴛ",
+    "HoN0R3D · OnE", "D1SGR4CeD · OnE", "CoM · GoD🔗", "HᴀᴄᴋᴇR", "COM · IkKA",
 
-    -- Tier 3
-    "Carnage🩸", "Manipulator😈", "Narcissist", "PIRATE·KING🏴‍☠️",
-    "HOMELANDER🇺🇸", "SUPER·SAYAN", "POOKIE🎀", "HAWTIE🥵", "GOAT🐐",
-    "SCHOOL-CRUSH😍", "Princess🩹", "CODM🎮", "BGMI·CONQUEROR🏅",
-    "FF·HEROIC🔫", "BADMASH🚬", "BADNAM🥀", "LifeLess🥶", "Majdoor⛑️",
-    "SIGMA🐺", "ELITE", "VIP", "BOT", "HASIRA", "DEVIL", "MONARCH",
-    "SAGE OF SIX PATHS", "DEMON", "Hokage", "Soul Reaper"
+    -- Tier 1: Free roles
+    "His🌸", "Her🎀", "B4DNAM", "SMoK3R🚭", "BR💔KEN", "Majdoor⛑️",
+    "Narcissist", "Elite", "Vip", "CONQUEROR", "HEROIC"
 }
 
 local ROLE_PRIORITY_INDEX = {}
@@ -1404,15 +1389,12 @@ for index, roleName in ipairs(ROLE_PRIORITY) do ROLE_PRIORITY_INDEX[roleName] = 
 local ROLE_PERMISSIONS = {
     ["Architect"] = {Spoof=true, Announce=true, Kick=true, Ban=true, Mute=true, PlayMusic=true},
     ["Overseer"] = {Spoof=true, Announce=true, Kick=true, Mute=true, PlayMusic=true},
-    ["Moderator"] = {Spoof=true, Announce=true, Mute=true, Kick=true, PlayMusic=true},
-    ["Developer"] = {Spoof=true, PlayMusic=true},
-    ["Hacker"] = {Spoof=true, PlayMusic=true},
-    ["One of the OGs👑"] = {Spoof=true, PlayMusic=true},
-    ["COM-GOD⛓️"] = {Spoof=true},
-    ["Regent of Clan🔥"] = {Spoof=true},
-    ["MALKIN🌸"] = {Spoof=true},
+    ["Contributor"] = {Spoof=true, PlayMusic=true},
+    ["MoD.Staff"] = {Spoof=true, PlayMusic=true},
+    ["\"~OG~\""] = {Spoof=true, PlayMusic=true},
+    ["CoM · GoD🔗"] = {Spoof=true},
+    ["HᴀᴄᴋᴇR"] = {Spoof=true, PlayMusic=true},
 }
-
 local function RoleNameEquals(a, b)
     return string.lower(tostring(a or "")) == string.lower(tostring(b or ""))
 end
@@ -1454,14 +1436,14 @@ local function GetAssignedOrCalculatedRole(username)
         local canonicalSelected = FindCanonicalRole(selected) or selected
         local selectedStyle = RANK_STYLES[canonicalSelected]
 
-        -- Tier 3 tags are cosmetic/free-select tags. A client does not need
-        -- to be present in the role roster for a manually selected Tier 3 tag
+        -- Tier 1 tags are cosmetic/free-select tags. A client does not need
+        -- to be present in the role roster for a manually selected Tier 1 tag
         -- to be used on their own messages.
-        if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 3 then
+        if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 1 then
             return canonicalSelected
         end
 
-        -- Restricted roles still require the normal assigned-role check.
+        -- Tier 2/3 restricted roles still require the normal assigned-role check.
         if PlayerHasRole(username, canonicalSelected) then
             return canonicalSelected
         end
@@ -1476,14 +1458,14 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    -- Tier 3 remains freely selectable, exactly as before.
-    if tonumber(style.Tier) == 3 then
+    -- Tier 1 is the free tier and is selectable by everyone.
+    if tonumber(style.Tier) == 1 then
         return true
     end
 
-    -- Tier 1/2 roles are restricted to users whose username AND UserId are
+    -- Tier 2/3 roles are restricted to users whose username AND UserId are
     -- both present in that specific role's GitHub roster entry.
-    if tonumber(style.Tier) and tonumber(style.Tier) > 3 then
+    if tonumber(style.Tier) ~= 2 and tonumber(style.Tier) ~= 3 then
         return false
     end
 
@@ -4037,9 +4019,9 @@ local function PopulateTagBar()
         tagBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
         tagBtn.BackgroundTransparency = 0.2
         tagBtn.Font = Enum.Font.GothamBold
-        tagBtn.Text = "  " .. string.upper(roleName) .. "  "
+        tagBtn.Text = "  " .. roleName .. "  "
         tagBtn.TextColor3 = style.Start
-        tagBtn.TextSize = 10
+        tagBtn.TextSize = tonumber(style.TextSize) or 10
         tagBtn.Parent = TagScrollFrame
         AnimateRoleFont(tagBtn, roleName, style)
 
@@ -4485,7 +4467,7 @@ local function ShowCommandAutocomplete()
         for roleName, style in pairs(RANK_STYLES) do
             if type(style) == "table" and not seen[roleName] then
                 local tier = tonumber(style.Tier)
-                if tier == 3 or CanSwitchToRole(roleName) then
+                if tier == 1 or CanSwitchToRole(roleName) then
                     table.insert(suggestions, roleName)
                     seen[roleName] = true
                 end
@@ -5012,9 +4994,9 @@ CreateMessageCard = function(msgData, isGlobal)
     tagLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     tagLabel.BackgroundTransparency = 0.3
     tagLabel.Font = Enum.Font.GothamBold
-    tagLabel.Text = "  " .. string.upper(roleName) .. "  "
+    tagLabel.Text = "  " .. roleName .. "  "
     tagLabel.TextColor3 = style.Start
-    tagLabel.TextSize = 9
+    tagLabel.TextSize = tonumber(style.TextSize) or 9
     tagLabel.Visible = not DisabledTags[msgData.Username]
     tagLabel.Parent = frame
 
@@ -5769,8 +5751,8 @@ SendChatMessage = function()
         if not canonical or type(style) ~= "table" then
             ShowLocalSystemMessage("[AI MoD] : Unknown tag. Please use a valid role.", true)
         elseif not CanSwitchToRole(canonical) then
-            if tonumber(style.Tier) == 3 then
-                ShowLocalSystemMessage("[AI MoD] : Tag could not be selected. Please try again after the role roster loads.", true)
+            if tonumber(style.Tier) == 2 or tonumber(style.Tier) == 3 then
+                ShowLocalSystemMessage("[AI MoD] : Tag could not be selected. Your username and UserId must both be listed for that role in the GitHub roster.", true)
             else
                 ShowLocalSystemMessage("[AI MoD] : You are not authorized to switch to " .. canonical .. ". Your username and UserId must both be listed for that role in the GitHub roster.", true)
             end

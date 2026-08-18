@@ -4431,6 +4431,45 @@ local function HideCommandAutocomplete()
     AutoCompleteFrame.Visible = false
 end
 
+local RoleCommandBusy = false
+
+local function TryApplyStandaloneTagCommand(text)
+    if RoleCommandBusy or IsPrivateModeActive() then return false end
+    text = tostring(text or "")
+
+    local requestedRole = text:match("^!tag%s+(.+)$")
+    if not requestedRole then return false end
+
+    requestedRole = requestedRole:gsub("^%s+", ""):gsub("%s+$", "")
+    if requestedRole == "" then return false end
+
+    local canonical = FindCanonicalRole(requestedRole)
+    if not canonical then return false end
+
+    local style = RANK_STYLES[canonical]
+    if type(style) ~= "table" then return false end
+
+    RoleCommandBusy = true
+    HideCommandAutocomplete()
+
+    if not CanSwitchToRole(canonical) then
+        ShowLocalSystemMessage(
+            "[AI MoD] : You are not authorized to switch to " .. canonical .. ". Your username and UserId must both be listed for that role in the GitHub roster.",
+            true
+        )
+    else
+        AssignedPlayerRoles[LocalPlayer.Name] = canonical
+        DisabledTags[LocalPlayer.Name] = nil
+        ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
+    end
+
+    MessageInput.Text = ""
+    task.defer(function()
+        RoleCommandBusy = false
+    end)
+    return true
+end
+
 local function ShowCommandAutocomplete()
     if not MessageInput then return end
 
@@ -4522,19 +4561,23 @@ local function ShowCommandAutocomplete()
             button.MouseLeave:Connect(function()
                 button.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
             end)
-            button.MouseButton1Click:Connect(function()
-                local selectedCommand = (command == "!announce ") and command or (command .. suggestion)
+            button.Activated:Connect(function()
                 HideCommandAutocomplete()
-
-                -- Setting the textbox after removing the old suggestions avoids
-                -- TextChanged rebuilding the list during the click event.
-                MessageInput.Text = selectedCommand
-                MessageInput.CursorPosition = #selectedCommand + 1
-                MessageInput:CaptureFocus()
+                if command == "!tag " then
+                    -- Sticker-like direct selection for roles: clicking a role
+                    -- applies it immediately instead of putting a command back
+                    -- into the TextBox and waiting for Send/Enter.
+                    TryApplyStandaloneTagCommand("!tag " .. suggestion)
+                else
+                    local selectedCommand = (command == "!announce ") and command or (command .. suggestion)
+                    MessageInput.Text = selectedCommand
+                    MessageInput.CursorPosition = #selectedCommand + 1
+                    MessageInput:CaptureFocus()
+                end
             end)
 
             button.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.Touch then
+                if input.UserInputType == Enum.UserInputType.Touch and command ~= "!tag " then
                     local selectedCommand = (command == "!announce ") and command or (command .. suggestion)
                     HideCommandAutocomplete()
                     MessageInput.Text = selectedCommand
@@ -5621,30 +5664,13 @@ SendChatMessage = function()
     local privateTargetDisplayName = PrivateModeTargetDisplayName
     local privateBody = typedText
 
-    -- !tag is handled before the generic command preflight/normal-message path.
-    -- This keeps tag switching independent of the restricted command-permission
-    -- table and guarantees that free Tier 1 tags can always be selected.
-    if not isPrivate and (typedText == "!tag" or typedText:sub(1, 5) == "!tag ") then
-        local requestedRole = typedText:sub(6):gsub("^%s+", ""):gsub("%s+$", "")
-
-        if requestedRole == "" then
-            DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
-            ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
-        else
-            local canonical = FindCanonicalRole(requestedRole)
-            local style = canonical and RANK_STYLES[canonical] or nil
-
-            if not canonical or type(style) ~= "table" then
-                ShowLocalSystemMessage("[AI MoD] : Unknown tag. Please use a valid role.", true)
-            elseif not CanSwitchToRole(canonical) then
-                ShowLocalSystemMessage("[AI MoD] : You are not authorized to switch to " .. canonical .. ". Your username and UserId must both be listed for that role in the GitHub roster.", true)
-            else
-                AssignedPlayerRoles[LocalPlayer.Name] = canonical
-                DisabledTags[LocalPlayer.Name] = nil
-                ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
-            end
-        end
-
+    -- !tag has a dedicated standalone handler. This fallback remains for
+    -- executors that do not fire TextChanged consistently.
+    if not isPrivate and TryApplyStandaloneTagCommand(typedText) then
+        return
+    elseif not isPrivate and typedText == "!tag" then
+        DisabledTags[LocalPlayer.Name] = not DisabledTags[LocalPlayer.Name]
+        ShowLocalSystemMessage("[AI MoD] : Tag display " .. (DisabledTags[LocalPlayer.Name] and "disabled" or "enabled") .. " ✓")
         MessageInput.Text = ""
         HideCommandAutocomplete()
         return
@@ -5950,6 +5976,9 @@ end
 
 MessageInput:GetPropertyChangedSignal("Text"):Connect(function()
     ShowCommandAutocomplete()
+    -- Role switching has its own path. Once an exact role is typed, it is
+    -- consumed here and does not depend on SendButton, FocusLost, or Enter.
+    TryApplyStandaloneTagCommand(MessageInput.Text)
 end)
 
 MessageInput.FocusLost:Connect(function()

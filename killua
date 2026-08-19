@@ -758,15 +758,15 @@ baseStickers = uniqueStickers
 local RANK_STYLES = {
     -- TIER 1: Restricted roles
     -- Full neon spectrum -> pure white, moving left-to-right.
-    ["His🌸"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Her🎀"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["B4DNAM"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["SMoK3R🚭"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["BR💔KEN"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Majdoor⛑️"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Narcissist"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["ELITE"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["VIP"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["His🌸"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Her🎀"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["B4DNAM"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["SMoK3R🚭"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["BR💔KEN"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Majdoor⛑️"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Narcissist"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["ELITE"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["VIP"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
 
     -- TIER 2: Restricted roles
     -- Primary color -> secondary color, moving left-to-right.
@@ -790,11 +790,11 @@ local RANK_STYLES = {
 
     -- TIER 3: Free-select roles
     -- Entire font color loops from signature color -> pitch black -> signature color.
-    ["PsYchopath"] = { Tier = 1, Start = Color3.fromRGB(155, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 110, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Architect"] = { Tier = 1, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Overseer"] = { Tier = 1, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["~OG~"] = { Tier = 1, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HoN0R3D OnE"] = { Tier = 1, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["PsYchopath"] = { Tier = 3, Start = Color3.fromRGB(155, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 110, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["~OG~"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HoN0R3D OnE"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
 
     -- BOT is retained only as an internal/system message role so existing
     -- AI MoD, announcement, join, and Music Session messages keep rendering.

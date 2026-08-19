@@ -1535,10 +1535,10 @@ local function GetAssignedOrCalculatedRole(username)
         local canonicalSelected = FindCanonicalRole(selected) or selected
         local selectedStyle = RANK_STYLES[canonicalSelected]
 
-        -- Tier 3 tags are cosmetic/free-select tags. A client does not need
-        -- to be present in the role roster for a manually selected Tier 3 tag
+        -- Tier 1 tags are cosmetic/free-select tags. A client does not need
+        -- to be present in the role roster for a manually selected Tier 1 tag
         -- to be used on their own messages.
-        if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 3 then
+        if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 1 then
             return canonicalSelected
         end
 
@@ -1557,8 +1557,8 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    -- Tier 3 remains freely selectable.
-    if tonumber(style.Tier) == 3 then
+    -- Tier 1 remains freely selectable.
+    if tonumber(style.Tier) == 1 then
         return true
     end
 
@@ -1567,7 +1567,7 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    -- Tier 1/2 roles require BOTH the username and UserId to be present
+    -- Tier 2/3 roles require BOTH the username and UserId to be present
     -- in that specific role's roster entry.
 
     if not RoleRosterLoaded then
@@ -4188,7 +4188,7 @@ KRONOS CHAT is a real-time cross-server chat infrastructure allowing seamless gl
 
 <b>[ COMMANDS GUIDE ]</b>
 • <b>!tag</b> : Toggle your custom tag display ON or OFF.
-• <b>!tag [RoleName]</b> : Switch to any Tier 3 tag. Tier 3 tags are freely selectable by everyone.
+• <b>!tag [RoleName]</b> : Switch to any Tier 1 tag. Tier 1 tags are freely selectable by everyone.
 • <b>!spoof [NewName]</b> : Change your chat Display Name (Architect / Overseer / Moderator / Com-God / Hacker).
 • <b>!role [User]</b> : Inspect a player's assigned roles and highest role.
 • <b>!announce [Text]</b> : Send an ANNOUNCER announcement (Architect / Overseer / Moderator only, max 900 chars).

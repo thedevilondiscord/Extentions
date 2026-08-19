@@ -812,9 +812,12 @@ local function AnimateRoleFont(textObject, roleName, style)
     if not textObject or not textObject.Parent then return end
     style = style or RANK_STYLES[roleName] or RANK_STYLES["Vip"]
 
-    -- Remove any previous role gradient attached to this object.
-    local oldGradient = textObject:FindFirstChild("KronosRoleGradient")
-    if oldGradient then oldGradient:Destroy() end
+    -- Remove any previous role gradients/effects attached to this object.
+    for _, child in ipairs(textObject:GetChildren()) do
+        if child.Name == "KronosRoleGradient" or child.Name == "KronosTier3Sheen" then
+            child:Destroy()
+        end
+    end
 
     local mode = style.Mode or "FONT_LOOP"
     local duration = tonumber(style.Speed) or 1.0
@@ -882,7 +885,101 @@ local function AnimateRoleFont(textObject, roleName, style)
         return
     end
 
-    -- Tier 3: entire font smoothly loops from signature color to black.
+    -- Tier 3: neon rainbow base with a black/white sheen continuously
+    -- sweeping from RIGHT to LEFT. The rainbow remains visible underneath.
+    if tonumber(style.Tier) == 3 then
+        textObject.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+        local rainbow = Instance.new("UIGradient")
+        rainbow.Name = "KronosRoleGradient"
+        rainbow.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+            ColorSequenceKeypoint.new(0.10, Color3.fromRGB(255, 55, 0)),
+            ColorSequenceKeypoint.new(0.20, Color3.fromRGB(255, 235, 0)),
+            ColorSequenceKeypoint.new(0.30, Color3.fromRGB(70, 255, 0)),
+            ColorSequenceKeypoint.new(0.40, Color3.fromRGB(0, 255, 170)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 190, 255)),
+            ColorSequenceKeypoint.new(0.60, Color3.fromRGB(35, 70, 255)),
+            ColorSequenceKeypoint.new(0.70, Color3.fromRGB(145, 0, 255)),
+            ColorSequenceKeypoint.new(0.80, Color3.fromRGB(255, 0, 220)),
+            ColorSequenceKeypoint.new(0.90, Color3.fromRGB(255, 0, 90)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0)),
+        })
+        rainbow.Rotation = 0
+        rainbow.Parent = textObject
+
+        -- A child TextLabel lets the black/white sheen sit over the rainbow
+        -- without replacing the underlying neon rainbow.
+        local sheen = Instance.new("TextLabel")
+        sheen.Name = "KronosTier3Sheen"
+        sheen.BackgroundTransparency = 1
+        sheen.BorderSizePixel = 0
+        sheen.Size = UDim2.new(1, 0, 1, 0)
+        sheen.Position = UDim2.new(0, 0, 0, 0)
+        sheen.AnchorPoint = Vector2.new(0, 0)
+        sheen.Text = textObject.Text
+        sheen.Font = textObject.Font
+        sheen.TextSize = textObject.TextSize
+        sheen.TextScaled = textObject.TextScaled
+        sheen.TextWrapped = textObject.TextWrapped
+        sheen.TextXAlignment = textObject.TextXAlignment
+        sheen.TextYAlignment = textObject.TextYAlignment
+        sheen.RichText = textObject.RichText
+        sheen.TextStrokeTransparency = 1
+        sheen.TextTransparency = 0
+        sheen.ZIndex = textObject.ZIndex + 1
+        sheen.Active = false
+        sheen.Selectable = false
+        sheen.Parent = textObject
+
+        local sheenGradient = Instance.new("UIGradient")
+        sheenGradient.Name = "KronosRoleGradient"
+        sheenGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(0.35, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0.65, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 0, 0)),
+        })
+        sheenGradient.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0.00, 0.90),
+            NumberSequenceKeypoint.new(0.35, 0.82),
+            NumberSequenceKeypoint.new(0.50, 0.15),
+            NumberSequenceKeypoint.new(0.65, 0.82),
+            NumberSequenceKeypoint.new(1.00, 0.90),
+        })
+        sheenGradient.Rotation = 0
+        sheenGradient.Parent = sheen
+
+        task.spawn(function()
+            while textObject and textObject.Parent and rainbow and rainbow.Parent do
+                rainbow.Offset = Vector2.new(-1, 0)
+                local rainbowTween = TweenService:Create(
+                    rainbow,
+                    TweenInfo.new(duration * 3.0, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Offset = Vector2.new(1, 0)}
+                )
+                rainbowTween:Play()
+                rainbowTween.Completed:Wait()
+            end
+        end)
+
+        task.spawn(function()
+            while textObject and textObject.Parent and sheen and sheen.Parent and sheenGradient and sheenGradient.Parent do
+                sheenGradient.Offset = Vector2.new(1.25, 0)
+                local sheenTween = TweenService:Create(
+                    sheenGradient,
+                    TweenInfo.new(duration * 1.35, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Offset = Vector2.new(-1.25, 0)}
+                )
+                sheenTween:Play()
+                sheenTween.Completed:Wait()
+            end
+        end)
+        return
+    end
+
+    -- Fallback for any internal/system role that is not a tiered selectable tag.
     textObject.TextColor3 = startColor
     task.spawn(function()
         while textObject and textObject.Parent do

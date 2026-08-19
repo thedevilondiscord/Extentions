@@ -765,28 +765,27 @@ local RANK_STYLES = {
     ["BR💔KEN"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
     ["Majdoor⛑️"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
     ["Narcissist"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["ELITE"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["VIP"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Elite"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Vip"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
 
     -- TIER 2: Restricted roles
     -- Primary color -> secondary color, moving left-to-right.
     ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(0, 190, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(120, 225, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 190), End = Color3.fromRGB(255, 0, 35), Name = Color3.fromRGB(255, 105, 175), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(120, 90, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(190, 170, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MOMMy♥️"] = { Tier = 2, Start = Color3.fromRGB(255, 40, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 160, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["DaDDy🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(255, 145, 30), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 195, 105), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MALKIN🌸"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["ToUR NaL SH4Da"] = { Tier = 2, Start = Color3.fromRGB(170, 75, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(215, 170, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["ToUR.NaL.SH4Da"] = { Tier = 2, Start = Color3.fromRGB(170, 75, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(215, 170, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["DISB4ND3R⛓️‍💥"] = { Tier = 2, Start = Color3.fromRGB(0, 210, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(110, 235, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["H4CK3R"] = { Tier = 2, Start = Color3.fromRGB(55, 235, 105), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(145, 255, 175), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
-    ["Mod Staff"] = { Tier = 2, Start = Color3.fromRGB(70, 145, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(155, 200, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
-    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
-    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
-    ["__जल्लाद__"] = { Tier = 2, Start = Color3.fromRGB(235, 65, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 150), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
+    ["Mod.Staff"] = { Tier = 2, Start = Color3.fromRGB(70, 145, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(155, 200, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(0, 205, 170), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(105, 240, 215), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["D1SGR4CeD OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["CoM GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["D1SGR4CeD.OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["CoM.GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
 
     -- TIER 3: Free-select roles
     -- Entire font color loops from signature color -> pitch black -> signature color.
@@ -794,7 +793,7 @@ local RANK_STYLES = {
     ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
     ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
     ["~OG~"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HoN0R3D OnE"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HoN0R3D.OnE"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
 
     -- BOT is retained only as an internal/system message role so existing
     -- AI MoD, announcement, join, and Music Session messages keep rendering.
@@ -811,7 +810,7 @@ local RANK_STYLES = {
 
 local function AnimateRoleFont(textObject, roleName, style)
     if not textObject or not textObject.Parent then return end
-    style = style or RANK_STYLES[roleName] or RANK_STYLES["VIP"]
+    style = style or RANK_STYLES[roleName] or RANK_STYLES["Vip"]
 
     -- Remove any previous role gradients/effects attached to this object.
     for _, child in ipairs(textObject:GetChildren()) do
@@ -1469,15 +1468,15 @@ end)
 local ROLE_PRIORITY = {
     -- Tier 1
     "His🌸", "Her🎀", "B4DNAM", "SMoK3R🚭", "BR💔KEN", "Majdoor⛑️",
-    "Narcissist", "ELITE", "VIP",
+    "Narcissist", "Elite", "Vip",
 
     -- Tier 2
     "G0DF4THER", "AUQAt.Ke.BAHR", "MOMMy♥️", "DaDDy🎅", "Abusive🪓",
-    "MALKIN🌸", "ToUR NaL SH4Da", "DISB4ND3R⛓️‍💥", "H4CK3R", "Mod Staff",
-    "__दानव__", "__देवता__", "__खलनायक__", "__जल्लाद__", "BADMASH🚬", "D1SGR4CeD OnE", "CoM GoD🔗",
+    "MALKIN🌸", "ToUR.NaL.SH4Da", "DISB4ND3R⛓️‍💥", "H4CK3R", "Mod.Staff",
+    "__दानव__", "__देवता__", "__खलनायक__", "BADMASH🚬", "D1SGR4CeD.OnE", "CoM.GoD🔗",
 
     -- Tier 3
-    "PsYchopath", "Architect", "Overseer", "~OG~", "HoN0R3D OnE"
+    "PsYchopath", "Architect", "Overseer", "~OG~", "HoN0R3D.OnE"
 }
 
 local ROLE_PRIORITY_INDEX = {}
@@ -1491,10 +1490,9 @@ end
 
 local function NormalizeRoleLookupName(roleName)
     local normalized = string.lower(tostring(roleName or ""))
-    normalized = normalized:gsub("·", " ")
-    normalized = normalized:gsub("%.", " ")
-    normalized = normalized:gsub("%s+", " ")
-    return normalized:match("^%s*(.-)%s*$") or normalized
+    normalized = normalized:gsub("·", ".")
+    normalized = normalized:gsub("%s*%.%s*", ".")
+    return normalized
 end
 
 local function FindCanonicalRole(roleName)
@@ -1519,7 +1517,7 @@ local function GetHighestRole(username)
             best, bestIndex = canonical, idx
         end
     end
-    return best or "VIP"
+    return best or "Vip"
 end
 
 local function PlayerHasRole(username, roleName)
@@ -4123,7 +4121,7 @@ local function PopulateTagBar()
         tagBtn.Font = Enum.Font.GothamBold
         tagBtn.Text = "  " .. string.upper(roleName) .. "  "
         tagBtn.TextColor3 = style.Start
-        tagBtn.TextSize = style.TextSize or 10
+        tagBtn.TextSize = 10
         tagBtn.Parent = TagScrollFrame
         AnimateRoleFont(tagBtn, roleName, style)
 
@@ -5071,7 +5069,7 @@ CreateMessageCard = function(msgData, isGlobal)
 
 
     local roleName = msgData.Role or GetAssignedOrCalculatedRole(msgData.Username)
-    local style = RANK_STYLES[roleName] or RANK_STYLES["VIP"]
+    local style = RANK_STYLES[roleName] or RANK_STYLES["Vip"]
 
     -- Private-message prefix: only private messages get this extra label.
     local privatePrefixLabel = nil
@@ -5099,7 +5097,7 @@ CreateMessageCard = function(msgData, isGlobal)
     tagLabel.Font = Enum.Font.GothamBold
     tagLabel.Text = "  " .. string.upper(roleName) .. "  "
     tagLabel.TextColor3 = style.Start
-    tagLabel.TextSize = style.TextSize or 9
+    tagLabel.TextSize = 9
     tagLabel.Visible = not DisabledTags[msgData.Username]
     tagLabel.Parent = frame
 

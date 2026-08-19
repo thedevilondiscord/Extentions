@@ -1017,6 +1017,7 @@ local RefreshReplyUI = function() end
 local ClearPersistentPrivatePrefix = function() end
 
 local AssignedPlayerRoles = {}
+local ActiveSelectedTag = nil
 local AvailableUserRoles = {}
 -- Per-role switch authorization loaded from GITHUB_ROLE_LIST_URL.
 -- A Tier 1/2 role requires BOTH the username and UserId to be listed for that role.
@@ -1544,18 +1545,52 @@ local function GetAssignedOrCalculatedRole(username)
     if selected then
         local canonicalSelected = FindCanonicalRole(selected) or selected
         local selectedStyle = RANK_STYLES[canonicalSelected]
+        if type(selectedStyle) == "table" then
+            local tier = tonumber(selectedStyle.Tier)
 
-        -- Tier 1 tags are freely selectable. Tier 2 and Tier 3 tags remain
-        -- restricted to roles present in the authoritative roster.
-        if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 1 then
-            return canonicalSelected
-        end
+            -- Tier 1 is intentionally unrestricted. If the player selected a
+            -- Tier 1 tag, that selection is always the active chat tag.
+            if tier == 1 then
+                return canonicalSelected
+            end
 
-        if PlayerHasRole(username, canonicalSelected) then
-            return canonicalSelected
+            -- Tier 2/3 selections are only valid when the player is actually
+            -- present in the authoritative GitHub roster for that role.
+            if (tier == 2 or tier == 3) and PlayerHasRole(username, canonicalSelected) then
+                return canonicalSelected
+            end
         end
     end
+
+    -- Keep the explicit local selection as a final safeguard for Tier 1.
+    -- This is deliberately NOT used to bypass Tier 2/3 roster checks.
+    if username == LocalPlayer.Name and ActiveSelectedTag then
+        local activeCanonical = FindCanonicalRole(ActiveSelectedTag) or ActiveSelectedTag
+        local activeStyle = RANK_STYLES[activeCanonical]
+        if type(activeStyle) == "table" and tonumber(activeStyle.Tier) == 1 then
+            return activeCanonical
+        end
+    end
+
     return GetHighestRole(username)
+end
+
+local function GetLocalChatRole()
+    local selected = AssignedPlayerRoles[LocalPlayer.Name]
+    if selected then
+        local canonical = FindCanonicalRole(selected) or selected
+        local style = RANK_STYLES[canonical]
+        if type(style) == "table" then
+            local tier = tonumber(style.Tier)
+            if tier == 1 then
+                return canonical
+            elseif (tier == 2 or tier == 3) and PlayerHasRole(LocalPlayer.Name, canonical) then
+                return canonical
+            end
+        end
+    end
+
+    return GetAssignedOrCalculatedRole(LocalPlayer.Name)
 end
 
 local function CanSwitchToRole(roleName)
@@ -1883,14 +1918,18 @@ local function FetchRemoteRoles()
         local selected = AssignedPlayerRoles[player.Name]
         local selectedCanonical = selected and (FindCanonicalRole(selected) or selected) or nil
         local selectedStyle = selectedCanonical and RANK_STYLES[selectedCanonical] or nil
-        local selectedTier3 = type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 3
+        local selectedTier = type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) or nil
 
-        -- Never replace a manually selected Tier 3 tag during a roster refresh.
-        -- Restricted roles continue to be validated against the assigned role data.
-        if not selected or (not selectedTier3 and not PlayerHasRole(player.Name, selectedCanonical)) then
-            AssignedPlayerRoles[player.Name] = GetHighestRole(player.Name)
-        else
+        -- Roster refresh rules:
+        --   Tier 1 -> always preserve the manually selected tag.
+        --   Tier 2/3 -> preserve only when GitHub grants that exact role.
+        --   Anything else -> fall back to the calculated highest role.
+        if selected and selectedTier == 1 then
             AssignedPlayerRoles[player.Name] = selectedCanonical
+        elseif selected and (selectedTier == 2 or selectedTier == 3) and PlayerHasRole(player.Name, selectedCanonical) then
+            AssignedPlayerRoles[player.Name] = selectedCanonical
+        else
+            AssignedPlayerRoles[player.Name] = GetHighestRole(player.Name)
         end
     end
     Moderation.RefreshAllRoleAutocomplete()
@@ -5864,7 +5903,11 @@ SendChatMessage = function()
         elseif not CanSwitchToRole(canonical) then
             ShowLocalSystemMessage("[AI MoD] : You have not been granted the \"" .. canonical .. "\" Tag by the Architect.", true)
         else
+            -- One authoritative selection path for all tiers.
+            -- Tier 1: no roster check.
+            -- Tier 2/3: CanSwitchToRole already verified the GitHub roster.
             AssignedPlayerRoles[LocalPlayer.Name] = canonical
+            ActiveSelectedTag = canonical
             DisabledTags[LocalPlayer.Name] = nil
             ShowLocalSystemMessage("[AI MoD] : Tag changed successfully to " .. canonical .. " ✓")
         end
@@ -6008,7 +6051,10 @@ SendChatMessage = function()
         DisplayName = GetFormattedDisplayName(LocalPlayer.DisplayName, true),
         Text = privateBody,
         Timestamp = os.time(),
-        Role = GetAssignedOrCalculatedRole(LocalPlayer.Name),
+        -- The outgoing chat payload must use the same authoritative role
+        -- resolver as the displayed message. Tier 1 is free; Tier 2/3 are
+        -- accepted only when the GitHub roster grants that role.
+        Role = GetLocalChatRole(),
         PfpId = CurrentPfpId,
         IsPrivate = isPrivate,
         TargetUsername = privateTargetUsername,

@@ -756,17 +756,17 @@ baseStickers = uniqueStickers
 -- HARDCODED RANKS & DEFAULT STYLES
 -- ============================================================================
 local RANK_STYLES = {
-    -- TIER 1: Restricted roles
+    -- TIER 1: Free-select roles
     -- Full neon spectrum -> pure white, moving left-to-right.
-    ["His🌸"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Her🎀"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["B4DNAM"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["SMoK3R🚭"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["BR💔KEN"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Majdoor⛑️"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Narcissist"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["ELITE"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["VIP"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["His🌸"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Her🎀"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["B4DNAM"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["SMoK3R🚭"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["BR💔KEN"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Majdoor⛑️"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Narcissist"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["ELITE"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["VIP"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
 
     -- TIER 2: Restricted roles
     -- Primary color -> secondary color, moving left-to-right.
@@ -788,13 +788,13 @@ local RANK_STYLES = {
     ["D1SGR4CeD OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["CoM GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
 
-    -- TIER 3: Free-select roles
+    -- TIER 3: Restricted roles
     -- Entire font color loops from signature color -> pitch black -> signature color.
-    ["PsYchopath"] = { Tier = 3, Start = Color3.fromRGB(155, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 110, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["~OG~"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HoN0R3D OnE"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["PsYchopath"] = { Tier = 1, Start = Color3.fromRGB(155, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 110, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Architect"] = { Tier = 1, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Overseer"] = { Tier = 1, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["~OG~"] = { Tier = 1, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HoN0R3D OnE"] = { Tier = 1, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
 
     -- BOT is retained only as an internal/system message role so existing
     -- AI MoD, announcement, join, and Music Session messages keep rendering.
@@ -826,7 +826,7 @@ local function AnimateRoleFont(textObject, roleName, style)
     local endColor = style.End or Color3.new(0, 0, 0)
 
     if mode == "RAINBOW_WHITE" then
-        -- Tier 1: continuous neon spectrum sweeping into white.
+        -- Free-select Tier 1: continuous neon spectrum sweeping into white.
         local gradient = Instance.new("UIGradient")
         gradient.Name = "KronosRoleGradient"
         gradient.Color = ColorSequence.new({
@@ -886,7 +886,7 @@ local function AnimateRoleFont(textObject, roleName, style)
         return
     end
 
-    -- Tier 3: neon rainbow base with a black/white sheen continuously
+    -- Restricted Tier 3: neon rainbow base with a black/white sheen continuously
     -- sweeping from RIGHT to LEFT. The rainbow remains visible underneath.
     if tonumber(style.Tier) == 3 then
         textObject.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1535,10 +1535,10 @@ local function GetAssignedOrCalculatedRole(username)
         local canonicalSelected = FindCanonicalRole(selected) or selected
         local selectedStyle = RANK_STYLES[canonicalSelected]
 
-        -- Tier 3 tags are cosmetic/free-select tags. A client does not need
-        -- to be present in the role roster for a manually selected Tier 3 tag
+        -- Tier 1 tags are cosmetic/free-select tags. A client does not need
+        -- to be present in the role roster for a manually selected Tier 1 tag
         -- to be used on their own messages.
-        if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 3 then
+        if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 1 then
             return canonicalSelected
         end
 
@@ -1557,8 +1557,8 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    -- Tier 3 remains freely selectable.
-    if tonumber(style.Tier) == 3 then
+    -- Tier 1 remains freely selectable.
+    if tonumber(style.Tier) == 1 then
         return true
     end
 
@@ -1567,7 +1567,7 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    -- Tier 1/2 roles require BOTH the username and UserId to be present
+    -- Tier 2/3 roles require BOTH the username and UserId to be present
     -- in that specific role's roster entry.
 
     if not RoleRosterLoaded then
@@ -1875,11 +1875,11 @@ local function FetchRemoteRoles()
         local selected = AssignedPlayerRoles[player.Name]
         local selectedCanonical = selected and (FindCanonicalRole(selected) or selected) or nil
         local selectedStyle = selectedCanonical and RANK_STYLES[selectedCanonical] or nil
-        local selectedTier3 = type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 3
+        local selectedTier1 = type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 1
 
-        -- Never replace a manually selected Tier 3 tag during a roster refresh.
-        -- Restricted roles continue to be validated against the assigned role data.
-        if not selected or (not selectedTier3 and not PlayerHasRole(player.Name, selectedCanonical)) then
+        -- Never replace a manually selected Tier 1 tag during a roster refresh.
+        -- Restricted Tier 3 roles continue to be validated against the assigned role data.
+        if not selected or (not selectedTier1 and not PlayerHasRole(player.Name, selectedCanonical)) then
             AssignedPlayerRoles[player.Name] = GetHighestRole(player.Name)
         else
             AssignedPlayerRoles[player.Name] = selectedCanonical
@@ -4188,7 +4188,7 @@ KRONOS CHAT is a real-time cross-server chat infrastructure allowing seamless gl
 
 <b>[ COMMANDS GUIDE ]</b>
 • <b>!tag</b> : Toggle your custom tag display ON or OFF.
-• <b>!tag [RoleName]</b> : Switch to any Tier 3 tag. Tier 3 tags are freely selectable by everyone.
+• <b>!tag [RoleName]</b> : Switch to any Tier 1 tag. Tier 1 tags are freely selectable by everyone.
 • <b>!spoof [NewName]</b> : Change your chat Display Name (Architect / Overseer / Moderator / Com-God / Hacker).
 • <b>!role [User]</b> : Inspect a player's assigned roles and highest role.
 • <b>!announce [Text]</b> : Send an ANNOUNCER announcement (Architect / Overseer / Moderator only, max 900 chars).
@@ -5854,7 +5854,7 @@ SendChatMessage = function()
         if not canonical or type(style) ~= "table" then
             ShowLocalSystemMessage("[AI MoD] : Unknown tag. Please use a valid role.", true)
         elseif not CanSwitchToRole(canonical) then
-            if tonumber(style.Tier) == 3 then
+            if tonumber(style.Tier) == 1 then
                 ShowLocalSystemMessage("[AI MoD] : Tag could not be selected. Please try again after the role roster loads.", true)
             else
                 ShowLocalSystemMessage("[AI MoD] : You have not been granted the \"" .. canonical .. "\" Tag by the Architect.", true)

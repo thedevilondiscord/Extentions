@@ -758,44 +758,43 @@ baseStickers = uniqueStickers
 local RANK_STYLES = {
     -- TIER 1: Restricted roles
     -- Full neon spectrum -> pure white, moving left-to-right.
-    ["His🌸"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Her🎀"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["B4DNAM"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["SMoK3R🚭"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["BR💔KEN"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Majdoor⛑️"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["Narcissist"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["ELITE"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["VIP"] = { Tier = 3, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["His🌸"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Her🎀"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["B4DNAM"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["SMoK3R🚭"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["BR💔KEN"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Majdoor⛑️"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Narcissist"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["ELITE"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["VIP"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
 
     -- TIER 2: Restricted roles
     -- Primary color -> secondary color, moving left-to-right.
     ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(0, 190, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(120, 225, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 45, 45), Name = Color3.fromRGB(255, 90, 170), Speed = 0.9, Mode = "PRIMARY_SECONDARY" },
+    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(255, 45, 180), End = Color3.fromRGB(255, 35, 45), Name = Color3.fromRGB(255, 105, 165), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MOMMy♥️"] = { Tier = 2, Start = Color3.fromRGB(255, 40, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 160, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["DaDDy🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(255, 145, 30), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 195, 105), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MALKIN🌸"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["ToUR NaL SH4Da"] = { Tier = 2, Start = Color3.fromRGB(205, 95, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(235, 165, 255), Speed = 1.05, Mode = "VERTICAL_WHITE", Font = Enum.Font.Garamond },
+    ["ToUR NaL SH4Da"] = { Tier = 2, Start = Color3.fromRGB(170, 75, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(215, 170, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["DISB4ND3R⛓️‍💥"] = { Tier = 2, Start = Color3.fromRGB(0, 210, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(110, 235, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["H4CK3R"] = { Tier = 2, Start = Color3.fromRGB(55, 235, 105), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(145, 255, 175), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
     ["Mod Staff"] = { Tier = 2, Start = Color3.fromRGB(70, 145, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(155, 200, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 13 },
-    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 13 },
-    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 13 },
+    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
+    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
+    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
+    ["__जल्लाद__"] = { Tier = 2, Start = Color3.fromRGB(220, 45, 55), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 135, 145), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
     ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(0, 205, 170), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(105, 240, 215), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["D1SGR4CeD OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["CoM GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
 
     -- TIER 3: Free-select roles
     -- Entire font color loops from signature color -> pitch black -> signature color.
-    ["PsYchopath"] = { Tier = 1, Start = Color3.fromRGB(155, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 110, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Architect"] = { Tier = 1, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Overseer"] = { Tier = 1, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["~OG~"] = { Tier = 1, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HoN0R3D OnE"] = { Tier = 1, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
-
-    ["__जल्लाद__"] = { Tier = 2, Start = Color3.fromRGB(235, 55, 75), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 125, 140), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
+    ["PsYchopath"] = { Tier = 3, Start = Color3.fromRGB(155, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 110, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["~OG~"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HoN0R3D OnE"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
 
     -- BOT is retained only as an internal/system message role so existing
     -- AI MoD, announcement, join, and Music Session messages keep rendering.
@@ -814,6 +813,7 @@ local function AnimateRoleFont(textObject, roleName, style)
     if not textObject or not textObject.Parent then return end
     style = style or RANK_STYLES[roleName] or RANK_STYLES["VIP"]
 
+    -- Remove any previous role gradients/effects attached to this object.
     for _, child in ipairs(textObject:GetChildren()) do
         if child.Name == "KronosRoleGradient" or child.Name == "KronosTier3Sheen" then
             child:Destroy()
@@ -825,11 +825,8 @@ local function AnimateRoleFont(textObject, roleName, style)
     local startColor = style.Start or style.Name or Color3.new(1, 1, 1)
     local endColor = style.End or Color3.new(0, 0, 0)
 
-    if style.Font then
-        textObject.Font = style.Font
-    end
-
     if mode == "RAINBOW_WHITE" then
+        -- Tier 1: continuous neon spectrum sweeping into white.
         local gradient = Instance.new("UIGradient")
         gradient.Name = "KronosRoleGradient"
         gradient.Color = ColorSequence.new({
@@ -844,18 +841,26 @@ local function AnimateRoleFont(textObject, roleName, style)
         })
         gradient.Rotation = 0
         gradient.Parent = textObject
+
         task.spawn(function()
+            local offset = -1
             while textObject and textObject.Parent and gradient and gradient.Parent do
-                gradient.Offset = Vector2.new(-1, 0)
-                local tween = TweenService:Create(gradient, TweenInfo.new(duration * 2.0, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {Offset = Vector2.new(2, 0)})
+                local tween = TweenService:Create(
+                    gradient,
+                    TweenInfo.new(duration * 2.0, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Offset = Vector2.new(2, 0)}
+                )
+                gradient.Offset = Vector2.new(offset, 0)
                 tween:Play()
                 tween.Completed:Wait()
+                offset = -1
             end
         end)
         return
     end
 
     if mode == "PRIMARY_SECONDARY" then
+        -- Tier 2: primary -> secondary sweep, then loops back left-to-right.
         local gradient = Instance.new("UIGradient")
         gradient.Name = "KronosRoleGradient"
         gradient.Color = ColorSequence.new({
@@ -865,10 +870,15 @@ local function AnimateRoleFont(textObject, roleName, style)
         })
         gradient.Rotation = 0
         gradient.Parent = textObject
+
         task.spawn(function()
             while textObject and textObject.Parent and gradient and gradient.Parent do
                 gradient.Offset = Vector2.new(-1, 0)
-                local tween = TweenService:Create(gradient, TweenInfo.new(duration * 2.0, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {Offset = Vector2.new(1, 0)})
+                local tween = TweenService:Create(
+                    gradient,
+                    TweenInfo.new(duration * 2.0, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Offset = Vector2.new(1, 0)}
+                )
                 tween:Play()
                 tween.Completed:Wait()
             end
@@ -876,60 +886,118 @@ local function AnimateRoleFont(textObject, roleName, style)
         return
     end
 
-    -- ToUR NaL SH4Da / AUQAt Ke BAHR: bright colour base with a white
-    -- highlight travelling vertically up and down.
-    if mode == "VERTICAL_WHITE" then
-        local gradient = Instance.new("UIGradient")
-        gradient.Name = "KronosRoleGradient"
-        gradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0.00, startColor),
-            ColorSequenceKeypoint.new(0.38, startColor),
-            ColorSequenceKeypoint.new(0.50, endColor),
-            ColorSequenceKeypoint.new(0.62, startColor),
-            ColorSequenceKeypoint.new(1.00, startColor),
-        })
-        gradient.Rotation = 90
-        gradient.Parent = textObject
-        task.spawn(function()
-            while textObject and textObject.Parent and gradient and gradient.Parent do
-                gradient.Offset = Vector2.new(0, -1.2)
-                local tween = TweenService:Create(gradient, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(0, 1.2)})
-                tween:Play()
-                tween.Completed:Wait()
-                if not textObject or not textObject.Parent or not gradient or not gradient.Parent then break end
-                local reverse = TweenService:Create(gradient, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(0, -1.2)})
-                reverse:Play()
-                reverse.Completed:Wait()
-            end
-        end)
-        return
-    end
-
-    -- Tier 3: plain colour transition only. No UIGradient or sheen.
+    -- Tier 3: neon rainbow base with a black/white sheen continuously
+    -- sweeping from RIGHT to LEFT. The rainbow remains visible underneath.
     if tonumber(style.Tier) == 3 then
-        textObject.TextColor3 = startColor
+        textObject.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+        local rainbow = Instance.new("UIGradient")
+        rainbow.Name = "KronosRoleGradient"
+        rainbow.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+            ColorSequenceKeypoint.new(0.10, Color3.fromRGB(255, 55, 0)),
+            ColorSequenceKeypoint.new(0.20, Color3.fromRGB(255, 235, 0)),
+            ColorSequenceKeypoint.new(0.30, Color3.fromRGB(70, 255, 0)),
+            ColorSequenceKeypoint.new(0.40, Color3.fromRGB(0, 255, 170)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 190, 255)),
+            ColorSequenceKeypoint.new(0.60, Color3.fromRGB(35, 70, 255)),
+            ColorSequenceKeypoint.new(0.70, Color3.fromRGB(145, 0, 255)),
+            ColorSequenceKeypoint.new(0.80, Color3.fromRGB(255, 0, 220)),
+            ColorSequenceKeypoint.new(0.90, Color3.fromRGB(255, 0, 90)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0)),
+        })
+        rainbow.Rotation = 0
+        rainbow.Parent = textObject
+
+        -- A child TextLabel lets the black/white sheen sit over the rainbow
+        -- without replacing the underlying neon rainbow.
+        local sheen = Instance.new("TextLabel")
+        sheen.Name = "KronosTier3Sheen"
+        sheen.BackgroundTransparency = 1
+        sheen.BorderSizePixel = 0
+        sheen.Size = UDim2.new(1, 0, 1, 0)
+        sheen.Position = UDim2.new(0, 0, 0, 0)
+        sheen.AnchorPoint = Vector2.new(0, 0)
+        sheen.Text = textObject.Text
+        sheen.Font = textObject.Font
+        sheen.TextSize = textObject.TextSize
+        sheen.TextScaled = textObject.TextScaled
+        sheen.TextWrapped = textObject.TextWrapped
+        sheen.TextXAlignment = textObject.TextXAlignment
+        sheen.TextYAlignment = textObject.TextYAlignment
+        sheen.RichText = textObject.RichText
+        sheen.TextStrokeTransparency = 1
+        sheen.TextTransparency = 0
+        sheen.ZIndex = textObject.ZIndex + 1
+        sheen.Active = false
+        sheen.Selectable = false
+        sheen.Parent = textObject
+
+        local sheenGradient = Instance.new("UIGradient")
+        sheenGradient.Name = "KronosRoleGradient"
+        sheenGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(0.35, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0.65, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 0, 0)),
+        })
+        sheenGradient.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0.00, 0.90),
+            NumberSequenceKeypoint.new(0.35, 0.82),
+            NumberSequenceKeypoint.new(0.50, 0.15),
+            NumberSequenceKeypoint.new(0.65, 0.82),
+            NumberSequenceKeypoint.new(1.00, 0.90),
+        })
+        sheenGradient.Rotation = 0
+        sheenGradient.Parent = sheen
+
         task.spawn(function()
-            while textObject and textObject.Parent do
-                local toEnd = TweenService:Create(textObject, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextColor3 = endColor})
-                toEnd:Play()
-                toEnd.Completed:Wait()
-                if not textObject or not textObject.Parent then break end
-                local toStart = TweenService:Create(textObject, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextColor3 = startColor})
-                toStart:Play()
-                toStart.Completed:Wait()
+            while textObject and textObject.Parent and rainbow and rainbow.Parent do
+                rainbow.Offset = Vector2.new(-1, 0)
+                local rainbowTween = TweenService:Create(
+                    rainbow,
+                    TweenInfo.new(duration * 3.0, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Offset = Vector2.new(1, 0)}
+                )
+                rainbowTween:Play()
+                rainbowTween.Completed:Wait()
+            end
+        end)
+
+        task.spawn(function()
+            while textObject and textObject.Parent and sheen and sheen.Parent and sheenGradient and sheenGradient.Parent do
+                sheenGradient.Offset = Vector2.new(1.25, 0)
+                local sheenTween = TweenService:Create(
+                    sheenGradient,
+                    TweenInfo.new(duration * 1.35, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    {Offset = Vector2.new(-1.25, 0)}
+                )
+                sheenTween:Play()
+                sheenTween.Completed:Wait()
             end
         end)
         return
     end
 
+    -- Fallback for any internal/system role that is not a tiered selectable tag.
     textObject.TextColor3 = startColor
     task.spawn(function()
         while textObject and textObject.Parent do
-            local toEnd = TweenService:Create(textObject, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextColor3 = endColor})
-            toEnd:Play()
-            toEnd.Completed:Wait()
+            local toBlack = TweenService:Create(
+                textObject,
+                TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {TextColor3 = endColor}
+            )
+            toBlack:Play()
+            toBlack.Completed:Wait()
             if not textObject or not textObject.Parent then break end
-            local toStart = TweenService:Create(textObject, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextColor3 = startColor})
+
+            local toStart = TweenService:Create(
+                textObject,
+                TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {TextColor3 = startColor}
+            )
             toStart:Play()
             toStart.Completed:Wait()
         end
@@ -1423,12 +1491,11 @@ end
 
 local function NormalizeRoleLookupName(roleName)
     local normalized = string.lower(tostring(roleName or ""))
-    -- Display-friendly spaces, normal dots, and middle dots are treated as
-    -- equivalent separators for role lookup/authorization.
-    normalized = normalized:gsub("·", " ")
-    normalized = normalized:gsub("%.", " ")
+    normalized = normalized:gsub("·", ".")
+    normalized = normalized:gsub("%s*%.%s*", " ")
     normalized = normalized:gsub("%s+", " ")
-    return normalized:match("^%s*(.-)%s*$") or normalized
+    normalized = normalized:gsub("^%s+", ""):gsub("%s+$", "")
+    return normalized
 end
 
 local function FindCanonicalRole(roleName)
@@ -4055,9 +4122,9 @@ local function PopulateTagBar()
         tagBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
         tagBtn.BackgroundTransparency = 0.2
         tagBtn.Font = Enum.Font.GothamBold
-        tagBtn.Text = "  " .. (style.DisplayName or string.upper(roleName)) .. "  "
+        tagBtn.Text = "  " .. string.upper(roleName) .. "  "
         tagBtn.TextColor3 = style.Start
-        tagBtn.TextSize = style.TextSize or ((roleName == "__दानव__" or roleName == "__देवता__" or roleName == "__खलनायक__" or roleName == "__जल्लाद__") and 15 or 10)
+        tagBtn.TextSize = tonumber(style.TextSize) or 10
         tagBtn.Parent = TagScrollFrame
         AnimateRoleFont(tagBtn, roleName, style)
 
@@ -5031,9 +5098,9 @@ CreateMessageCard = function(msgData, isGlobal)
     tagLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     tagLabel.BackgroundTransparency = 0.3
     tagLabel.Font = Enum.Font.GothamBold
-    tagLabel.Text = "  " .. (style.DisplayName or string.upper(roleName)) .. "  "
+    tagLabel.Text = "  " .. string.upper(roleName) .. "  "
     tagLabel.TextColor3 = style.Start
-    tagLabel.TextSize = style.TextSize or ((roleName == "__दानव__" or roleName == "__देवता__" or roleName == "__खलनायक__" or roleName == "__जल्लाद__") and 15 or 9)
+    tagLabel.TextSize = tonumber(style.TextSize) or 9
     tagLabel.Visible = not DisabledTags[msgData.Username]
     tagLabel.Parent = frame
 

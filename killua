@@ -765,37 +765,37 @@ local RANK_STYLES = {
     ["BR💔KEN"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
     ["Majdoor⛑️"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
     ["Narcissist"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["ELITE"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
-    ["VIP"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Elite"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
+    ["Vip"] = { Tier = 1, Start = Color3.fromRGB(255, 0, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 255, 255), Speed = 0.75, Mode = "RAINBOW_WHITE" },
 
     -- TIER 2: Restricted roles
     -- Primary color -> secondary color, moving left-to-right.
     ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(0, 190, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(120, 225, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 45, 45), Name = Color3.fromRGB(255, 90, 170), Speed = 0.9, Mode = "PRIMARY_SECONDARY" },
+    -- Special vertical-highlight tag; display text intentionally uses spaces.
+    ["AUQAt.Ke.BAHR"] = { Tier = 2, DisplayName = "AUQAt Ke BAHR", Start = Color3.fromRGB(35, 205, 220), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(120, 245, 245), Speed = 1.0, Mode = "VERTICAL_WHITE", Font = Enum.Font.Garamond },
     ["MOMMy♥️"] = { Tier = 2, Start = Color3.fromRGB(255, 40, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 160, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["DaDDy🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(255, 145, 30), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 195, 105), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MALKIN🌸"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["ToUR NaL SH4Da"] = { Tier = 2, Start = Color3.fromRGB(205, 95, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(235, 165, 255), Speed = 1.05, Mode = "VERTICAL_WHITE", Font = Enum.Font.Garamond },
+    -- Special vertical-highlight tag; display text intentionally uses spaces.
+    ["ToUR.NaL.SH4Da"] = { Tier = 2, DisplayName = "ToUR NaL SH4Da", Start = Color3.fromRGB(190, 90, 240), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(230, 160, 255), Speed = 1.0, Mode = "VERTICAL_WHITE", Font = Enum.Font.Garamond },
     ["DISB4ND3R⛓️‍💥"] = { Tier = 2, Start = Color3.fromRGB(0, 210, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(110, 235, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["H4CK3R"] = { Tier = 2, Start = Color3.fromRGB(55, 235, 105), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(145, 255, 175), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
-    ["Mod Staff"] = { Tier = 2, Start = Color3.fromRGB(70, 145, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(155, 200, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 13 },
-    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 13 },
-    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 13 },
+    ["Mod.Staff"] = { Tier = 2, Start = Color3.fromRGB(70, 145, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(155, 200, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(0, 205, 170), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(105, 240, 215), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["D1SGR4CeD OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["CoM GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["D1SGR4CeD.OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["CoM.GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
 
     -- TIER 3: Free-select roles
     -- Entire font color loops from signature color -> pitch black -> signature color.
-    ["PsYchopath"] = { Tier = 3, Start = Color3.fromRGB(155, 45, 220), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(205, 110, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 235, 100), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(45, 145, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(120, 200, 255), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["~OG~"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(255, 215, 95), Speed = 1.0, Mode = "FONT_LOOP" },
-    ["HoN0R3D OnE"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
-
-    ["__जल्लाद__"] = { Tier = 2, Start = Color3.fromRGB(235, 55, 75), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 125, 140), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
+    ["PsYchopath"] = { Tier = 3, Start = Color3.fromRGB(235, 70, 190), End = Color3.fromRGB(45, 220, 255), Name = Color3.fromRGB(235, 70, 190), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Architect"] = { Tier = 3, Start = Color3.fromRGB(255, 205, 35), End = Color3.fromRGB(185, 80, 255), Name = Color3.fromRGB(255, 225, 80), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["Overseer"] = { Tier = 3, Start = Color3.fromRGB(45, 210, 255), End = Color3.fromRGB(95, 100, 255), Name = Color3.fromRGB(120, 220, 255), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["~OG~"] = { Tier = 3, Start = Color3.fromRGB(255, 175, 35), End = Color3.fromRGB(255, 85, 175), Name = Color3.fromRGB(255, 205, 75), Speed = 1.0, Mode = "FONT_LOOP" },
+    ["HoN0R3D.OnE"] = { Tier = 3, Start = Color3.fromRGB(0, 220, 205), End = Color3.fromRGB(170, 75, 255), Name = Color3.fromRGB(90, 255, 240), Speed = 1.0, Mode = "FONT_LOOP" },
 
     -- BOT is retained only as an internal/system message role so existing
     -- AI MoD, announcement, join, and Music Session messages keep rendering.
@@ -812,7 +812,7 @@ local RANK_STYLES = {
 
 local function AnimateRoleFont(textObject, roleName, style)
     if not textObject or not textObject.Parent then return end
-    style = style or RANK_STYLES[roleName] or RANK_STYLES["VIP"]
+    style = style or RANK_STYLES[roleName] or RANK_STYLES["Vip"]
 
     for _, child in ipairs(textObject:GetChildren()) do
         if child.Name == "KronosRoleGradient" or child.Name == "KronosTier3Sheen" then
@@ -876,36 +876,37 @@ local function AnimateRoleFont(textObject, roleName, style)
         return
     end
 
-    -- ToUR NaL SH4Da / AUQAt Ke BAHR: bright colour base with a white
-    -- highlight travelling vertically up and down.
+    -- ToUR NaL SH4Da and AUQAt Ke BAHR: bright solid colour with a
+    -- narrow white highlight that continuously travels UP and DOWN.
     if mode == "VERTICAL_WHITE" then
         local gradient = Instance.new("UIGradient")
         gradient.Name = "KronosRoleGradient"
         gradient.Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0.00, startColor),
-            ColorSequenceKeypoint.new(0.38, startColor),
+            ColorSequenceKeypoint.new(0.40, startColor),
             ColorSequenceKeypoint.new(0.50, endColor),
-            ColorSequenceKeypoint.new(0.62, startColor),
+            ColorSequenceKeypoint.new(0.60, startColor),
             ColorSequenceKeypoint.new(1.00, startColor),
         })
         gradient.Rotation = 90
         gradient.Parent = textObject
         task.spawn(function()
             while textObject and textObject.Parent and gradient and gradient.Parent do
-                gradient.Offset = Vector2.new(0, -1.2)
-                local tween = TweenService:Create(gradient, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(0, 1.2)})
-                tween:Play()
-                tween.Completed:Wait()
+                gradient.Offset = Vector2.new(0, 1.25)
+                local upTween = TweenService:Create(gradient, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(0, -1.25)})
+                upTween:Play()
+                upTween.Completed:Wait()
                 if not textObject or not textObject.Parent or not gradient or not gradient.Parent then break end
-                local reverse = TweenService:Create(gradient, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(0, -1.2)})
-                reverse:Play()
-                reverse.Completed:Wait()
+                local downTween = TweenService:Create(gradient, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(0, 1.25)})
+                downTween:Play()
+                downTween.Completed:Wait()
             end
         end)
         return
     end
 
-    -- Tier 3: plain colour transition only. No UIGradient or sheen.
+    -- Tier 3: NO UIGradient. The entire font smoothly transitions between
+    -- two plain colours; it never uses a gradient or moving sheen.
     if tonumber(style.Tier) == 3 then
         textObject.TextColor3 = startColor
         task.spawn(function()
@@ -935,177 +936,6 @@ local function AnimateRoleFont(textObject, roleName, style)
         end
     end)
 end
-
-local ALL_AUTOCOMPLETE_OPTIONS = { "!tag", "!role", "!spoof", "!announce ", "!mute ", "/w " }
-local CurrentContextMessage = nil
-local EditingContextMessage = nil
-local EditingContextIsGlobal = false
-local ReplyContextMessage = nil
-local ReplyHighlightToken = 0
-local PrivateModeTargetUsername = nil
-local PrivateModeTargetDisplayName = nil
-local PrivateModePill = nil
-local RefreshReplyUI = function() end
-local ClearPersistentPrivatePrefix = function() end
-
-local AssignedPlayerRoles = {}
-local AvailableUserRoles = {}
--- Per-role switch authorization loaded from GITHUB_ROLE_LIST_URL.
--- A Tier 1/2 role requires BOTH the username and UserId to be listed for that role.
-local RoleSwitchAuthorization = {}
-local RoleRosterLoaded = false
-local DisabledTags = {}        
-local PersistentPvtPrefix = ""
-
-local GlobalCachedMessages, GlobalUIElements = {}, {}
-local ServerCachedMessages, ServerUIElements = {}, {}
-
--- Temporary per-session message blocks. These are intentionally memory-only:
--- they are cleared automatically when this script/session ends or the player rejoins.
-local BlockedMessageUsers = {}
-
-local function IsMessageUserBlocked(username)
-    username = tostring(username or "")
-    return username ~= "" and BlockedMessageUsers[string.lower(username)] == true
-end
-
-local function RemoveBlockedUserFromLocalChat(username)
-    username = tostring(username or "")
-    if username == "" then return end
-    local wanted = string.lower(username)
-
-    for _, cache in ipairs({GlobalCachedMessages, ServerCachedMessages}) do
-        for key, msg in pairs(cache) do
-            if type(msg) == "table" and string.lower(tostring(msg.Username or "")) == wanted then
-                cache[key] = nil
-            end
-        end
-    end
-
-    for _, list in ipairs({GlobalUIElements, ServerUIElements}) do
-        for i = #list, 1, -1 do
-            local card = list[i]
-            if card and string.lower(tostring(card:GetAttribute("MessageUsername") or "")) == wanted then
-                if card.Parent then
-                    card:Destroy()
-                end
-                table.remove(list, i)
-            elseif card and not card.Parent then
-                table.remove(list, i)
-            end
-        end
-    end
-end
-
-local function BlockMessageUser(username)
-    username = tostring(username or "")
-    if username == "" or string.lower(username) == string.lower(tostring(LocalPlayer.Name or "")) then
-        return false
-    end
-    BlockedMessageUsers[string.lower(username)] = true
-    RemoveBlockedUserFromLocalChat(username)
-    return true
-end
-
--- Moderation state. Mutes are scoped to GLOBAL or SERVER chat and expire automatically.
-local Moderation = { ActiveMutes = {} }
-
--- Announcement identity / presentation.
--- Announcements are rendered as a dedicated ANNOUNCER message, not as AI MoD.
-local ANNOUNCER_NAME = "ANNOUNCER"
-local ANNOUNCER_PFP_ID = "132432242608689"
-local ANNOUNCEMENT_TEXT_COLOR = Color3.fromRGB(255, 255, 0) -- Neon Yellow
-local ANNOUNCEMENT_TEXT_SIZE = 12
-
-Moderation.NormalizeName = function(s)
-    return string.lower(tostring(s or ""))
-end
-
-Moderation.ResolveModerationTarget = function(query)
-    query = tostring(query or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    if query == "" then return nil end
-    local needle = Moderation.NormalizeName(query)
-
-    local function checkPlayer(player)
-        local name = Moderation.NormalizeName(player.Name)
-        local display = Moderation.NormalizeName(player.DisplayName)
-        if name == needle or display == needle then return player.Name, player.DisplayName end
-    end
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        local u, d = checkPlayer(player)
-        if u then return u, d end
-    end
-
-    local bestUsername, bestDisplay
-    for _, player in ipairs(Players:GetPlayers()) do
-        local name = Moderation.NormalizeName(player.Name)
-        local display = Moderation.NormalizeName(player.DisplayName)
-        if string.sub(name, 1, #needle) == needle or string.sub(display, 1, #needle) == needle then
-            if not bestUsername then
-                bestUsername, bestDisplay = player.Name, player.DisplayName
-            end
-        end
-    end
-    if bestUsername then return bestUsername, bestDisplay end
-
-    for _, cache in ipairs({GlobalCachedMessages, ServerCachedMessages}) do
-        for _, msg in pairs(cache) do
-            if type(msg) == "table" then
-                local username = tostring(msg.Username or "")
-                local display = tostring(msg.DisplayName or username)
-                local lu, ld = Moderation.NormalizeName(username), Moderation.NormalizeName(display)
-                if lu == needle or ld == needle or string.sub(lu, 1, #needle) == needle or string.sub(ld, 1, #needle) == needle then
-                    return username, display
-                end
-            end
-        end
-    end
-    return nil
-end
-
-Moderation.GetMuteKey = function(scope, username)
-    return tostring(scope) .. "|" .. Moderation.NormalizeName(username)
-end
-
-Moderation.GetActiveMute = function(scope, username)
-    local key = Moderation.GetMuteKey(scope, username)
-    local mute = Moderation.ActiveMutes[key]
-    if mute and tonumber(mute.ExpiresAt or 0) > os.time() then
-        return mute
-    end
-    Moderation.ActiveMutes[key] = nil
-    return nil
-end
-
-Moderation.FormatMuteRemaining = function(seconds)
-    seconds = math.max(0, math.floor(tonumber(seconds) or 0))
-    local minutes = math.floor(seconds / 60)
-    local secs = seconds % 60
-    return string.format("%02d:%02d", minutes, secs)
-end
-
-Moderation.RefreshAllRoleAutocomplete = function()
-    local optionsMap = { ["!tag"] = true, ["!role"] = true, ["!spoof"] = true, ["!announce "] = true, ["!mute "] = true, ["/w "] = true }
-   
-    for rankName, _ in pairs(RANK_STYLES) do
-        if rankName ~= "BOT" then
-            optionsMap[rankName] = true
-        end
-    end
-   
-    for playerName, roles in pairs(AvailableUserRoles) do
-        for _, roleName in ipairs(roles) do
-            optionsMap[roleName] = true
-        end
-    end
-
-    ALL_AUTOCOMPLETE_OPTIONS = {}
-    for opt, _ in pairs(optionsMap) do
-        table.insert(ALL_AUTOCOMPLETE_OPTIONS, opt)
-    end
-end
-Moderation.RefreshAllRoleAutocomplete()
 
 -- ============================================================================
 -- ENCODING UTILITY
@@ -1401,15 +1231,15 @@ end)
 local ROLE_PRIORITY = {
     -- Tier 1
     "His🌸", "Her🎀", "B4DNAM", "SMoK3R🚭", "BR💔KEN", "Majdoor⛑️",
-    "Narcissist", "ELITE", "VIP",
+    "Narcissist", "Elite", "Vip",
 
     -- Tier 2
     "G0DF4THER", "AUQAt.Ke.BAHR", "MOMMy♥️", "DaDDy🎅", "Abusive🪓",
-    "MALKIN🌸", "ToUR NaL SH4Da", "DISB4ND3R⛓️‍💥", "H4CK3R", "Mod Staff",
-    "__दानव__", "__देवता__", "__खलनायक__", "__जल्लाद__", "BADMASH🚬", "D1SGR4CeD OnE", "CoM GoD🔗",
+    "MALKIN🌸", "ToUR.NaL.SH4Da", "DISB4ND3R⛓️‍💥", "H4CK3R", "Mod.Staff",
+    "__दानव__", "__देवता__", "__खलनायक__", "BADMASH🚬", "D1SGR4CeD.OnE", "CoM.GoD🔗",
 
     -- Tier 3
-    "PsYchopath", "Architect", "Overseer", "~OG~", "HoN0R3D OnE"
+    "PsYchopath", "Architect", "Overseer", "~OG~", "HoN0R3D.OnE"
 }
 
 local ROLE_PRIORITY_INDEX = {}
@@ -1423,12 +1253,9 @@ end
 
 local function NormalizeRoleLookupName(roleName)
     local normalized = string.lower(tostring(roleName or ""))
-    -- Display-friendly spaces, normal dots, and middle dots are treated as
-    -- equivalent separators for role lookup/authorization.
-    normalized = normalized:gsub("·", " ")
-    normalized = normalized:gsub("%.", " ")
-    normalized = normalized:gsub("%s+", " ")
-    return normalized:match("^%s*(.-)%s*$") or normalized
+    normalized = normalized:gsub("·", ".")
+    normalized = normalized:gsub("%s*%.%s*", ".")
+    return normalized
 end
 
 local function FindCanonicalRole(roleName)
@@ -4055,9 +3882,9 @@ local function PopulateTagBar()
         tagBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
         tagBtn.BackgroundTransparency = 0.2
         tagBtn.Font = Enum.Font.GothamBold
-        tagBtn.Text = "  " .. (style.DisplayName or string.upper(roleName)) .. "  "
+        tagBtn.Text = "  " .. string.upper(roleName) .. "  "
         tagBtn.TextColor3 = style.Start
-        tagBtn.TextSize = style.TextSize or ((roleName == "__दानव__" or roleName == "__देवता__" or roleName == "__खलनायक__" or roleName == "__जल्लाद__") and 15 or 10)
+        tagBtn.TextSize = style.TextSize or ((roleName == "__दानव__" or roleName == "__देवता__" or roleName == "__खलनायक__") and 16 or 10)
         tagBtn.Parent = TagScrollFrame
         AnimateRoleFont(tagBtn, roleName, style)
 
@@ -5005,7 +4832,7 @@ CreateMessageCard = function(msgData, isGlobal)
 
 
     local roleName = msgData.Role or GetAssignedOrCalculatedRole(msgData.Username)
-    local style = RANK_STYLES[roleName] or RANK_STYLES["VIP"]
+    local style = RANK_STYLES[roleName] or RANK_STYLES["Vip"]
 
     -- Private-message prefix: only private messages get this extra label.
     local privatePrefixLabel = nil
@@ -5031,9 +4858,9 @@ CreateMessageCard = function(msgData, isGlobal)
     tagLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     tagLabel.BackgroundTransparency = 0.3
     tagLabel.Font = Enum.Font.GothamBold
-    tagLabel.Text = "  " .. (style.DisplayName or string.upper(roleName)) .. "  "
+    tagLabel.Text = "  " .. string.upper(roleName) .. "  "
     tagLabel.TextColor3 = style.Start
-    tagLabel.TextSize = style.TextSize or ((roleName == "__दानव__" or roleName == "__देवता__" or roleName == "__खलनायक__" or roleName == "__जल्लाद__") and 15 or 9)
+    tagLabel.TextSize = style.TextSize or ((roleName == "__दानव__" or roleName == "__देवता__" or roleName == "__खलनायक__") and 16 or 9)
     tagLabel.Visible = not DisabledTags[msgData.Username]
     tagLabel.Parent = frame
 

@@ -770,21 +770,21 @@ local RANK_STYLES = {
 
     -- TIER 2: Restricted roles
     -- Primary color -> secondary color, moving left-to-right.
-    ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(0, 190, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(120, 225, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(120, 90, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(190, 170, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(0, 220, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 240, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MOMMy♥️"] = { Tier = 2, Start = Color3.fromRGB(255, 40, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 160, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["DaDDy🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(255, 145, 30), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 195, 105), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(220, 0, 35), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 90, 105), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MALKIN🌸"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["ToUR.NaL.SH4Da"] = { Tier = 2, Start = Color3.fromRGB(170, 75, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(215, 170, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["DISB4ND3R⛓️‍💥"] = { Tier = 2, Start = Color3.fromRGB(0, 210, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(110, 235, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["H4CK3R"] = { Tier = 2, Start = Color3.fromRGB(55, 235, 105), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(145, 255, 175), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
-    ["Mod.Staff"] = { Tier = 2, Start = Color3.fromRGB(70, 145, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(155, 200, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["ToUR.NaL.SH4Da"] = { Tier = 2, Start = Color3.fromRGB(170, 70, 255), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(215, 150, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["DISB4ND3R⛓️‍💥"] = { Tier = 2, Start = Color3.fromRGB(180, 0, 25), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 80, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["H4CK3R"] = { Tier = 2, Start = Color3.fromRGB(0, 255, 55), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(150, 255, 170), Speed = 0.8, Mode = "PRIMARY_SECONDARY" },
+    ["Mod.Staff"] = { Tier = 2, Start = Color3.fromRGB(255, 95, 0), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 190, 120), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(125, 0, 20), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(220, 45, 55), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(0, 205, 170), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(105, 240, 215), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["D1SGR4CeD.OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(175, 0, 255), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(215, 100, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(165, 170, 180), End = Color3.fromRGB(5, 5, 5), Name = Color3.fromRGB(225, 225, 230), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["D1SGR4CeD.OnE"] = { Tier = 2, Start = Color3.fromRGB(190, 0, 35), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 90, 110), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["CoM.GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
 
     -- TIER 3: Free-select roles

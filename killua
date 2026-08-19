@@ -771,7 +771,7 @@ local RANK_STYLES = {
     -- TIER 2: Restricted roles
     -- Primary color -> secondary color, moving left-to-right.
     ["G0DF4THER"] = { Tier = 2, Start = Color3.fromRGB(0, 190, 255), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(120, 225, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
-    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(255, 20, 190), End = Color3.fromRGB(255, 0, 35), Name = Color3.fromRGB(255, 105, 175), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
+    ["AUQAt.Ke.BAHR"] = { Tier = 2, Start = Color3.fromRGB(255, 45, 180), End = Color3.fromRGB(255, 35, 45), Name = Color3.fromRGB(255, 105, 165), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["MOMMy♥️"] = { Tier = 2, Start = Color3.fromRGB(255, 40, 150), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 160, 220), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["DaDDy🎅"] = { Tier = 2, Start = Color3.fromRGB(255, 105, 0), End = Color3.fromRGB(35, 35, 35), Name = Color3.fromRGB(255, 175, 90), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["Abusive🪓"] = { Tier = 2, Start = Color3.fromRGB(255, 145, 30), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 195, 105), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
@@ -783,7 +783,7 @@ local RANK_STYLES = {
     ["__दानव__"] = { Tier = 2, Start = Color3.fromRGB(105, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(175, 145, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
     ["__देवता__"] = { Tier = 2, Start = Color3.fromRGB(255, 220, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 240, 130), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
     ["__खलनायक__"] = { Tier = 2, Start = Color3.fromRGB(225, 70, 235), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(245, 155, 250), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
-    ["__जल्लाद__"] = { Tier = 2, Start = Color3.fromRGB(235, 65, 65), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 150, 150), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
+    ["__जल्लाद__"] = { Tier = 2, Start = Color3.fromRGB(220, 45, 55), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 135, 145), Speed = 0.85, Mode = "PRIMARY_SECONDARY", TextSize = 15 },
     ["BADMASH🚬"] = { Tier = 2, Start = Color3.fromRGB(0, 205, 170), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(105, 240, 215), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["D1SGR4CeD OnE"] = { Tier = 2, Start = Color3.fromRGB(75, 125, 255), End = Color3.fromRGB(0, 0, 0), Name = Color3.fromRGB(150, 190, 255), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
     ["CoM GoD🔗"] = { Tier = 2, Start = Color3.fromRGB(255, 190, 45), End = Color3.fromRGB(255, 255, 255), Name = Color3.fromRGB(255, 245, 190), Speed = 0.85, Mode = "PRIMARY_SECONDARY" },
@@ -1491,10 +1491,11 @@ end
 
 local function NormalizeRoleLookupName(roleName)
     local normalized = string.lower(tostring(roleName or ""))
-    normalized = normalized:gsub("·", " ")
-    normalized = normalized:gsub("%.", " ")
+    normalized = normalized:gsub("·", ".")
+    normalized = normalized:gsub("%s*%.%s*", " ")
     normalized = normalized:gsub("%s+", " ")
-    return normalized:match("^%s*(.-)%s*$") or normalized
+    normalized = normalized:gsub("^%s+", ""):gsub("%s+$", "")
+    return normalized
 end
 
 local function FindCanonicalRole(roleName)
@@ -1519,7 +1520,7 @@ local function GetHighestRole(username)
             best, bestIndex = canonical, idx
         end
     end
-    return best or "VIP"
+    return best or "Vip"
 end
 
 local function PlayerHasRole(username, roleName)
@@ -4123,7 +4124,7 @@ local function PopulateTagBar()
         tagBtn.Font = Enum.Font.GothamBold
         tagBtn.Text = "  " .. string.upper(roleName) .. "  "
         tagBtn.TextColor3 = style.Start
-        tagBtn.TextSize = style.TextSize or 10
+        tagBtn.TextSize = tonumber(style.TextSize) or 10
         tagBtn.Parent = TagScrollFrame
         AnimateRoleFont(tagBtn, roleName, style)
 
@@ -5099,7 +5100,7 @@ CreateMessageCard = function(msgData, isGlobal)
     tagLabel.Font = Enum.Font.GothamBold
     tagLabel.Text = "  " .. string.upper(roleName) .. "  "
     tagLabel.TextColor3 = style.Start
-    tagLabel.TextSize = style.TextSize or 9
+    tagLabel.TextSize = tonumber(style.TextSize) or 9
     tagLabel.Visible = not DisabledTags[msgData.Username]
     tagLabel.Parent = frame
 

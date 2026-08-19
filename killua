@@ -826,7 +826,7 @@ local function AnimateRoleFont(textObject, roleName, style)
     local endColor = style.End or Color3.new(0, 0, 0)
 
     if mode == "RAINBOW_WHITE" then
-        -- Free-select tier: continuous neon spectrum sweeping into white.
+        -- Tier 1: continuous neon spectrum sweeping into white.
         local gradient = Instance.new("UIGradient")
         gradient.Name = "KronosRoleGradient"
         gradient.Color = ColorSequence.new({
@@ -1535,14 +1535,13 @@ local function GetAssignedOrCalculatedRole(username)
         local canonicalSelected = FindCanonicalRole(selected) or selected
         local selectedStyle = RANK_STYLES[canonicalSelected]
 
-        -- Tier 1 tags are cosmetic/free-select tags. A client does not need
-        -- to be present in the role roster for a manually selected Tier 1 tag
-        -- to be used on their own messages.
+        -- Tier 1 tags are intentionally free-select. They do not require
+        -- the player to appear in the GitHub role roster.
         if type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 1 then
             return canonicalSelected
         end
 
-        -- Restricted roles still require the normal assigned-role check.
+        -- Tier 2/3 roles remain roster-restricted.
         if PlayerHasRole(username, canonicalSelected) then
             return canonicalSelected
         end
@@ -1557,7 +1556,7 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    -- Tier 1 is freely selectable by everyone.
+    -- Tier 1 is FREE to select for everyone.
     if tonumber(style.Tier) == 1 then
         return true
     end
@@ -1567,9 +1566,8 @@ local function CanSwitchToRole(roleName)
         return false
     end
 
-    -- Tier 2/3 roles require BOTH the username and UserId to be present
-    -- in that specific role's roster entry.
-
+    -- Tier 2 and Tier 3 require BOTH the username and UserId to be present
+    -- in that specific role's GitHub roster entry.
     if not RoleRosterLoaded then
         return false
     end
@@ -1878,7 +1876,7 @@ local function FetchRemoteRoles()
         local selectedTier1 = type(selectedStyle) == "table" and tonumber(selectedStyle.Tier) == 1
 
         -- Never replace a manually selected Tier 1 tag during a roster refresh.
-        -- Restricted roles continue to be validated against the assigned role data.
+        -- Tier 2/3 selections must remain authorized by the roster.
         if not selected or (not selectedTier1 and not PlayerHasRole(player.Name, selectedCanonical)) then
             AssignedPlayerRoles[player.Name] = GetHighestRole(player.Name)
         else
@@ -4188,7 +4186,7 @@ KRONOS CHAT is a real-time cross-server chat infrastructure allowing seamless gl
 
 <b>[ COMMANDS GUIDE ]</b>
 • <b>!tag</b> : Toggle your custom tag display ON or OFF.
-• <b>!tag [RoleName]</b> : Switch to any Tier 3 tag. Tier 3 tags are freely selectable by everyone.
+• <b>!tag [RoleName]</b> : Switch to any Tier 1 tag. Tier 1 tags are freely selectable by everyone.
 • <b>!spoof [NewName]</b> : Change your chat Display Name (Architect / Overseer / Moderator / Com-God / Hacker).
 • <b>!role [User]</b> : Inspect a player's assigned roles and highest role.
 • <b>!announce [Text]</b> : Send an ANNOUNCER announcement (Architect / Overseer / Moderator only, max 900 chars).
@@ -5854,7 +5852,11 @@ SendChatMessage = function()
         if not canonical or type(style) ~= "table" then
             ShowLocalSystemMessage("[AI MoD] : Unknown tag. Please use a valid role.", true)
         elseif not CanSwitchToRole(canonical) then
-            ShowLocalSystemMessage("[AI MoD] : You have not been granted the \"" .. canonical .. "\" Tag by the Architect.", true)
+            if tonumber(style.Tier) == 1 then
+                ShowLocalSystemMessage("[AI MoD] : Tag could not be selected. Please try again.", true)
+            else
+                ShowLocalSystemMessage("[AI MoD] : You have not been granted the \"" .. canonical .. "\" Tag by the Architect.", true)
+            end
         else
             AssignedPlayerRoles[LocalPlayer.Name] = canonical
             DisabledTags[LocalPlayer.Name] = nil

@@ -413,8 +413,8 @@ task.spawn(runIntro)
 
 
 
-local customRPName = "乂乂 ᴋʀᴏɴᴏꜱ V ᴄʜᴀᴛ 乂乂"
-local customRPBio  = "Dιʂρʅαყɳαɱҽ"
+local customRPName = "乂乂 ᴋʀᴏɴᴏꜱ  ᴄʜᴀᴛ 乂乂"
+local customRPBio  = "૮σɱɱµɳเ૮αƭเσɳ ૮ɦαɳɳεℓร α૮ƭเѵε"
 
 local function applyRPProfile()
     local reFolder = ReplicatedStorage:WaitForChild("RE", 10)
